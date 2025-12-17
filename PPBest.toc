@@ -1,0 +1,11 @@
+## Interface: 110200
+## Title: PPBest
+## Notes: 魔兽世界宠物对战自动插件 - 简单的自动对战功能
+## Version: 1.0.0
+## Author: 戒虑牧
+## SavedVariables: PPBestConfig, PPBestHistory
+
+
+BattleUtils.lua
+PPBest.lua
+OptionPanel.lua
