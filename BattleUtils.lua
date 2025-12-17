@@ -33,4 +33,17 @@ function BattleUtils:GetWeatherDuration(weatherId)
     return 0
 end
 
+-- 获取宠物品质名称
+local function BattleUtils:GetPetQualityName(quality)
+    local names = {
+        [0] = "粗糙",
+        [1] = "普通",
+        [2] = "优秀",
+        [3] = "精良",
+        [4] = "史诗",
+        [5] = "传奇",
+    }
+    return names[quality] or "未知"
+end
+
 _G.PPBestBattleUtils = BattleUtils

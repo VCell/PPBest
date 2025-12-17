@@ -5,10 +5,105 @@ PPBest:RegisterEvent("ADDON_LOADED")
 local PPBest_TITLE = "PPBest"
 local BattleUtils = _G.PPBestBattleUtils
 local OptionPanel = _G.PPBestOptionPanel
+
 -- 配置变量
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
 }
+PPBestHistory = PPBestHistory or {
+    version = 1,
+    records = {},
+    totalBattles = 0,
+    wins = 0,
+    losses = 0,
+}
+
+-- 当前对战信息
+local currentBattleInfo = {
+    startTime = nil,
+    opponentTeam = {},
+    opponentQualities = {},
+    rounds = 0,
+    result = nil, -- "win", "loss", "forfeit"
+    duration = 0,
+}
+
+-- 记录当前对战信息
+local function RecordCurrentBattleInfo()
+    if not PPBestConfig.enableHistory then
+        return
+    end
+    
+    currentBattleInfo.startTime = time()
+    currentBattleInfo.rounds = 0
+    currentBattleInfo.opponentTeam = {}
+    currentBattleInfo.opponentQualities = {}
+    currentBattleInfo.result = nil
+    currentBattleInfo.duration = 0
+    
+    -- 获取对手宠物信息
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
+        local name = C_PetBattles.GetName(LE_BATTLE_PET_ENEMY, petIndex)
+        local petType = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
+        local level = C_PetBattles.GetLevel(LE_BATTLE_PET_ENEMY, petIndex)
+        local quality = C_PetBattles.GetBreedQuality(LE_BATTLE_PET_ENEMY, petIndex)
+        
+        table.insert(currentBattleInfo.opponentTeam, {
+            name = name,
+            type = petType,
+            level = level,
+            quality = quality,
+        })
+        
+        table.insert(currentBattleInfo.opponentQualities, quality)
+    end
+end
+
+-- 添加对战记录
+local function AddBattleRecord()
+    if not PPBestConfig.enableHistory or not currentBattleInfo.result then
+        return
+    end
+    
+    -- 更新统计数据
+    PPBestHistory.totalBattles = (PPBestHistory.totalBattles or 0) + 1
+    if currentBattleInfo.result == "win" then
+        PPBestHistory.wins = (PPBestHistory.wins or 0) + 1
+    elseif currentBattleInfo.result == "loss" then
+        PPBestHistory.losses = (PPBestHistory.losses or 0) + 1
+    end
+    
+    -- 创建记录
+    local record = {
+        timestamp = currentBattleInfo.startTime,
+        timeString = GetCurrentTimeString(),
+        opponentTeam = {},
+        opponentQualities = currentBattleInfo.opponentQualities,
+        rounds = currentBattleInfo.rounds,
+        result = currentBattleInfo.result,
+        duration = GetBattleDuration(currentBattleInfo.startTime),
+    }
+    
+    -- 复制对手队伍信息
+    for _, pet in ipairs(currentBattleInfo.opponentTeam) do
+        table.insert(record.opponentTeam, {
+            name = pet.name,
+            type = pet.type,
+            level = pet.level,
+            quality = pet.quality,
+        })
+    end
+    
+    -- 添加到记录列表
+    table.insert(PPBestHistory.records, record)
+    
+    -- 限制记录数量
+    local maxRecords = PPBestConfig.maxHistoryRecords or 100
+    while #PPBestHistory.records > maxRecords do
+        table.remove(PPBestHistory.records, 1)
+    end
+end
+
 
 -- 按钮创建
 local autoButton
@@ -97,7 +192,8 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
             self:RegisterEvent("PET_BATTLE_CLOSE")
             self:RegisterEvent("PET_BATTLE_ACTION_SELECTED")
             self:RegisterEvent("PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
-            
+            self:RegisterEvent("PET_BATTLE_OVER") 
+
             CreateAutoButton()
             PPBest_SetupHotkey()
             print("|cFF00FF00PPBest 已加载|r")
@@ -108,6 +204,7 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
             autoButton:SetShown(true)
         end
         round = 0
+        RecordCurrentBattleInfo()
     elseif event == "PET_BATTLE_CLOSE" then
         isInPetBattle = false
         if autoButton then
@@ -117,6 +214,24 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
         round = round+1
+        currentBattleInfo.rounds = round
+    elseif event == "PET_BATTLE_OVER" then
+        -- 对战结束，记录结果
+        local _, isWinner = ...
+        if isWinner then
+            currentBattleInfo.result = "win"
+        else
+            currentBattleInfo.result = "loss"
+        end
+        
+        -- 添加对战记录
+        currentBattleInfo.duration = GetBattleDuration(currentBattleInfo.startTime)
+        AddBattleRecord()
+        
+        -- 显示简单结果
+        local resultText = currentBattleInfo.result == "win" and "|cFF00FF00胜利|r" or "|cFFFF0000失败|r"
+        print(string.format("PPBest: 对战结束 | %s | %d回合 | %d秒", 
+            resultText, currentBattleInfo.rounds, currentBattleInfo.duration))
     end
 end)
 
