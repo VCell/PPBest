@@ -34,7 +34,7 @@ function BattleUtils:GetWeatherDuration(weatherId)
 end
 
 -- 获取宠物品质名称
-local function BattleUtils:GetPetQualityName(quality)
+function BattleUtils:GetPetQualityName(quality)
     local names = {
         [0] = "粗糙",
         [1] = "普通",
