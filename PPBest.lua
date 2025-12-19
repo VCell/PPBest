@@ -193,17 +193,19 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
         round = round+1
     elseif event == "PET_BATTLE_FINAL_ROUND" then
-        -- 对战结束，记录结果
-        print("PET_BATTLE_FINAL_ROUND", ...)
-        local winner = ...
-        -- PET_BATTLE_FINAL_ROUND会在对手投降时返回2
-        if winner == 1 or round < 5 then
-            currentBattleInfo.result = "win"
-        else
-            currentBattleInfo.result = "loss"
+        if currentBattleInfo then
+            -- 对战结束，记录结果
+            local winner = ...
+            -- PET_BATTLE_FINAL_ROUND会在对手投降时返回2
+            if winner == 1 or round < 5 then
+                currentBattleInfo.result = "win"
+            else
+                currentBattleInfo.result = "loss"
+            end
+
+            AddBattleRecord()
         end
 
-        AddBattleRecord()
     end
 end)
 
