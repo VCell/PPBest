@@ -88,7 +88,7 @@ end
 
 -- 执行自动战斗
 local function PerformAutoBattle()
-    print('PerformAutoBattle start')
+    --print('PerformAutoBattle start')
     if not C_PetBattles.IsInBattle() then 
         --print('not IsInBattle')
         return
@@ -100,13 +100,21 @@ local function PerformAutoBattle()
     end
 
     if C_PetBattles.IsSkipAvailable() then
-        local duration = BattleUtils:GetWeatherDuration(590)
+        local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
+        local enemyType = BattleUtils:GetEnemyPetType()
+        --print("GetEnemyPetType ", enemyType)
         --print("GetWeatherDuration", duration)
-        if duration < 3 then 
-            C_PetBattles.UseAbility(3)
+        if BattleUtils:IsUndeadRound() then
+            BattleUtils:UseSkillByPriority({3, 1})
+        elseif enemyType == BattleUtils.TYPE_MECHANICAL then
+            BattleUtils:UseSkillByPriority({1, 3})
+        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
+            BattleUtils:UseSkillByPriority({2, 1,3})
+        elseif duration < 3 then 
+            BattleUtils:UseSkillByPriority({3, 2, 1})
+        else
+            BattleUtils:UseSkillByPriority({2, 1, 3})
         end
-        C_PetBattles.UseAbility(2)
-        C_PetBattles.UseAbility(1)
         return 
     end
 

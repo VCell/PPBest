@@ -1,5 +1,16 @@
 -- BattleUtils.lua
-local BattleUtils = {}
+local BattleUtils = {
+    WEATHER_ID_ARCANE_STORM = 590,
+    
+    AURA_ID_UNDEAD = 242,
+
+    TYPE_HUMANOID = 1,
+    TYPE_DRAGONKIN = 2,
+    TYPE_FLYING = 3,
+    TYPE_UNDEAD = 4,
+    TYPE_CRITTER = 5,
+    TYPE_MECHANICAL = 10,
+}
 
 -- 切换到血量最高的宠物
 function BattleUtils:SwitchToHighestHealthPet()
@@ -19,14 +30,14 @@ function BattleUtils:SwitchToHighestHealthPet()
             bestPetIndex = petIndex
         end
     end
-    print("SwitchToHighestHealthPet ", bestPetIndex)
+    --print("SwitchToHighestHealthPet ", bestPetIndex)
     C_PetBattles.ChangePet(bestPetIndex)
 end
 
 -- 切换到血量最高的宠物
 function BattleUtils:GetWeatherDuration(weatherId)
     local id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
-    print("GetAuraInfo", id, duration)
+    --print("GetAuraInfo", id, duration)
     if weatherId and id and (id == weatherId) then
         return duration
     end
@@ -44,6 +55,75 @@ function BattleUtils:GetPetQualityName(quality)
         [5] = "传奇",
     }
     return names[quality] or "未知"
+end
+
+function BattleUtils:UseSkillByPriority(priorityArray)
+
+    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+    
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+    
+    -- 按照优先级顺序检查技能是否可用
+    for _, skillSlot in ipairs(priorityArray) do
+        local abilityID, abilityName = C_PetBattles.GetAbilityInfo(LE_BATTLE_PET_ALLY, petIndex, skillSlot)
+        
+        if abilityID then
+            local isUsable, currentCooldown, currentLockdown = 
+                C_PetBattles.GetAbilityState(LE_BATTLE_PET_ALLY, petIndex, skillSlot)
+            
+            if isUsable then
+                -- 执行技能
+                C_PetBattles.UseAbility(skillSlot)
+                return true
+            end
+        end
+    end
+    C_PetBattles.SkipTurn()
+    return false
+end
+
+
+function BattleUtils:IsUndeadRound()
+    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+    
+    -- 获取宠物的所有光环效果
+    for auraIndex = 1, C_PetBattles.GetNumAuras(LE_BATTLE_PET_ENEMY, petIndex) do
+        local auraId = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_ENEMY, petIndex, auraIndex)
+        if auraId == self.AURA_ID_UNDEAD then
+            return true
+        end
+    end
+    return false
+end
+
+function BattleUtils:GetEnemyPetType()
+    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+    return C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
+end
+
+function BattleUtils:GetAliveNum(owner)
+    local count = 0
+
+    for petIndex = 1, C_PetBattles.GetNumPets(owner) do
+        local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
+        if health > 0 then
+            count = count + 1
+        end
+    end
+
+    return count
 end
 
 _G.PPBestBattleUtils = BattleUtils
