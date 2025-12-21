@@ -4,6 +4,10 @@ local BattleUtils = {
     
     AURA_ID_UNDEAD = 242,
 
+    STRATEGE_3PP = '3PP',
+    STRATEGE_1MIN = '1MIN',
+
+
     TYPE_HUMANOID = 1,
     TYPE_DRAGONKIN = 2,
     TYPE_FLYING = 3,

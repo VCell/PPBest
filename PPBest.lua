@@ -5,10 +5,11 @@ PPBest:RegisterEvent("ADDON_LOADED")
 local PPBest_TITLE = "PPBest"
 local BattleUtils = _G.PPBestBattleUtils
 local OptionPanel = _G.PPBestOptionPanel
-
+local strategy =  BattleUtils.STRATEGE_1MIN
 -- 配置变量
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
+    
 }
 PPBestHistory = PPBestHistory or {
     version = 1,
@@ -98,7 +99,13 @@ local function PerformAutoBattle()
         BattleUtils:SwitchToHighestHealthPet()
         return
     end
-
+    if strategy == BattleUtils.STRATEGE_1MIN and currentBattleInfo then
+        if time()-currentBattleInfo.startTime>60 then
+            C_PetBattles.ForfeitGame()
+        else
+            return
+        end
+    end
     if C_PetBattles.IsSkipAvailable() then
         local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
         local enemyType = BattleUtils:GetEnemyPetType()
@@ -226,8 +233,9 @@ SlashCmdList["PPBEST"] = function(msg)
     
     if command == "help" then
         print("|cFFFF0000 PPBest :暂无|r")
-    elseif command == "history" or command == "记录" then
-        ShowBattleHistory()
+    elseif command == "1min" then 
+        strategy = BattleUtils.STRATEGE_1MIN
+         print("|cFFFF0000 PPBest :Auto forfeit|r")
     else
         print("|cFFFF0000未知命令。输入 /ppbest help 查看帮助|r")
     end
