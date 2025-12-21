@@ -5,7 +5,7 @@ PPBest:RegisterEvent("ADDON_LOADED")
 local PPBest_TITLE = "PPBest"
 local BattleUtils = _G.PPBestBattleUtils
 local OptionPanel = _G.PPBestOptionPanel
-local strategy =  BattleUtils.STRATEGE_1MIN
+local strategy =  BattleUtils.STRATEGE_3PP
 -- 配置变量
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
