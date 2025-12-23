@@ -4,16 +4,18 @@ local BattleUtils = {
     
     AURA_ID_UNDEAD = 242,
 
-    STRATEGE_3PP = '3PP',
-    STRATEGE_1MIN = '1MIN',
-
-
     TYPE_HUMANOID = 1,
     TYPE_DRAGONKIN = 2,
     TYPE_FLYING = 3,
     TYPE_UNDEAD = 4,
     TYPE_CRITTER = 5,
+    TYPE_MAGIC = 6,
+    TYPE_ELEMENTAL = 7,
+    TYPE_BEAST = 8,
+    TYPE_AQUATIC = 9,
     TYPE_MECHANICAL = 10,
+
+    debug = false,
 }
 
 -- 切换到血量最高的宠物
@@ -128,6 +130,12 @@ function BattleUtils:GetAliveNum(owner)
     end
 
     return count
+end
+
+function BattleUtils:Debug(message)
+    if self.debug then
+        print("PPBest Debug: ", message)
+    end
 end
 
 _G.PPBestBattleUtils = BattleUtils

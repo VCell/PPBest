@@ -5,7 +5,6 @@ PPBest:RegisterEvent("ADDON_LOADED")
 local PPBest_TITLE = "PPBest"
 local BattleUtils = _G.PPBestBattleUtils
 local OptionPanel = _G.PPBestOptionPanel
-local strategy =  BattleUtils.STRATEGE_3PP
 -- 配置变量
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
@@ -43,12 +42,13 @@ local function RecordCurrentBattleInfo()
         local petType = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
         local level = C_PetBattles.GetLevel(LE_BATTLE_PET_ENEMY, petIndex)
         local quality = C_PetBattles.GetBreedQuality(LE_BATTLE_PET_ENEMY, petIndex)
-        
+        local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, petIndex)
         table.insert(currentBattleInfo.opponentTeam, {
             name = name,
             type = petType,
             level = level,
             quality = quality,
+            id = id,
         })
         
         table.insert(currentBattleInfo.opponentQualities, quality)
@@ -69,14 +69,17 @@ local function AddBattleRecord()
         PPBestHistory.losses = (PPBestHistory.losses or 0) + 1
     end
     
-    record = string.format("%s, %s, %d, %d [%s, %s, %s]", 
+    record = string.format("%s, %s, %d, %d, [%s-%s-%s],[%d-%d-%d]", 
         date("%Y-%m-%d %H:%M:%S", currentBattleInfo.startTime), currentBattleInfo.result, round, time() - currentBattleInfo.startTime, 
-        currentBattleInfo.opponentTeam[1].name, currentBattleInfo.opponentTeam[2].name, currentBattleInfo.opponentTeam[3].name
+        currentBattleInfo.opponentTeam[1].name, currentBattleInfo.opponentTeam[2].name, currentBattleInfo.opponentTeam[3].name,
+        currentBattleInfo.opponentTeam[1].id, currentBattleInfo.opponentTeam[2].id, currentBattleInfo.opponentTeam[3].id
     )
     
     -- 添加到记录列表
     table.insert(PPBestHistory.records, record)
-    
+
+    BattleUtils.Debug(record)
+
     -- 限制记录数量
     local maxRecords = PPBestConfig.maxHistoryRecords or 100
     while #PPBestHistory.records > maxRecords do
@@ -89,28 +92,20 @@ end
 
 -- 执行自动战斗
 local function PerformAutoBattle()
-    --print('PerformAutoBattle start')
     if not C_PetBattles.IsInBattle() then 
-        --print('not IsInBattle')
+        BattleUtils:Debug("PerformAutoBattle Not IsInBattle")
         return
     end
 
-    if  C_PetBattles.ShouldShowPetSelect() then
+    if C_PetBattles.ShouldShowPetSelect() then
         BattleUtils:SwitchToHighestHealthPet()
         return
     end
-    if strategy == BattleUtils.STRATEGE_1MIN and currentBattleInfo then
-        if time()-currentBattleInfo.startTime>60 then
-            C_PetBattles.ForfeitGame()
-        else
-            return
-        end
-    end
+
     if C_PetBattles.IsSkipAvailable() then
         local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
         local enemyType = BattleUtils:GetEnemyPetType()
-        --print("GetEnemyPetType ", enemyType)
-        --print("GetWeatherDuration", duration)
+        
         if BattleUtils:IsUndeadRound() then
             BattleUtils:UseSkillByPriority({3, 1})
         elseif enemyType == BattleUtils.TYPE_MECHANICAL then
@@ -233,9 +228,9 @@ SlashCmdList["PPBEST"] = function(msg)
     
     if command == "help" then
         print("|cFFFF0000 PPBest :暂无|r")
-    elseif command == "1min" then 
-        strategy = BattleUtils.STRATEGE_1MIN
-         print("|cFFFF0000 PPBest :Auto forfeit|r")
+    elseif command == "test" then 
+        BattleUtils.debug = true
+        print("|cFFFF0000 PPBest :开启日志|r")
     else
         print("|cFFFF0000未知命令。输入 /ppbest help 查看帮助|r")
     end
