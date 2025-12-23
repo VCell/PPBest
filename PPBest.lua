@@ -93,7 +93,6 @@ end
 -- 执行自动战斗
 local function PerformAutoBattle()
     if not C_PetBattles.IsInBattle() then 
-        BattleUtils:Debug("PerformAutoBattle Not IsInBattle")
         return
     end
 
@@ -105,7 +104,7 @@ local function PerformAutoBattle()
     if C_PetBattles.IsSkipAvailable() then
         local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
         local enemyType = BattleUtils:GetEnemyPetType()
-        
+
         if BattleUtils:IsUndeadRound() then
             BattleUtils:UseSkillByPriority({3, 1})
         elseif enemyType == BattleUtils.TYPE_MECHANICAL then
