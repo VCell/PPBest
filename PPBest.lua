@@ -5,88 +5,18 @@ PPBest:RegisterEvent("ADDON_LOADED")
 local PPBest_TITLE = "PPBest"
 local BattleUtils = _G.PPBestBattleUtils
 local OptionPanel = _G.PPBestOptionPanel
+local Strategy = _G.PPBestStrategy
+
 -- 配置变量
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
     
 }
-PPBestHistory = PPBestHistory or {
-    version = 1,
-    records = {},
-    totalBattles = 0,
-    wins = 0,
-    losses = 0,
-}
-
--- 当前对战信息
-local currentBattleInfo = nil
 
 -- 按钮创建
 local autoButton
 local isInPetBattle = false
-local round = 0
 
--- 记录当前对战信息
-local function RecordCurrentBattleInfo()
-    currentBattleInfo = {
-        startTime = time(),
-        opponentTeam = {},
-        opponentQualities = {},
-        result = nil,
-        duration = 0,
-    }
-    
-    -- 获取对手宠物信息
-    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
-        local name = C_PetBattles.GetName(LE_BATTLE_PET_ENEMY, petIndex)
-        local petType = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
-        local level = C_PetBattles.GetLevel(LE_BATTLE_PET_ENEMY, petIndex)
-        local quality = C_PetBattles.GetBreedQuality(LE_BATTLE_PET_ENEMY, petIndex)
-        local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, petIndex)
-        table.insert(currentBattleInfo.opponentTeam, {
-            name = name,
-            type = petType,
-            level = level,
-            quality = quality,
-            id = id,
-        })
-        
-        table.insert(currentBattleInfo.opponentQualities, quality)
-    end
-end
-
--- 添加对战记录
-local function AddBattleRecord()
-    if not currentBattleInfo or not currentBattleInfo.result then
-        return
-    end
-    
-    -- 更新统计数据
-    PPBestHistory.totalBattles = (PPBestHistory.totalBattles or 0) + 1
-    if currentBattleInfo.result == "win" then
-        PPBestHistory.wins = (PPBestHistory.wins or 0) + 1
-    elseif currentBattleInfo.result == "loss" then
-        PPBestHistory.losses = (PPBestHistory.losses or 0) + 1
-    end
-    
-    record = string.format("%s, %s, %d, %d, [%s-%s-%s],[%d-%d-%d]", 
-        date("%Y-%m-%d %H:%M:%S", currentBattleInfo.startTime), currentBattleInfo.result, round, time() - currentBattleInfo.startTime, 
-        currentBattleInfo.opponentTeam[1].name, currentBattleInfo.opponentTeam[2].name, currentBattleInfo.opponentTeam[3].name,
-        currentBattleInfo.opponentTeam[1].id, currentBattleInfo.opponentTeam[2].id, currentBattleInfo.opponentTeam[3].id
-    )
-    
-    -- 添加到记录列表
-    table.insert(PPBestHistory.records, record)
-
-    BattleUtils.Debug(record)
-
-    -- 限制记录数量
-    local maxRecords = PPBestConfig.maxHistoryRecords or 100
-    while #PPBestHistory.records > maxRecords do
-        table.remove(PPBestHistory.records, 1)
-    end
-    currentBattleInfo = nil
-end
 
 
 
@@ -97,26 +27,12 @@ local function PerformAutoBattle()
     end
 
     if C_PetBattles.ShouldShowPetSelect() then
-        BattleUtils:SwitchToHighestHealthPet()
+        Strategy:PerformSelect()
         return
     end
 
     if C_PetBattles.IsSkipAvailable() then
-        local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
-        local enemyType = BattleUtils:GetEnemyPetType()
-
-        if BattleUtils:IsUndeadRound() then
-            BattleUtils:UseSkillByPriority({3, 1})
-        elseif enemyType == BattleUtils.TYPE_MECHANICAL then
-            BattleUtils:UseSkillByPriority({1, 3})
-        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
-            BattleUtils:UseSkillByPriority({2, 1,3})
-        elseif duration < 3 then 
-            BattleUtils:UseSkillByPriority({3, 2, 1})
-        else
-            BattleUtils:UseSkillByPriority({2, 1, 3})
-        end
-        return 
+        Strategy:PerformBattle()
     end
 
 end
@@ -188,10 +104,7 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
         if autoButton then
             autoButton:SetShown(true)
         end
-        round = 0
-        if not C_PetBattles.IsPlayerNPC(LE_BATTLE_PET_ENEMY) then
-            RecordCurrentBattleInfo()
-        end
+        Strategy:Init()
     elseif event == "PET_BATTLE_CLOSE" then
         isInPetBattle = false
         if autoButton then
@@ -200,21 +113,9 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
-        round = round+1
+        Strategy:OnRoundComplete()
     elseif event == "PET_BATTLE_FINAL_ROUND" then
-        if currentBattleInfo then
-            -- 对战结束，记录结果
-            local winner = ...
-            -- PET_BATTLE_FINAL_ROUND会在对手投降时返回2
-            if winner == 1 or round < 5 then
-                currentBattleInfo.result = "win"
-            else
-                currentBattleInfo.result = "loss"
-            end
-
-            AddBattleRecord()
-        end
-
+        Strategy:OnFinalRound(...)
     end
 end)
 

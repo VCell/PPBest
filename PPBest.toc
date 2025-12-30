@@ -7,5 +7,6 @@
 
 
 BattleUtils.lua
+Strategy.lua
 PPBest.lua
 OptionPanel.lua
