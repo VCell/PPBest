@@ -17,9 +17,6 @@ PPBestConfig = PPBestConfig or {
 local autoButton
 local isInPetBattle = false
 
-
-
-
 -- 执行自动战斗
 local function PerformAutoBattle()
     if not C_PetBattles.IsInBattle() then 

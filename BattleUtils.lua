@@ -132,6 +132,47 @@ function BattleUtils:GetAliveNum(owner)
     return count
 end
 
+function BattleUtils:IsSameTeam(petIdList1, petIdList2)
+    if #petIdList1 ~= #petIdList2 then
+        return false
+    end
+
+    local idSet = {}
+    for _, id in ipairs(petIdList1) do
+        idSet[id] = (idSet[id] or 0) + 1
+    end
+
+    for _, id in ipairs(petIdList2) do
+        if not idSet[id] then
+            return false
+        end
+        idSet[id] = idSet[id] - 1
+        if idSet[id] < 0 then
+            return false
+        end
+    end
+end
+
+function BattleUtils:EnemyTeamIs(petIdList)
+    local enemyPetIds = {}
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
+        local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, petIndex)
+        table.insert(enemyPetIds, id)
+    end
+
+    return self:IsSameTeam(enemyPetIds, petIdList)
+end
+
+function BattleUtils:AllyTeamIs(petIdList)
+    local allyPetIds = {}
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
+        local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, petIndex)
+        table.insert(allyPetIds, id)
+    end
+
+    return self:IsSameTeam(allyPetIds, petIdList)
+end
+
 function BattleUtils:Debug(message)
     if self.debug then
         print("PPBest Debug: ", message)

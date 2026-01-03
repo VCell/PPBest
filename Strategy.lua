@@ -1,10 +1,9 @@
 
-local MODE_3PP = '3pp'
-local MODE_1MIN = '1min'
-local MODE_FORFEIT = 'forfeit'
 
 local TARGET_EXP = '我要经验'
 local TARGET_WIN = '我要胜场'
+
+local TEAM_3NEXUS = {1165, 1165, 1165}
 
 local MAX_RECORDS = 200
 
@@ -20,12 +19,98 @@ PPBestHistory = PPBestHistory or {
 
 local Strategy = {
     startTime = nil,
-    mode = nil,
     opponentTeam = nil,
     recording = false,
     round = 0,
+    scheme = nil,
 }
 
+function GetForfeiScheme()
+    return {
+        Select = function()
+            BattleUtils:SwitchToHighestHealthPet()
+        end,
+        Battle = function(...)
+            C_PetBattles.ForfeitGame()
+        end,
+    }
+end
+
+function Get1MinScheme()
+    local startTime = time()
+    return {
+        Select = function()
+            BattleUtils:SwitchToHighestHealthPet()
+        end,
+        Battle = function(...)
+            if time() - startTime > 60 then
+                C_PetBattles.ForfeitGame()
+            end
+        end,
+    }
+end
+
+function GetRandomScheme()
+    return {
+        Select = function()
+            BattleUtils:SwitchToHighestHealthPet()
+        end,
+        Battle = function(...)
+            local skillSlot = math.random(1,3)
+            BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
+        end,
+    }
+end
+
+function Get3PPScheme()
+    local forfeit = false
+    local forfeitTeam = {
+        {1165, 1525, 1526},  -- 化石幼兽 便携式世界毁灭者 乌鸦
+    }
+    for _, team in ipairs(forfeitTeam) do
+        if BattleUtils:EnemyTeamIs(team) then
+            forfeit = true
+        end
+    end
+
+    return {
+        forfeit = forfeit,
+        Select = function()
+            BattleUtils:SwitchToHighestHealthPet()
+        end,
+        Battle = function(round)
+            if self.forfeit and round>1 then
+                C_PetBattles.ForfeitGame()
+                return
+            end
+            if C_PetBattles.IsSkipAvailable() then
+                local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
+                local enemyType = BattleUtils:GetEnemyPetType()
+                if self.round > 1 then
+                    for _, team in ipairs(forfeitTeam) do
+                        if BattleUtils:EnemyTeamIs(team) then
+                            C_PetBattles.ForfeitGame()
+                            return
+                        end
+                    end
+                end
+        
+                if BattleUtils:IsUndeadRound() then
+                    BattleUtils:UseSkillByPriority({3, 1})
+                elseif enemyType == BattleUtils.TYPE_MECHANICAL then
+                    BattleUtils:UseSkillByPriority({1, 3})
+                elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
+                    BattleUtils:UseSkillByPriority({2, 1,3})
+                elseif duration < 3 then 
+                    BattleUtils:UseSkillByPriority({3, 2, 1})
+                else
+                    BattleUtils:UseSkillByPriority({2, 1, 3})
+                end
+                return 
+            end
+        end,
+    }
+end
 
 -- 添加对战记录
 function Strategy:AddBattleRecord(result)
@@ -61,11 +146,17 @@ end
 
 function Strategy:Init()
     self.startTime = time()
-    self.mode = MODE_3PP
+    self.scheme = GetRandomScheme()
     self.opponentTeam = {}
     self.recording = false
     self.round = 0
-        -- 获取对手宠物信息
+    
+    -- 处理己方宠物信息
+    if BattleUtils:AllyTeamIs(TEAM_3NEXUS) then
+        self.scheme = Get3PPScheme()
+    end
+
+    -- 处理对手宠物信息
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
         local name = C_PetBattles.GetName(LE_BATTLE_PET_ENEMY, petIndex)
         local petType = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
@@ -80,11 +171,13 @@ function Strategy:Init()
             id = id,
         })
         if name == TARGET_EXP then
-            self.mode = MODE_1MIN
+            self.scheme = Get1MinScheme()
         elseif name == TARGET_WIN then
-            self.mode = MODE_FORFEIT
+            self.scheme = GetForfeiScheme()
         end
     end
+
+
     if not C_PetBattles.IsPlayerNPC(LE_BATTLE_PET_ENEMY) then
         self.recording = true
     end
@@ -108,42 +201,11 @@ function Strategy:OnFinalRound(...)
 end
 
 function Strategy:PerformSelect()
-    BattleUtils:SwitchToHighestHealthPet()
+    self.scheme.Select()
 end
 
 function Strategy:PerformBattle()
-    if self.mode == MODE_3PP then
-        Strategy:Get3PPScheme()
-    elseif self.mode == MODE_1MIN then
-        if time() - self.startTime > 60 then
-            C_PetBattles.ForfeitGame()
-        end
-        return
-    elseif self.mode == MODE_FORFEIT then
-        C_PetBattles.ForfeitGame()
-    end
+    self.scheme.Battle(self.round)
 end
-
-
-function Strategy:Get3PPScheme()
-    if C_PetBattles.IsSkipAvailable() then
-        local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
-        local enemyType = BattleUtils:GetEnemyPetType()
-
-        if BattleUtils:IsUndeadRound() then
-            BattleUtils:UseSkillByPriority({3, 1})
-        elseif enemyType == BattleUtils.TYPE_MECHANICAL then
-            BattleUtils:UseSkillByPriority({1, 3})
-        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
-            BattleUtils:UseSkillByPriority({2, 1,3})
-        elseif duration < 3 then 
-            BattleUtils:UseSkillByPriority({3, 2, 1})
-        else
-            BattleUtils:UseSkillByPriority({2, 1, 3})
-        end
-        return 
-    end
-end
-
 
 _G.PPBestStrategy = Strategy
