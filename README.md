@@ -44,3 +44,10 @@
 | 暗月飞艇 | HB | Missile | 轰炸 | 诱饵 |
 | 熊猫人僧侣 | PS | 打倒 | 聚齐 | 幻灭踢 |
 
+
+## 附：
+**排队宏：**
+```
+/run C_PetBattles.StartPVPMatchmaking()
+/run C_PetBattles.AcceptQueuedPVPMatch();StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+```
