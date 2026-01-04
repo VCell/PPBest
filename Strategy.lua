@@ -3,9 +3,16 @@
 local TARGET_EXP = '我要经验'
 local TARGET_WIN = '我要胜场'
 
-local TEAM_3NEXUS = {1165, 1165, 1165}
-
 local MAX_RECORDS = 200
+
+local PET_ID_NEXUS_WHELPLING = 1165 --节点雏龙
+local PET_ID_FOSSILIZED_HATCHLING = 266 --化石幼兽
+local PET_ID_PERSONAL_WORLD_DESTROYER = 261  --便携式世界毁灭者
+local PET_ID_CROW = 1068    --乌鸦
+local PET_ID_CHROMINIUS = 1152  --克罗马尼斯
+local PET_ID_ARFUS = 4329  --阿尔福斯
+local PET_ID_DARKMOON_ZEPPELIN = 339  --暗月飞艇
+local PET_ID_PANDAREN_MONK = 248  --熊猫人僧侣
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -27,10 +34,10 @@ local Strategy = {
 
 function GetForfeiScheme()
     return {
-        Select = function()
+        Select = function(self)
             BattleUtils:SwitchToHighestHealthPet()
         end,
-        Battle = function(...)
+        Battle = function(self, round)
             C_PetBattles.ForfeitGame()
         end,
     }
@@ -39,10 +46,10 @@ end
 function Get1MinScheme()
     local startTime = time()
     return {
-        Select = function()
+        Select = function(self)
             BattleUtils:SwitchToHighestHealthPet()
         end,
-        Battle = function(...)
+        Battle = function(self, round)
             if time() - startTime > 60 then
                 C_PetBattles.ForfeitGame()
             end
@@ -50,22 +57,11 @@ function Get1MinScheme()
     }
 end
 
-function GetRandomScheme()
-    return {
-        Select = function()
-            BattleUtils:SwitchToHighestHealthPet()
-        end,
-        Battle = function(...)
-            local skillSlot = math.random(1,3)
-            BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
-        end,
-    }
-end
-
-function Get3PPScheme()
+-- 3节点雏龙
+function GetScheme3Nexus()
     local forfeit = false
     local forfeitTeam = {
-        {1165, 1525, 1526},  -- 化石幼兽 便携式世界毁灭者 乌鸦
+        {266, 261, 1068},  -- 化石幼兽 便携式世界毁灭者 乌鸦
     }
     for _, team in ipairs(forfeitTeam) do
         if BattleUtils:EnemyTeamIs(team) then
@@ -75,10 +71,10 @@ function Get3PPScheme()
 
     return {
         forfeit = forfeit,
-        Select = function()
-            BattleUtils:SwitchToHighestHealthPet()
+        Select = function(self)
+            BattleUtils:SwitchPetByOrder()
         end,
-        Battle = function(round)
+        Battle = function(self, round)
             if self.forfeit and round>1 then
                 C_PetBattles.ForfeitGame()
                 return
@@ -86,14 +82,6 @@ function Get3PPScheme()
             if C_PetBattles.IsSkipAvailable() then
                 local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
                 local enemyType = BattleUtils:GetEnemyPetType()
-                if self.round > 1 then
-                    for _, team in ipairs(forfeitTeam) do
-                        if BattleUtils:EnemyTeamIs(team) then
-                            C_PetBattles.ForfeitGame()
-                            return
-                        end
-                    end
-                end
         
                 if BattleUtils:IsUndeadRound() then
                     BattleUtils:UseSkillByPriority({3, 1})
@@ -109,6 +97,40 @@ function Get3PPScheme()
                 return 
             end
         end,
+    }
+end
+
+function GetSimpleScheme()
+    return {
+        Select = function(self)
+            BattleUtils:SwitchPetByOrder()
+        end,
+        Battle = function(self, round)
+            local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+            local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
+
+            if id == PET_ID_FOSSILIZED_HATCHLING then
+                BattleUtils:UseSkillByPriority({3,2,1})
+            elseif id == PET_ID_PERSONAL_WORLD_DESTROYER then
+                BattleUtils:UseSkillByPriority({3,2,1})
+            elseif id == PET_ID_CROW then
+                if BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_DARKNESS) then
+                    BattleUtils:UseSkillByPriority({2,3,1})
+                else
+                    BattleUtils:UseSkillByPriority({2,1,3})
+                end
+            elseif id == PET_ID_ARFUS then
+                BattleUtils:UseSkillByPriority({2,3,1})
+            elseif id == PET_ID_DARKMOON_ZEPPELIN then
+                BattleUtils:UseSkillByPriority({3,2,1})
+            elseif id == PET_ID_PANDAREN_MONK then
+                BattleUtils:UseSkillByPriority({3,1,2})
+            else 
+                local skillSlot = math.random(1,3)
+                BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
+            end
+
+        end
     }
 end
 
@@ -146,14 +168,14 @@ end
 
 function Strategy:Init()
     self.startTime = time()
-    self.scheme = GetRandomScheme()
+    self.scheme = GetSimpleScheme()
     self.opponentTeam = {}
     self.recording = false
     self.round = 0
     
     -- 处理己方宠物信息
-    if BattleUtils:AllyTeamIs(TEAM_3NEXUS) then
-        self.scheme = Get3PPScheme()
+    if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
+        self.scheme = GetScheme3Nexus()
     end
 
     -- 处理对手宠物信息
@@ -201,11 +223,11 @@ function Strategy:OnFinalRound(...)
 end
 
 function Strategy:PerformSelect()
-    self.scheme.Select()
+    self.scheme:Select()
 end
 
 function Strategy:PerformBattle()
-    self.scheme.Battle(self.round)
+    self.scheme:Battle(self.round)
 end
 
 _G.PPBestStrategy = Strategy

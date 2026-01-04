@@ -1,6 +1,7 @@
 -- BattleUtils.lua
 local BattleUtils = {
-    WEATHER_ID_ARCANE_STORM = 590,
+    WEATHER_ID_ARCANE_STORM = 590, 
+    WEATHER_ID_DARKNESS = 257, 
     
     AURA_ID_UNDEAD = 242,
 
@@ -38,6 +39,22 @@ function BattleUtils:SwitchToHighestHealthPet()
     end
     --print("SwitchToHighestHealthPet ", bestPetIndex)
     C_PetBattles.ChangePet(bestPetIndex)
+end
+
+-- 按默认顺序切换宠物
+function BattleUtils:SwitchPetByOrder()
+    if not C_PetBattles.IsInBattle() then
+        return false
+    end
+    
+    -- 检查所有友方宠物
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
+        local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
+        
+        if C_PetBattles.CanPetSwapIn(petIndex) then
+            C_PetBattles.ChangePet(petIndex)
+        end
+    end 
 end
 
 -- 切换到血量最高的宠物
@@ -151,6 +168,7 @@ function BattleUtils:IsSameTeam(petIdList1, petIdList2)
             return false
         end
     end
+    return true
 end
 
 function BattleUtils:EnemyTeamIs(petIdList)
@@ -169,7 +187,7 @@ function BattleUtils:AllyTeamIs(petIdList)
         local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, petIndex)
         table.insert(allyPetIds, id)
     end
-
+    print(allyPetIds[1],allyPetIds[2], allyPetIds[3])
     return self:IsSameTeam(allyPetIds, petIdList)
 end
 
