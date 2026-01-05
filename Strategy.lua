@@ -2,6 +2,13 @@
 
 local TARGET_EXP = '我要经验'
 local TARGET_WIN = '我要胜场'
+local TARGET_ASSIST = '我要送'
+
+local COOPERATE_TARGETS = {
+    TARGET_EXP,
+    TARGET_WIN,
+    TARGET_ASSIST,
+}
 
 local MAX_RECORDS = 200
 
@@ -30,28 +37,33 @@ local Strategy = {
     recording = false,
     round = 0,
     scheme = nil,
+    forfeited = false,
 }
 
-function GetForfeiScheme()
-    return {
-        Select = function(self)
-            BattleUtils:SwitchToHighestHealthPet()
-        end,
-        Battle = function(self, round)
-            C_PetBattles.ForfeitGame()
-        end,
-    }
+function Strategy:Forfeit()
+    self.forfeited = true
+    Strategy:Forfeit()
 end
 
-function Get1MinScheme()
+function GetCooperateScheme(myTarget, enemyTarget)
     local startTime = time()
     return {
         Select = function(self)
+            if enemyTarget == nil then
+                Strategy:Forfeit()
+                return
+            end
             BattleUtils:SwitchToHighestHealthPet()
         end,
         Battle = function(self, round)
-            if time() - startTime > 60 then
-                C_PetBattles.ForfeitGame()
+            if myTarget == TARGET_ASSIST then
+                if enemyTarget == TARGET_EXP and time() - startTime < 60 then
+                    return
+                end
+                Strategy:Forfeit()
+            else
+                local skillSlot = math.random(1,3)
+                BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
             end
         end,
     }
@@ -76,7 +88,7 @@ function GetScheme3Nexus()
         end,
         Battle = function(self, round)
             if self.forfeit and round>1 then
-                C_PetBattles.ForfeitGame()
+                Strategy:Forfeit()
                 return
             end
             if C_PetBattles.IsSkipAvailable() then
@@ -178,6 +190,21 @@ function Strategy:Init()
         self.scheme = GetScheme3Nexus()
     end
 
+    local lowLevel = false
+    local myTarget = nil, enemyTarget = nil
+
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
+        local name = C_PetBattles.GetName(LE_BATTLE_PET_ALLY, petIndex)
+        local level = C_PetBattles.GetLevel(LE_BATTLE_PET_ALLY, petIndex)
+        if level < 25 then
+            lowLevel = true
+        end
+        if name in COOPERATE_TARGETS then
+            myTarget = name
+        end
+    end
+
+
     -- 处理对手宠物信息
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
         local name = C_PetBattles.GetName(LE_BATTLE_PET_ENEMY, petIndex)
@@ -192,13 +219,13 @@ function Strategy:Init()
             quality = quality,
             id = id,
         })
-        if name == TARGET_EXP then
-            self.scheme = Get1MinScheme()
-        elseif name == TARGET_WIN then
-            self.scheme = GetForfeiScheme()
+        if name in COOPERATE_TARGETS then
+            enemyTarget = name
         end
     end
-
+    if lowLevel and myTarget != nil then
+        self.scheme = GetCooperateScheme(myTarget, enemyTarget)
+    end
 
     if not C_PetBattles.IsPlayerNPC(LE_BATTLE_PET_ENEMY) then
         self.recording = true
@@ -213,11 +240,23 @@ end
 function Strategy:OnFinalRound(...)
     local result 
     local winner = ...
-    -- PET_BATTLE_FINAL_ROUND会在对手投降时返回2
-    if winner == 1 or self.round < 5 then
-        result = "win"
-    else
+    -- PET_BATTLE_FINAL_ROUND的参数时常会返回错误的结果
+    -- if winner == 1 then
+    --     result = "win"
+    -- else
+    --     result = "loss"
+    -- end
+
+    if self.forfeited then
         result = "loss"
+    else
+        local allyAlive = BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY)
+        local enemyAlive = BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY)
+        if allyAlive > enemyAlive then
+            result = "win"
+        else
+            result = "loss"
+        end
     end
     Strategy:AddBattleRecord(result)
 end

@@ -191,6 +191,34 @@ function BattleUtils:AllyTeamIs(petIdList)
     return self:IsSameTeam(allyPetIds, petIdList)
 end
 
+-- 在PET_BATTLE_FINAL_ROUND时根据双方宠物生命情况判断胜负
+function BattleUtils:DetermineWinner()
+    local allyAlive = 0
+    local enemyAlive = 0
+
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
+        local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
+        if health > 0 then
+            allyAlive = allyAlive + 1
+        end
+    end
+
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
+        local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ENEMY, petIndex) 
+        if health > 0 then
+            enemyAlive = enemyAlive + 1
+        end
+    end
+
+    if allyAlive > enemyAlive then
+        return 1 -- 我方胜利
+    elseif enemyAlive > allyAlive then
+        return -1 -- 敌方胜利
+    else
+        return 0 -- 未知，要看我方是否投降
+    end
+end
+
 function BattleUtils:Debug(message)
     if self.debug then
         print("PPBest Debug: ", message)
