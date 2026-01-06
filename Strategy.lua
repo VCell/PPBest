@@ -51,7 +51,7 @@ end
 function GetCooperateScheme(myTarget, enemyTarget)
     local startTime = time()
     return {
-        schemeName = "CooperateScheme"
+        schemeName = "CooperateScheme",
 
         Select = function(self)
             if not enemyTarget then
