@@ -251,9 +251,8 @@ function Strategy:OnFinalRound(...)
     if self.forfeited then
         result = "loss"
     else
-        local allyAlive = BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY)
-        local enemyAlive = BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY)
-        if allyAlive > enemyAlive then
+        local win = BattleUtils:DetermineWinner()
+        if win >= 0 then
             result = "win"
         else
             result = "loss"

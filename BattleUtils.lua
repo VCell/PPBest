@@ -200,7 +200,7 @@ function BattleUtils:DetermineWinner()
         local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
         if health > 0 then
             allyAlive = allyAlive + 1
-        end
+        end 
     end
 
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
@@ -210,9 +210,9 @@ function BattleUtils:DetermineWinner()
         end
     end
 
-    if allyAlive > enemyAlive then
+    if allyAlive > 0 and enemyAlive == 0 then
         return 1 -- 我方胜利
-    elseif enemyAlive > allyAlive then
+    elseif allyAlive == 0 then
         return -1 -- 敌方胜利
     else
         return 0 -- 未知，要看我方是否投降
