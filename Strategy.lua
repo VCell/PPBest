@@ -51,6 +51,8 @@ end
 function GetCooperateScheme(myTarget, enemyTarget)
     local startTime = time()
     return {
+        schemeName = "CooperateScheme"
+
         Select = function(self)
             if not enemyTarget then
                 Strategy:Forfeit()
@@ -103,6 +105,7 @@ function GetScheme3Nexus()
     end
 
     return {
+        schemeName = "3NexusScheme",
         forfeit = forfeit,
         Select = function(self)
             BattleUtils:SwitchPetByOrder()
@@ -121,6 +124,7 @@ end
 
 function GetSimpleScheme()
     return {
+        schemeName = "SimpleScheme",
         Select = function(self)
             BattleUtils:SwitchPetByOrder()
         end,
@@ -246,6 +250,7 @@ function Strategy:Init()
         self.recording = true
     end
 
+    BattleUtils.Debug("Using scheme: " .. self.scheme.schemeName)
 end
 
 function Strategy:OnRoundComplete()
