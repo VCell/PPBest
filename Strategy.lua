@@ -22,7 +22,9 @@ local PET_ID_DARKMOON_ZEPPELIN = 339  --暗月飞艇
 local PET_ID_PANDAREN_MONK = 248  --熊猫人僧侣
 local PET_ID_UNBORN_VALKYR = 1238 --幼年瓦格里
 local PET_ID_FEL_FLAME = 519 --邪焰
-
+local PET_ID_PEIBO = 265 -- 配波
+local PET_ID_MOJO = 165 --魔汁
+local PET_ID_SPRINT_RABBIT = 200 -- 春兔
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -156,6 +158,14 @@ function GetSimpleScheme()
                 else
                     BattleUtils:UseSkillByPriority({2,1})
                 end
+            elseif id == PET_ID_PEIBO then
+                BattleUtils:UseSkillByPriority({2,1,3})
+            elseif id == PET_ID_MOJO then
+                if BattleUtils:GetActivePetHealth() < 1000 then
+                    BattleUtils:UseSkillByPriority({2,3})
+                else
+                    BattleUtils:UseSkillByPriority({3})
+                end
             else 
                 local skillSlot = math.random(1,3)
                 BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
@@ -251,7 +261,7 @@ function Strategy:Init()
         self.recording = true
     end
 
-    BattleUtils.Debug("Using scheme: " .. self.scheme.schemeName)
+    --BattleUtils.Debug("Using scheme: " .. self.scheme.schemeName)
 end
 
 function Strategy:OnRoundComplete()

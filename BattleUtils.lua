@@ -223,6 +223,11 @@ function BattleUtils:DetermineWinner()
     end
 end
 
+function BattleUtils:GetActivePetHealth(petOwner)
+    petIndex = C_PetBattles.GetActivePet(petOwner)
+    return C_PetBattles.GetHealth(petOwner, petIndex)
+end
+
 function BattleUtils:Debug(message)
     print("PPBest Debug: ", message)
     if self.debug then
