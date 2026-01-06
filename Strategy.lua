@@ -42,14 +42,14 @@ local Strategy = {
 
 function Strategy:Forfeit()
     self.forfeited = true
-    Strategy:Forfeit()
+    C_PetBattles.ForfeitGame()
 end
 
 function GetCooperateScheme(myTarget, enemyTarget)
     local startTime = time()
     return {
         Select = function(self)
-            if enemyTarget == nil then
+            if not enemyTarget then
                 Strategy:Forfeit()
                 return
             end
@@ -191,7 +191,8 @@ function Strategy:Init()
     end
 
     local lowLevel = false
-    local myTarget = nil, enemyTarget = nil
+    local myTarget = nil
+    local enemyTarget = nil
 
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
         local name = C_PetBattles.GetName(LE_BATTLE_PET_ALLY, petIndex)
@@ -199,7 +200,7 @@ function Strategy:Init()
         if level < 25 then
             lowLevel = true
         end
-        if name in COOPERATE_TARGETS then
+        if name == TARGET_EXP or name == TARGET_WIN or name == TARGET_ASSIST then
             myTarget = name
         end
     end
@@ -219,11 +220,11 @@ function Strategy:Init()
             quality = quality,
             id = id,
         })
-        if name in COOPERATE_TARGETS then
-            enemyTarget = name
+        if name == TARGET_EXP or name == TARGET_WIN or name == TARGET_ASSIST then
+            myTarget = name
         end
     end
-    if lowLevel and myTarget != nil then
+    if lowLevel and myTarget ~= nil then
         self.scheme = GetCooperateScheme(myTarget, enemyTarget)
     end
 
