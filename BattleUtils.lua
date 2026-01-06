@@ -117,8 +117,8 @@ function BattleUtils:GetAuraRemaining(petOwner, auraId)
     
     -- 获取宠物的所有光环效果
     for auraIndex = 1, C_PetBattles.GetNumAuras(petOwner, petIndex) do
-        local auraId, _ ,remain = C_PetBattles.GetAuraInfo(petOwner, petIndex, auraIndex)
-        if auraId == auraId then
+        local id, _ ,remain = C_PetBattles.GetAuraInfo(petOwner, petIndex, auraIndex)
+        if id == auraId then
             return remain
         end
     end
@@ -224,6 +224,7 @@ function BattleUtils:DetermineWinner()
 end
 
 function BattleUtils:Debug(message)
+    print("PPBest Debug: ", message)
     if self.debug then
         print("PPBest Debug: ", message)
     end

@@ -131,6 +131,7 @@ function GetSimpleScheme()
         Battle = function(self, round)
             local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
+
             if id == PET_ID_NEXUS_WHELPLING then
                 NexusPerform()
             elseif id == PET_ID_FOSSILIZED_HATCHLING then
