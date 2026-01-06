@@ -221,7 +221,7 @@ function Strategy:Init()
             id = id,
         })
         if name == TARGET_EXP or name == TARGET_WIN or name == TARGET_ASSIST then
-            myTarget = name
+            enemyTarget = name
         end
     end
     if lowLevel and myTarget ~= nil then
