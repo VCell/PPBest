@@ -20,6 +20,9 @@ local PET_ID_CHROMINIUS = 1152  --克罗马尼斯
 local PET_ID_ARFUS = 4329  --阿尔福斯
 local PET_ID_DARKMOON_ZEPPELIN = 339  --暗月飞艇
 local PET_ID_PANDAREN_MONK = 248  --熊猫人僧侣
+local PET_ID_UNBORN_VALKYR = 1238 --幼年瓦格里
+local PET_ID_FEL_FLAME = 519 --邪焰
+
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -69,6 +72,24 @@ function GetCooperateScheme(myTarget, enemyTarget)
     }
 end
 
+function NexusPerform()
+    local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
+    local enemyType = BattleUtils:GetEnemyPetType()
+
+    if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
+        BattleUtils:UseSkillByPriority({3, 1})
+    elseif enemyType == BattleUtils.TYPE_MECHANICAL then
+        BattleUtils:UseSkillByPriority({1, 3})
+    elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
+        BattleUtils:UseSkillByPriority({2, 1,3})
+    elseif duration < 3 then 
+        BattleUtils:UseSkillByPriority({3, 2, 1})
+    else
+        BattleUtils:UseSkillByPriority({2, 1, 3})
+    end
+    return 
+end
+
 -- 3节点雏龙
 function GetScheme3Nexus()
     local forfeit = false
@@ -92,21 +113,7 @@ function GetScheme3Nexus()
                 return
             end
             if C_PetBattles.IsSkipAvailable() then
-                local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
-                local enemyType = BattleUtils:GetEnemyPetType()
-        
-                if BattleUtils:IsUndeadRound() then
-                    BattleUtils:UseSkillByPriority({3, 1})
-                elseif enemyType == BattleUtils.TYPE_MECHANICAL then
-                    BattleUtils:UseSkillByPriority({1, 3})
-                elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
-                    BattleUtils:UseSkillByPriority({2, 1,3})
-                elseif duration < 3 then 
-                    BattleUtils:UseSkillByPriority({3, 2, 1})
-                else
-                    BattleUtils:UseSkillByPriority({2, 1, 3})
-                end
-                return 
+                NexusPerform()
             end
         end,
     }
@@ -120,8 +127,9 @@ function GetSimpleScheme()
         Battle = function(self, round)
             local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
-
-            if id == PET_ID_FOSSILIZED_HATCHLING then
+            if id == PET_ID_NEXUS_WHELPLING then
+                NexusPerform()
+            elseif id == PET_ID_FOSSILIZED_HATCHLING then
                 BattleUtils:UseSkillByPriority({3,2,1})
             elseif id == PET_ID_PERSONAL_WORLD_DESTROYER then
                 BattleUtils:UseSkillByPriority({3,2,1})
@@ -137,6 +145,12 @@ function GetSimpleScheme()
                 BattleUtils:UseSkillByPriority({3,2,1})
             elseif id == PET_ID_PANDAREN_MONK then
                 BattleUtils:UseSkillByPriority({3,1,2})
+            elseif id == PET_ID_UNBORN_VALKYR then
+                if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ALLY) then
+                    BattleUtils:UseSkillByPriority({3})
+                else
+                    BattleUtils:UseSkillByPriority({2,1})
+                end
             else 
                 local skillSlot = math.random(1,3)
                 BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})

@@ -108,23 +108,27 @@ function BattleUtils:UseSkillByPriority(priorityArray)
     return false
 end
 
-
-function BattleUtils:IsUndeadRound()
-    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+function BattleUtils:GetAuraRemaining(petOwner, auraId)
+    petIndex = C_PetBattles.GetActivePet(petOwner)
     
     if petIndex == 0 then
-        print("GetActivePet == 0")
-        return false
+        return 0
     end
     
     -- 获取宠物的所有光环效果
-    for auraIndex = 1, C_PetBattles.GetNumAuras(LE_BATTLE_PET_ENEMY, petIndex) do
-        local auraId = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_ENEMY, petIndex, auraIndex)
-        if auraId == self.AURA_ID_UNDEAD then
-            return true
+    for auraIndex = 1, C_PetBattles.GetNumAuras(petOwner, petIndex) do
+        local auraId, _ ,remain = C_PetBattles.GetAuraInfo(petOwner, petIndex, auraIndex)
+        if auraId == auraId then
+            return remain
         end
     end
-    return false
+    return 0
+end
+
+
+function BattleUtils:IsUndeadRound(petOwner)
+    local remain = self:GetAuraRemaining(petOwner, self.AURA_ID_UNDEAD)
+    return remain > 0
 end
 
 function BattleUtils:GetEnemyPetType()
