@@ -22,7 +22,7 @@ local PET_ID_DARKMOON_ZEPPELIN = 339  --暗月飞艇
 local PET_ID_PANDAREN_MONK = 248  --熊猫人僧侣
 local PET_ID_UNBORN_VALKYR = 1238 --幼年瓦格里
 local PET_ID_FEL_FLAME = 519 --邪焰
-local PET_ID_PEIBO = 265 -- 配波
+local PET_ID_PEBBLE = 265 -- 配波
 local PET_ID_MOJO = 165 --魔汁
 local PET_ID_SPRINT_RABBIT = 200 -- 春兔
 local PET_ID_SCOURGED_WHELPLING = 538 -- 痛苦的雏龙
@@ -167,7 +167,7 @@ function GetSimpleScheme()
                 else
                     BattleUtils:UseSkillByPriority({2,1})
                 end
-            elseif id == PET_ID_PEIBO then
+            elseif id == PET_ID_PEBBLE then
                 if BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_ROCK_BARRAGE) > 0 then
                     BattleUtils:UseSkillByPriority({2,1,3})
                 else
