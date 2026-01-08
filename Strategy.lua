@@ -25,6 +25,8 @@ local PET_ID_FEL_FLAME = 519 --邪焰
 local PET_ID_PEIBO = 265 -- 配波
 local PET_ID_MOJO = 165 --魔汁
 local PET_ID_SPRINT_RABBIT = 200 -- 春兔
+local PET_ID_SCOURGED_WHELPLING = 538 -- 痛苦的雏龙
+local PET_ID_KUNLAI_RUNR = 1166 -- 昆莱小雪人
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -133,6 +135,8 @@ function GetSimpleScheme()
         Battle = function(self, round)
             local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
+            local enemyIdx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+            local enemyId = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, enemyIdx)
 
             if id == PET_ID_NEXUS_WHELPLING then
                 NexusPerform()
@@ -159,12 +163,22 @@ function GetSimpleScheme()
                     BattleUtils:UseSkillByPriority({2,1})
                 end
             elseif id == PET_ID_PEIBO then
-                BattleUtils:UseSkillByPriority({2,1,3})
+                BattleUtils:UseSkillByPriority({3,2,1})
             elseif id == PET_ID_MOJO then
                 if BattleUtils:GetActivePetHealth() < 1000 then
                     BattleUtils:UseSkillByPriority({2,3})
                 else
                     BattleUtils:UseSkillByPriority({3})
+                end
+            elseif id == PET_ID_SPRINT_RABBIT then
+                if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING then
+                    if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
+                        BattleUtils:UseSkillByPriority({3,2,1})
+                    else
+                        BattleUtils:UseSkillByPriority({1})
+                    end
+                else 
+                    BattleUtils:UseSkillByPriority({3,2,1})
                 end
             else 
                 local skillSlot = math.random(1,3)
