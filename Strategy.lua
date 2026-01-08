@@ -27,6 +27,7 @@ local PET_ID_MOJO = 165 --魔汁
 local PET_ID_SPRINT_RABBIT = 200 -- 春兔
 local PET_ID_SCOURGED_WHELPLING = 538 -- 痛苦的雏龙
 local PET_ID_KUNLAI_RUNR = 1166 -- 昆莱小雪人
+local PET_ID_GRASSLANDS_COTTONTAIL = 443 -- 草地短尾兔
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -170,7 +171,7 @@ function GetSimpleScheme()
                 else
                     BattleUtils:UseSkillByPriority({3})
                 end
-            elseif id == PET_ID_SPRINT_RABBIT then
+            elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL then
                 if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING then
                     if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
                         BattleUtils:UseSkillByPriority({3,2,1})
