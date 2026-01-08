@@ -4,6 +4,9 @@ local BattleUtils = {
     WEATHER_ID_DARKNESS = 257, 
     
     AURA_ID_UNDEAD = 242,
+    AURA_ID_ROCK_BARRAGE = 627, --配波的岩石弹幕
+    AURA_ID_FROST_SHOCK = 415, --昆莱雪人的冰霜震击
+    AURA_ID_STUN = 927, --眩晕
 
     TYPE_HUMANOID = 1,
     TYPE_DRAGONKIN = 2,
@@ -226,6 +229,104 @@ end
 function BattleUtils:GetActivePetHealth(petOwner)
     petIndex = C_PetBattles.GetActivePet(petOwner)
     return C_PetBattles.GetHealth(petOwner, petIndex)
+end
+
+--传入攻击属性和目标属性，返回是削弱、正常还是增强.1增强 -1削弱 0正常
+function BattleUtils:GetTypeEffectiveness(attackType, targetType)
+    -- 属性相克表
+    local strongTable = {
+        BattleUtils.TYPE_HUMANOID = BattleUtils.TYPE_DRAGONKIN,
+        BattleUtils.TYPE_DRAGONKIN = BattleUtils.TYPE_MAGIC,
+        BattleUtils.TYPE_MAGIC, = BattleUtils.TYPE_FLYING,
+        BattleUtils.TYPE_FLYING = BattleUtils.TYPE_AQUATIC,
+        BattleUtils.TYPE_AQUATIC = BattleUtils.TYPE_ELEMENTAL,
+        BattleUtils.TYPE_ELEMENTAL = BattleUtils.TYPE_MECHANICAL,
+        BattleUtils.TYPE_MECHANICAL = BattleUtils.TYPE_BEAST,
+        BattleUtils.TYPE_BEAST = BattleUtils.TYPE_CRITTER,
+        BattleUtils.TYPE_CRITTER = BattleUtils.TYPE_UNDEAD,
+        BattleUtils.TYPE_UNDEAD = BattleUtils.TYPE_HUMANOID,
+    }
+    local weakTable = {
+        BattleUtils.TYPE_HUMANOID = BattleUtils.TYPE_BEAST,
+        BattleUtils.TYPE_BEAST = BattleUtils.TYPE_FLYING,
+        BattleUtils.TYPE_FLYING, = BattleUtils.TYPE_DRAGONKIN,
+        BattleUtils.TYPE_DRAGONKIN = BattleUtils.TYPE_UNDEAD,
+        BattleUtils.TYPE_UNDEAD = BattleUtils.TYPE_AQUATIC,
+        BattleUtils.TYPE_AQUATIC = BattleUtils.TYPE_MAGIC,
+        BattleUtils.TYPE_MAGIC = BattleUtils.TYPE_MECHANICAL,
+        BattleUtils.TYPE_MECHANICAL = BattleUtils.TYPE_ELEMENTAL,
+        BattleUtils.TYPE_ELEMENTAL = BattleUtils.TYPE_CRITTER,
+        BattleUtils.TYPE_CRITTER = BattleUtils.TYPE_HUMANOID,
+    }
+    if strongTable[attackType] == targetType then
+        return 1
+    elseif weakTable[attackType] == targetType then
+        return -1
+    else
+        return 0
+    end
+end
+
+function BattleUtils.IsAbilityStrongToEnemy(abilityType)
+    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+    local enemyType = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
+    local effectiveness = BattleUtils:GetTypeEffectiveness(abilityType, enemyType)
+    return effectiveness > 0
+end
+
+function BattleUtils.IsAbilityWeakToEnemy(abilityType)
+    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+    local enemyType = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
+    local effectiveness = BattleUtils:GetTypeEffectiveness(abilityType, enemyType)
+    return effectiveness < 0
+end
+
+function BattleUtils:CanKillEnemy(baseDamage, abilityType)
+    local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+
+    local enemyHealth = C_PetBattles.GetHealth(LE_BATTLE_PET_ENEMY, petIndex)
+    local effectiveness = BattleUtils:GetTypeEffectiveness(abilityType, C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex))
+    
+    local finalDamage = baseDamage
+    if effectiveness > 0 then
+        finalDamage = baseDamage * 1.5
+    elseif effectiveness < 0 then
+        finalDamage = baseDamage * 0.66
+    end
+
+    return finalDamage >= enemyHealth
+end
+
+function BattleUtils:GetAbilityCooldown(idx)
+    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+    
+    if petIndex == 0 then
+        print("GetActivePet == 0")
+        return false
+    end
+
+    local isUsable, currentCooldown, currentLockdown = 
+        C_PetBattles.GetAbilityState(LE_BATTLE_PET_ALLY, petIndex, idx)
+    
+    if isUsable then
+        return 0
+    elseif currentCooldown > currentLockdown then
+        return currentCooldown
+    else
+        return currentLockdown
+    end
 end
 
 function BattleUtils:Debug(message)

@@ -152,7 +152,11 @@ function GetSimpleScheme()
                     BattleUtils:UseSkillByPriority({2,1,3})
                 end
             elseif id == PET_ID_ARFUS then
-                BattleUtils:UseSkillByPriority({2,3,1})
+                if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
+                    BattleUtils:UseSkillByPriority({3,1})
+                else
+                    BattleUtils:UseSkillByPriority({2,3,1})
+                end
             elseif id == PET_ID_DARKMOON_ZEPPELIN then
                 BattleUtils:UseSkillByPriority({3,2,1})
             elseif id == PET_ID_PANDAREN_MONK then
@@ -164,7 +168,11 @@ function GetSimpleScheme()
                     BattleUtils:UseSkillByPriority({2,1})
                 end
             elseif id == PET_ID_PEIBO then
-                BattleUtils:UseSkillByPriority({3,2,1})
+                if BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_ROCK_BARRAGE) > 0 then
+                    BattleUtils:UseSkillByPriority({2,1,3})
+                else
+                    BattleUtils:UseSkillByPriority({3,2,1})
+                end
             elseif id == PET_ID_MOJO then
                 if BattleUtils:GetActivePetHealth() < 1000 then
                     BattleUtils:UseSkillByPriority({2,3})
@@ -180,6 +188,21 @@ function GetSimpleScheme()
                     end
                 else 
                     BattleUtils:UseSkillByPriority({3,2,1})
+                end
+            elseif id == PET_ID_KUNLAI_RUNR then
+                if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
+                    BattleUtils:UseSkillByPriority({1,3})
+                else
+                    if BattleUtils.CanKillEnemy(324, BattleUtils.TYPE_HUMANOID) or 
+                            BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_STUN) > 0 then
+                        BattleUtils:UseSkillByPriority({1,2})
+                    elseif BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
+                        BattleUtils:UseSkillByPriority({3,1})
+                    elseif BattleUtils:GetAbilityCooldown(3) <= 1 then
+                        BattleUtils:UseSkillByPriority({2,1})
+                    else
+                        BattleUtils:UseSkillByPriority({1,2})
+                    end
                 end
             else 
                 local skillSlot = math.random(1,3)
