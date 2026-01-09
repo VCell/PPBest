@@ -154,7 +154,9 @@ function GetSimpleScheme()
             elseif id == PET_ID_ARFUS then
                 if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
                     BattleUtils:UseSkillByPriority({3,1})
-                else
+                elseif BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_UNDEAD) then
+                    BattleUtils:UseSkillByPriority({1,3})
+                else 
                     BattleUtils:UseSkillByPriority({2,3,1})
                 end
             elseif id == PET_ID_DARKMOON_ZEPPELIN then
@@ -168,11 +170,7 @@ function GetSimpleScheme()
                     BattleUtils:UseSkillByPriority({2,1})
                 end
             elseif id == PET_ID_PEBBLE then
-                if BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_ROCK_BARRAGE) > 0 then
-                    BattleUtils:UseSkillByPriority({2,1,3})
-                else
-                    BattleUtils:UseSkillByPriority({3,2,1})
-                end
+                BattleUtils:UseSkillByPriority({3,2,1})
             elseif id == PET_ID_MOJO then
                 if BattleUtils:GetActivePetHealth() < 1000 then
                     BattleUtils:UseSkillByPriority({2,3})
@@ -190,13 +188,14 @@ function GetSimpleScheme()
                     BattleUtils:UseSkillByPriority({3,2,1})
                 end
             elseif id == PET_ID_KUNLAI_RUNR then
-                if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
+                if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) or 
+                        BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_HUMANOID) then
                     BattleUtils:UseSkillByPriority({1,3})
                 else
-                    if BattleUtils.CanKillEnemy(324, BattleUtils.TYPE_HUMANOID) or 
-                            BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_STUN) > 0 then
+                    if BattleUtils:CanKillEnemy(324, BattleUtils.TYPE_HUMANOID) or 
+                            BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_STUN) > 0 then
                         BattleUtils:UseSkillByPriority({1,2})
-                    elseif BattleUtils.GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
+                    elseif BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
                         BattleUtils:UseSkillByPriority({3,1})
                     elseif BattleUtils:GetAbilityCooldown(3) <= 1 then
                         BattleUtils:UseSkillByPriority({2,1})
@@ -236,7 +235,7 @@ function Strategy:AddBattleRecord(result)
     -- 添加到记录列表
     table.insert(PPBestHistory.records, record)
 
-    BattleUtils.Debug(record)
+    BattleUtils:Debug(record)
 
     -- 限制记录数量
     while #PPBestHistory.records > MAX_RECORDS do
@@ -299,7 +298,7 @@ function Strategy:Init()
         self.recording = true
     end
 
-    --BattleUtils.Debug("Using scheme: " .. self.scheme.schemeName)
+    --BattleUtils:Debug("Using scheme: " .. self.scheme.schemeName)
 end
 
 function Strategy:OnRoundComplete()

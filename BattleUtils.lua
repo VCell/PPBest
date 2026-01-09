@@ -235,28 +235,28 @@ end
 function BattleUtils:GetTypeEffectiveness(attackType, targetType)
     -- 属性相克表
     local strongTable = {
-        BattleUtils.TYPE_HUMANOID = BattleUtils.TYPE_DRAGONKIN,
-        BattleUtils.TYPE_DRAGONKIN = BattleUtils.TYPE_MAGIC,
-        BattleUtils.TYPE_MAGIC, = BattleUtils.TYPE_FLYING,
-        BattleUtils.TYPE_FLYING = BattleUtils.TYPE_AQUATIC,
-        BattleUtils.TYPE_AQUATIC = BattleUtils.TYPE_ELEMENTAL,
-        BattleUtils.TYPE_ELEMENTAL = BattleUtils.TYPE_MECHANICAL,
-        BattleUtils.TYPE_MECHANICAL = BattleUtils.TYPE_BEAST,
-        BattleUtils.TYPE_BEAST = BattleUtils.TYPE_CRITTER,
-        BattleUtils.TYPE_CRITTER = BattleUtils.TYPE_UNDEAD,
-        BattleUtils.TYPE_UNDEAD = BattleUtils.TYPE_HUMANOID,
+        [BattleUtils.TYPE_HUMANOID] = BattleUtils.TYPE_DRAGONKIN,
+        [BattleUtils.TYPE_DRAGONKIN] = BattleUtils.TYPE_MAGIC,
+        [BattleUtils.TYPE_MAGIC] = BattleUtils.TYPE_FLYING,
+        [BattleUtils.TYPE_FLYING] = BattleUtils.TYPE_AQUATIC,
+        [BattleUtils.TYPE_AQUATIC] = BattleUtils.TYPE_ELEMENTAL,
+        [BattleUtils.TYPE_ELEMENTAL] = BattleUtils.TYPE_MECHANICAL,
+        [BattleUtils.TYPE_MECHANICAL] = BattleUtils.TYPE_BEAST,
+        [BattleUtils.TYPE_BEAST] = BattleUtils.TYPE_CRITTER,
+        [BattleUtils.TYPE_CRITTER] = BattleUtils.TYPE_UNDEAD,
+        [BattleUtils.TYPE_UNDEAD] = BattleUtils.TYPE_HUMANOID,
     }
     local weakTable = {
-        BattleUtils.TYPE_HUMANOID = BattleUtils.TYPE_BEAST,
-        BattleUtils.TYPE_BEAST = BattleUtils.TYPE_FLYING,
-        BattleUtils.TYPE_FLYING, = BattleUtils.TYPE_DRAGONKIN,
-        BattleUtils.TYPE_DRAGONKIN = BattleUtils.TYPE_UNDEAD,
-        BattleUtils.TYPE_UNDEAD = BattleUtils.TYPE_AQUATIC,
-        BattleUtils.TYPE_AQUATIC = BattleUtils.TYPE_MAGIC,
-        BattleUtils.TYPE_MAGIC = BattleUtils.TYPE_MECHANICAL,
-        BattleUtils.TYPE_MECHANICAL = BattleUtils.TYPE_ELEMENTAL,
-        BattleUtils.TYPE_ELEMENTAL = BattleUtils.TYPE_CRITTER,
-        BattleUtils.TYPE_CRITTER = BattleUtils.TYPE_HUMANOID,
+        [BattleUtils.TYPE_HUMANOID] = BattleUtils.TYPE_BEAST,
+        [BattleUtils.TYPE_BEAST] = BattleUtils.TYPE_FLYING,
+        [BattleUtils.TYPE_FLYING] = BattleUtils.TYPE_DRAGONKIN,
+        [BattleUtils.TYPE_DRAGONKIN] = BattleUtils.TYPE_UNDEAD,
+        [BattleUtils.TYPE_UNDEAD] = BattleUtils.TYPE_AQUATIC,
+        [BattleUtils.TYPE_AQUATIC] = BattleUtils.TYPE_MAGIC,
+        [BattleUtils.TYPE_MAGIC] = BattleUtils.TYPE_MECHANICAL,
+        [BattleUtils.TYPE_MECHANICAL] = BattleUtils.TYPE_ELEMENTAL,
+        [BattleUtils.TYPE_ELEMENTAL] = BattleUtils.TYPE_CRITTER,
+        [BattleUtils.TYPE_CRITTER] = BattleUtils.TYPE_HUMANOID,
     }
     if strongTable[attackType] == targetType then
         return 1
@@ -267,7 +267,7 @@ function BattleUtils:GetTypeEffectiveness(attackType, targetType)
     end
 end
 
-function BattleUtils.IsAbilityStrongToEnemy(abilityType)
+function BattleUtils:IsAbilityStrongToEnemy(abilityType)
     petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
     if petIndex == 0 then
         print("GetActivePet == 0")
@@ -278,7 +278,7 @@ function BattleUtils.IsAbilityStrongToEnemy(abilityType)
     return effectiveness > 0
 end
 
-function BattleUtils.IsAbilityWeakToEnemy(abilityType)
+function BattleUtils:IsAbilityWeakToEnemy(abilityType)
     petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
     if petIndex == 0 then
         print("GetActivePet == 0")
