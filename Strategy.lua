@@ -11,7 +11,7 @@ local COOPERATE_TARGETS = {
 }
 
 local MAX_RECORDS = 200
-local LOSS_REST_TIME = 10  -- 失败后休息时间，单位秒
+local LOSS_REST_TIME = 20  -- 失败后休息时间，单位秒
 
 local PET_ID_NEXUS_WHELPLING = 1165 --节点雏龙
 local PET_ID_FOSSILIZED_HATCHLING = 266 --化石幼兽
@@ -323,6 +323,7 @@ function Strategy:OnFinalRound(...)
         result = "loss"
     else
         local win = BattleUtils:DetermineWinner()
+        
         if win >= 0 then
             result = "win"
         else
@@ -337,6 +338,7 @@ function Strategy:ShouldRest()
     if not self.lossTime then
         return false
     end
+
     return (time() - self.lossTime) < LOSS_REST_TIME
 end
 
