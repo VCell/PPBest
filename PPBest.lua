@@ -20,9 +20,11 @@ local isInPetBattle = false
 -- 执行自动战斗
 local function PerformAutoBattle()
     if not C_PetBattles.IsInBattle() then 
-        C_PetBattles.StartPVPMatchmaking()
-        C_PetBattles.AcceptQueuedPVPMatch()
-        StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+        if not Strategy:ShouldRest() then
+            C_PetBattles.StartPVPMatchmaking()
+            C_PetBattles.AcceptQueuedPVPMatch()
+            StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+        end
         return
     end
 

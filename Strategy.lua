@@ -11,6 +11,7 @@ local COOPERATE_TARGETS = {
 }
 
 local MAX_RECORDS = 200
+local LOSS_REST_TIME = 10  -- 失败后休息时间，单位秒
 
 local PET_ID_NEXUS_WHELPLING = 1165 --节点雏龙
 local PET_ID_FOSSILIZED_HATCHLING = 266 --化石幼兽
@@ -46,6 +47,7 @@ local Strategy = {
     round = 0,
     scheme = nil,
     forfeited = false,
+    lossTime = nil,
 }
 
 function Strategy:Forfeit()
@@ -251,6 +253,7 @@ function Strategy:Init()
     self.opponentTeam = {}
     self.recording = false
     self.round = 0
+    self.lossTime = nil
     
     -- 处理己方宠物信息
     if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
@@ -324,9 +327,17 @@ function Strategy:OnFinalRound(...)
             result = "win"
         else
             result = "loss"
+            self.lossTime = time()
         end
     end
     Strategy:AddBattleRecord(result)
+end
+
+function Strategy:ShouldRest()
+    if not self.lossTime then
+        return false
+    end
+    return (time() - self.lossTime) < LOSS_REST_TIME
 end
 
 function Strategy:PerformSelect()
