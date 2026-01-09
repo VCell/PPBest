@@ -178,7 +178,8 @@ function GetSimpleScheme()
                     BattleUtils:UseSkillByPriority({3})
                 end
             elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL then
-                if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING then
+                if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING or
+                        enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
                     if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
                         BattleUtils:UseSkillByPriority({3,2,1})
                     else
