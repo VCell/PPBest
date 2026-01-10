@@ -81,22 +81,98 @@ function GetCooperateScheme(myTarget, enemyTarget)
     }
 end
 
-function NexusPerform()
-    local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
-    local enemyType = BattleUtils:GetEnemyPetType()
+function SimplePerform()
+    local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+    local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
+    local enemyIdx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    local enemyId = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, enemyIdx)
 
-    if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
-        BattleUtils:UseSkillByPriority({3, 1})
-    elseif enemyType == BattleUtils.TYPE_MECHANICAL then
-        BattleUtils:UseSkillByPriority({1, 3})
-    elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
-        BattleUtils:UseSkillByPriority({2, 1,3})
-    elseif duration < 3 then 
-        BattleUtils:UseSkillByPriority({3, 2, 1})
-    else
-        BattleUtils:UseSkillByPriority({2, 1, 3})
+    if id == PET_ID_NEXUS_WHELPLING then
+        local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
+        local enemyType = BattleUtils:GetEnemyPetType()
+        if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
+            BattleUtils:UseSkillByPriority({3, 1})
+        elseif enemyType == BattleUtils.TYPE_MECHANICAL then
+            BattleUtils:UseSkillByPriority({1, 3})
+        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
+            BattleUtils:UseSkillByPriority({2, 1,3})
+        elseif duration < 3 then 
+            BattleUtils:UseSkillByPriority({3, 2, 1})
+        else
+            BattleUtils:UseSkillByPriority({2, 1, 3})
+        end
+    elseif id == PET_ID_FOSSILIZED_HATCHLING then
+        BattleUtils:UseSkillByPriority({3,2,1})
+    elseif id == PET_ID_PERSONAL_WORLD_DESTROYER then
+        BattleUtils:UseSkillByPriority({3,2,1})
+    elseif id == PET_ID_CROW then
+        if BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_DARKNESS) then
+            BattleUtils:UseSkillByPriority({2,3,1})
+        else
+            BattleUtils:UseSkillByPriority({2,1,3})
+        end
+    elseif id == PET_ID_ARFUS then
+        if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
+            BattleUtils:UseSkillByPriority({3,1})
+        elseif BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_UNDEAD) then
+            BattleUtils:UseSkillByPriority({1,3})
+        else 
+            BattleUtils:UseSkillByPriority({2,3,1})
+        end
+    elseif id == PET_ID_DARKMOON_ZEPPELIN then
+        BattleUtils:UseSkillByPriority({3,2,1})
+    elseif id == PET_ID_PANDAREN_MONK then
+        BattleUtils:UseSkillByPriority({3,1,2})
+    elseif id == PET_ID_UNBORN_VALKYR then
+        if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ALLY) then
+            BattleUtils:UseSkillByPriority({3})
+        else
+            BattleUtils:UseSkillByPriority({2,1})
+        end
+    elseif id == PET_ID_PEBBLE then
+        if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
+            BattleUtils:UseSkillByPriority({3,1,2})
+        else
+            BattleUtils:UseSkillByPriority({3,2,1})
+        end
+    elseif id == PET_ID_MOJO then
+        if BattleUtils:GetActivePetHealth() < 1000 then
+            BattleUtils:UseSkillByPriority({2,3})
+        else
+            BattleUtils:UseSkillByPriority({3})
+        end
+    elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL then
+        if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING or
+                enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
+            if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
+                BattleUtils:UseSkillByPriority({3,2,1})
+            else
+                BattleUtils:UseSkillByPriority({1})
+            end
+        else 
+            BattleUtils:UseSkillByPriority({3,2,1})
+        end
+    elseif id == PET_ID_KUNLAI_RUNR then
+        if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) or 
+                BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_HUMANOID) then
+            BattleUtils:UseSkillByPriority({1,3})
+        else
+            if BattleUtils:CanKillEnemy(324, BattleUtils.TYPE_HUMANOID) or 
+                    BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_STUN) > 0 then
+                BattleUtils:UseSkillByPriority({1,2})
+            elseif BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
+                BattleUtils:UseSkillByPriority({3,1})
+            elseif BattleUtils:GetAbilityCooldown(3) <= 1 then
+                BattleUtils:UseSkillByPriority({2,1})
+            else
+                BattleUtils:UseSkillByPriority({1,2})
+            end
+        end
+    else 
+        local skillSlot = math.random(1,3)
+        BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
     end
-    return 
+
 end
 
 -- 3节点雏龙
@@ -136,81 +212,39 @@ function GetSimpleScheme()
             BattleUtils:SwitchPetByOrder()
         end,
         Battle = function(self, round)
-            local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
-            local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
-            local enemyIdx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
-            local enemyId = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, enemyIdx)
+            SimplePerform()
+        end
+    }
+end
 
-            if id == PET_ID_NEXUS_WHELPLING then
-                NexusPerform()
-            elseif id == PET_ID_FOSSILIZED_HATCHLING then
-                BattleUtils:UseSkillByPriority({3,2,1})
-            elseif id == PET_ID_PERSONAL_WORLD_DESTROYER then
-                BattleUtils:UseSkillByPriority({3,2,1})
-            elseif id == PET_ID_CROW then
-                if BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_DARKNESS) then
-                    BattleUtils:UseSkillByPriority({2,3,1})
-                else
-                    BattleUtils:UseSkillByPriority({2,1,3})
-                end
-            elseif id == PET_ID_ARFUS then
-                if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
-                    BattleUtils:UseSkillByPriority({3,1})
-                elseif BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_UNDEAD) then
-                    BattleUtils:UseSkillByPriority({1,3})
-                else 
-                    BattleUtils:UseSkillByPriority({2,3,1})
-                end
-            elseif id == PET_ID_DARKMOON_ZEPPELIN then
-                BattleUtils:UseSkillByPriority({3,2,1})
-            elseif id == PET_ID_PANDAREN_MONK then
-                BattleUtils:UseSkillByPriority({3,1,2})
-            elseif id == PET_ID_UNBORN_VALKYR then
-                if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ALLY) then
-                    BattleUtils:UseSkillByPriority({3})
-                else
-                    BattleUtils:UseSkillByPriority({2,1})
-                end
-            elseif id == PET_ID_PEBBLE then
-                BattleUtils:UseSkillByPriority({3,2,1})
-            elseif id == PET_ID_MOJO then
-                if BattleUtils:GetActivePetHealth() < 1000 then
-                    BattleUtils:UseSkillByPriority({2,3})
-                else
-                    BattleUtils:UseSkillByPriority({3})
-                end
-            elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL then
-                if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING or
-                        enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
-                    if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
-                        BattleUtils:UseSkillByPriority({3,2,1})
-                    else
-                        BattleUtils:UseSkillByPriority({1})
-                    end
-                else 
-                    BattleUtils:UseSkillByPriority({3,2,1})
-                end
-            elseif id == PET_ID_KUNLAI_RUNR then
-                if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) or 
-                        BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_HUMANOID) then
-                    BattleUtils:UseSkillByPriority({1,3})
-                else
-                    if BattleUtils:CanKillEnemy(324, BattleUtils.TYPE_HUMANOID) or 
-                            BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_STUN) > 0 then
-                        BattleUtils:UseSkillByPriority({1,2})
-                    elseif BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
-                        BattleUtils:UseSkillByPriority({3,1})
-                    elseif BattleUtils:GetAbilityCooldown(3) <= 1 then
-                        BattleUtils:UseSkillByPriority({2,1})
-                    else
-                        BattleUtils:UseSkillByPriority({1,2})
-                    end
-                end
-            else 
-                local skillSlot = math.random(1,3)
-                BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
-            end
+function GetSchemeRabbitPebbleArfus()
+    local undeadCount = 0
+    local mechanicalCount = 0
+    local order = {1,2,3}
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
+        local type = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
+        if type == BattleUtils.TYPE_UNDEAD then
+            undeadCount = undeadCount + 1
+        elseif type == BattleUtils.TYPE_MECHANICAL then
+            mechanicalCount = mechanicalCount + 1
+        end
+    end
 
+    if undeadCount == 0 then
+        order = {3,2,1}  -- 阿尔福斯->配波->兔
+    elseif undeadCount > 0 and mechanicalCount > 0 then
+        order = {1,2,3}  --  兔->配波->阿尔福斯
+    elseif undeadCount > 0 then
+        order = {1,3,2}  -- 兔->阿尔福斯->配波
+    end
+
+    return {
+        schemeName = "RPAScheme",
+        Select = function(self)
+            BattleUtils:SwitchPetByOrder(order)
+        end,
+        Battle = function(self, round)
+            RabbitPebblePerform()
         end
     }
 end

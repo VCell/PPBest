@@ -44,20 +44,38 @@ function BattleUtils:SwitchToHighestHealthPet()
     C_PetBattles.ChangePet(bestPetIndex)
 end
 
--- 按默认顺序切换宠物
-function BattleUtils:SwitchPetByOrder()
+-- 按指定顺序切换宠物（支持不定参数）
+function BattleUtils:SwitchPetByOrder(...)
     if not C_PetBattles.IsInBattle() then
         return false
     end
+
+    -- 处理不定参数：如果没有传入参数，则使用默认顺序
+    local orderList = {...}
+    local useCustomOrder = #orderList > 0
     
-    -- 检查所有友方宠物
-    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
-        local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
-        
-        if C_PetBattles.CanPetSwapIn(petIndex) then
-            C_PetBattles.ChangePet(petIndex)
+    -- 如果没有传入参数，则使用默认顺序：1,2,3
+    if not useCustomOrder then
+        for i = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
+            orderList[i] = i
         end
-    end 
+    end
+    
+    -- 按自定义顺序检查宠物
+    for _, petIndex in ipairs(orderList) do
+        -- 验证索引有效性
+        if petIndex >= 1 and petIndex <= C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) then
+            local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
+            
+            -- 检查宠物是否可以切换
+            if C_PetBattles.CanPetSwapIn(petIndex) then
+                C_PetBattles.ChangePet(petIndex)
+                return true  -- 切换成功，返回true
+            end
+        end
+    end
+    
+    return false  -- 没有宠物可以切换
 end
 
 -- 切换到血量最高的宠物
