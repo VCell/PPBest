@@ -70,12 +70,10 @@ function BattleUtils:SwitchPetByOrder(...)
             -- 检查宠物是否可以切换
             if C_PetBattles.CanPetSwapIn(petIndex) then
                 C_PetBattles.ChangePet(petIndex)
-                return true  -- 切换成功，返回true
             end
         end
     end
-    
-    return false  -- 没有宠物可以切换
+    return true
 end
 
 -- 切换到血量最高的宠物
@@ -199,7 +197,7 @@ end
 function BattleUtils:EnemyTeamIs(petIdList)
     local enemyPetIds = {}
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
-        local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, petIndex)
+        local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, petIndex) 
         table.insert(enemyPetIds, id)
     end
 

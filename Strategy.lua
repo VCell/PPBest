@@ -199,7 +199,7 @@ function GetScheme3Nexus()
                 return
             end
             if C_PetBattles.IsSkipAvailable() then
-                NexusPerform()
+                SimplePerform()
             end
         end,
     }
@@ -241,10 +241,10 @@ function GetSchemeRabbitPebbleArfus()
     return {
         schemeName = "RPAScheme",
         Select = function(self)
-            BattleUtils:SwitchPetByOrder(order)
+            BattleUtils:SwitchPetByOrder(order[0],order[1],order[2])
         end,
         Battle = function(self, round)
-            RabbitPebblePerform()
+            SimplePerform()
         end
     }
 end
@@ -292,6 +292,8 @@ function Strategy:Init()
     -- 处理己方宠物信息
     if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
         self.scheme = GetScheme3Nexus()
+    elseif BattleUtils:AllyTeamIs({PET_ID_SPRINT_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+        self.scheme = GetSchemeRabbitPebbleArfus()
     end
 
     local lowLevel = false
