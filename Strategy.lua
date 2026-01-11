@@ -26,9 +26,11 @@ local PET_ID_FEL_FLAME = 519 --邪焰
 local PET_ID_PEBBLE = 265 -- 配波
 local PET_ID_MOJO = 165 --魔汁
 local PET_ID_SPRINT_RABBIT = 200 -- 春兔
+local PET_ID_MOUNTAIN_COTTONTAIL = 391 -- 高山短尾兔
 local PET_ID_SCOURGED_WHELPLING = 538 -- 痛苦的雏龙
 local PET_ID_KUNLAI_RUNR = 1166 -- 昆莱小雪人
 local PET_ID_GRASSLANDS_COTTONTAIL = 443 -- 草地短尾兔
+local PET_ID_TOLAI_HARE = 729 -- 多莱野兔
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -141,7 +143,8 @@ function SimplePerform()
         else
             BattleUtils:UseSkillByPriority({3})
         end
-    elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL then
+    elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL or 
+            id == PET_ID_MOUNTAIN_COTTONTAIL or id == PET_ID_TOLAI_HARE then
         if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING or
                 enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
             if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
@@ -241,7 +244,7 @@ function GetSchemeRabbitPebbleArfus()
     return {
         schemeName = "RPAScheme",
         Select = function(self)
-            BattleUtils:SwitchPetByOrder(order[0],order[1],order[2])
+            BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
         end,
         Battle = function(self, round)
             SimplePerform()
@@ -293,6 +296,10 @@ function Strategy:Init()
     if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
         self.scheme = GetScheme3Nexus()
     elseif BattleUtils:AllyTeamIs({PET_ID_SPRINT_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+        self.scheme = GetSchemeRabbitPebbleArfus()
+    elseif BattleUtils:AllyTeamIs({PET_ID_MOUNTAIN_COTTONTAIL, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+        self.scheme = GetSchemeRabbitPebbleArfus()
+    elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_HARE, PET_ID_PEBBLE, PET_ID_ARFUS}) then
         self.scheme = GetSchemeRabbitPebbleArfus()
     end
 
