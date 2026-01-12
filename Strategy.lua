@@ -11,7 +11,7 @@ local COOPERATE_TARGETS = {
 }
 
 local MAX_RECORDS = 200
-local LOSS_REST_TIME = 20  -- 失败后休息时间，单位秒
+local LOSS_REST_TIME = 30  -- 失败后休息时间，单位秒
 
 local PET_ID_NEXUS_WHELPLING = 1165 --节点雏龙
 local PET_ID_FOSSILIZED_HATCHLING = 266 --化石幼兽
@@ -31,6 +31,7 @@ local PET_ID_SCOURGED_WHELPLING = 538 -- 痛苦的雏龙
 local PET_ID_KUNLAI_RUNR = 1166 -- 昆莱小雪人
 local PET_ID_GRASSLANDS_COTTONTAIL = 443 -- 草地短尾兔
 local PET_ID_TOLAI_HARE = 729 -- 多莱野兔
+local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -171,6 +172,10 @@ function SimplePerform()
                 BattleUtils:UseSkillByPriority({1,2})
             end
         end
+    elseif id=PET_ID_SCOURGED_WHELPLING then
+        BattleUtils:UseSkillByPriority({3,1})
+    elseif id==PET_ID_SCAVENGING_PINCHER then
+        BattleUtils:UseSkillByPriority({2,1})
     else 
         local skillSlot = math.random(1,3)
         BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
@@ -243,6 +248,18 @@ function GetSchemeRabbitPebbleArfus()
 
     return {
         schemeName = "RPAScheme",
+        Select = function(self)
+            BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
+        end,
+        Battle = function(self, round)
+            SimplePerform()
+        end
+    }
+end
+
+function GetSchemeAAB()
+    return {
+        schemeName = "AABScheme",
         Select = function(self)
             BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
         end,
