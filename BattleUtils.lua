@@ -163,7 +163,7 @@ function BattleUtils:GetAliveNum(owner)
     local count = 0
 
     for petIndex = 1, C_PetBattles.GetNumPets(owner) do
-        local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
+        local health = C_PetBattles.GetHealth(owner, petIndex) 
         if health > 0 then
             count = count + 1
         end

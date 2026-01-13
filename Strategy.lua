@@ -172,10 +172,18 @@ function SimplePerform()
                 BattleUtils:UseSkillByPriority({1,2})
             end
         end
-    elseif id=PET_ID_SCOURGED_WHELPLING then
-        BattleUtils:UseSkillByPriority({3,1})
+    elseif id==PET_ID_SCOURGED_WHELPLING then
+        if  BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 then
+            BattleUtils:UseSkillByPriority({2,1})
+        else
+            BattleUtils:UseSkillByPriority({3,1})
+        end
     elseif id==PET_ID_SCAVENGING_PINCHER then
-        BattleUtils:UseSkillByPriority({2,1})
+        if  BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 then
+            BattleUtils:UseSkillByPriority({3,1})
+        else 
+            BattleUtils:UseSkillByPriority({2,3,1})
+        end
     else 
         local skillSlot = math.random(1,3)
         BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
