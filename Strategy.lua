@@ -119,7 +119,9 @@ function SimplePerform()
             BattleUtils:UseSkillByPriority({3,1})
         elseif BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_UNDEAD) then
             BattleUtils:UseSkillByPriority({1,3})
-        else 
+        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:CanKillEnemy(432, BattleUtils.TYPE_BEAST) then
+            BattleUtils:UseSkillByPriority({3,1})
+        else
             BattleUtils:UseSkillByPriority({2,3,1})
         end
     elseif id == PET_ID_DARKMOON_ZEPPELIN then
@@ -135,7 +137,7 @@ function SimplePerform()
     elseif id == PET_ID_PEBBLE then
         if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
             BattleUtils:UseSkillByPriority({3,1,2})
-        elseif BattleUtils:GetWeatherDuration( BattleUtils.WEATHER_ID_SANDSTORM) > 0 then
+        elseif BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_SANDSTORM) > 0 then
             BattleUtils:UseSkillByPriority({2,1})
         else
             BattleUtils:UseSkillByPriority({3,2,1})
