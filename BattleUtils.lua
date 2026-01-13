@@ -2,6 +2,7 @@
 local BattleUtils = {
     WEATHER_ID_ARCANE_STORM = 590, 
     WEATHER_ID_DARKNESS = 257, 
+    WEATHER_ID_SANDSTORM = 454,  --沙暴
     
     AURA_ID_UNDEAD = 242,
     AURA_ID_ROCK_BARRAGE = 627, --配波的岩石弹幕

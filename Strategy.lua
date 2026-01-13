@@ -135,6 +135,8 @@ function SimplePerform()
     elseif id == PET_ID_PEBBLE then
         if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
             BattleUtils:UseSkillByPriority({3,1,2})
+        elseif BattleUtils:GetWeatherDuration( BattleUtils.WEATHER_ID_SANDSTORM) > 0 then
+            BattleUtils:UseSkillByPriority({2,1})
         else
             BattleUtils:UseSkillByPriority({3,2,1})
         end
@@ -316,6 +318,7 @@ function Strategy:Init()
     self.recording = false
     self.round = 0
     self.lossTime = nil
+    self.forfeited = false
     
     -- 处理己方宠物信息
     if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
