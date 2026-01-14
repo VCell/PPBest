@@ -266,8 +266,9 @@ function GetSchemeRabbitPebbleArfus()
             mechanicalCount = mechanicalCount + 1
         end
     end
-
-    if undeadCount == 0 then
+    if BattleUtils:EnemyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
+        order = {3,1,2}  -- 阿尔福斯->兔->配波
+    elseif undeadCount == 0 then
         order = {3,2,1}  -- 阿尔福斯->配波->兔
     elseif undeadCount > 0 and mechanicalCount > 0 then
         order = {1,2,3}  --  兔->配波->阿尔福斯
