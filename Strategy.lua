@@ -53,6 +53,8 @@ local Strategy = {
     lossTime = nil,
 }
 
+local lossCount = 0 --互刷模式下 连续失败次数，辅助的一方每10场要赢一场
+
 function Strategy:Forfeit()
     self.forfeited = true
     C_PetBattles.ForfeitGame()
@@ -72,13 +74,28 @@ function GetCooperateScheme(myTarget, enemyTarget)
         end,
         Battle = function(self, round)
             if myTarget == TARGET_ASSIST then
+                if lossCount >=10 then
+                    -- 辅助方每10场要赢一场
+                    return
+                end
                 if enemyTarget == TARGET_EXP and time() - startTime < 60 then
                     return
                 end
                 Strategy:Forfeit()
-            else
+            elseif myTarget == TARGET_WIN then
+                if time() - startTime > 10 then
+                    Strategy:Forfeit()
+                end
                 local skillSlot = math.random(1,3)
                 BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
+            elseif myTarget == TARGET_EXP then
+                if time() - startTime > 75 then
+                    Strategy:Forfeit()
+                end
+                local skillSlot = math.random(1,3)
+                BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
+            else
+                Strategy:Forfeit()
             end
         end,
     }
@@ -403,6 +420,12 @@ function Strategy:OnFinalRound(...)
             result = "loss"
             self.lossTime = time()
         end
+    end
+
+    if result == "loss" then
+        lossCount = lossCount + 1
+    else
+        lossCount = 0
     end
     Strategy:AddBattleRecord(result)
 end
