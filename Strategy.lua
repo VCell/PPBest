@@ -33,6 +33,8 @@ local PET_ID_GRASSLANDS_COTTONTAIL = 443 -- 草地短尾兔
 local PET_ID_TOLAI_HARE = 729 -- 多莱野兔
 local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
 local PET_ID_GILNEAN_RAVEN = 630 -- 吉尔尼斯渡鸦
+local PET_ID_STUNTED_DIREHORN = 1184 -- 瘦弱恐角龙
+local PET_ID_ANUBISATH_IDOL = 1155 -- 瘦弱恐角龙
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -276,7 +278,8 @@ function GetSchemeRabbitPebbleArfus()
         end
     end
 
-    if BattleUtils:EnemyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
+    if BattleUtils:EnemyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) or
+             BattleUtils:EnemyTeamIs({PET_ID_STUNTED_DIREHORN, PET_ID_ARFUS, PET_ID_ANUBISATH_IDOL}) then
         order = {3,1,2}  -- 阿尔福斯->兔->配波
     elseif undeadCount == 0 then
         order = {3,2,1}  -- 阿尔福斯->配波->兔

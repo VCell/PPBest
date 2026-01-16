@@ -53,7 +53,7 @@ function BattleUtils:SwitchPetByOrder(...)
 
     -- 处理不定参数：如果没有传入参数，则使用默认顺序
     local orderList = {...}
-    if orderList == 0 then
+    if #orderList == 0 then
         for i = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
             orderList[i] = i
         end
@@ -64,10 +64,10 @@ function BattleUtils:SwitchPetByOrder(...)
         find = true
     end
 
-    print("SwitchPetByOrder GetActivePet:", activeIndex)
+  
     -- 按自定义顺序检查宠物
     for i = 1, 2 * #orderList do
-        petIndex = orderList[((i-1)%3) + 1]
+        local petIndex = orderList[((i-1)%(#orderList)) + 1]
         -- 验证索引有效性
         if find and petIndex >= 1 and petIndex <= C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) then
             if C_PetBattles.CanPetSwapIn(petIndex) then
