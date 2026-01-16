@@ -32,6 +32,7 @@ local PET_ID_KUNLAI_RUNR = 1166 -- 昆莱小雪人
 local PET_ID_GRASSLANDS_COTTONTAIL = 443 -- 草地短尾兔
 local PET_ID_TOLAI_HARE = 729 -- 多莱野兔
 local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
+local PET_ID_GILNEAN_RAVEN = 630 -- 吉尔尼斯渡鸦
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -136,7 +137,9 @@ function SimplePerform()
             BattleUtils:UseSkillByPriority({3,1})
         elseif BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_UNDEAD) then
             BattleUtils:UseSkillByPriority({1,3})
-        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:CanKillEnemy(432, BattleUtils.TYPE_BEAST) then
+        elseif BattleUtils:CanKillEnemy(361, BattleUtils.TYPE_UNDEAD) then
+            BattleUtils:UseSkillByPriority({1})
+        elseif BattleUtils:CanKillEnemy(432, BattleUtils.TYPE_BEAST) then
             BattleUtils:UseSkillByPriority({3,1})
         else
             BattleUtils:UseSkillByPriority({2,3,1})
@@ -167,14 +170,20 @@ function SimplePerform()
         end
     elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL or 
             id == PET_ID_MOUNTAIN_COTTONTAIL or id == PET_ID_TOLAI_HARE then
-        if enemyId == PET_ID_FOSSILIZED_HATCHLING or enemyId == PET_ID_SCOURGED_WHELPLING or
-                enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
+        if  enemyId == PET_ID_SCOURGED_WHELPLING or enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
             if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
                 BattleUtils:UseSkillByPriority({3,2,1})
             else
                 BattleUtils:UseSkillByPriority({1})
             end
-        else 
+        elseif enemyId == PET_ID_FOSSILIZED_HATCHLING then 
+            if BattleUtils:GetAbilityCooldown(LE_BATTLE_PET_ALLY, 3) == 0 and 
+                    BattleUtils:GetAbilityCooldown(LE_BATTLE_PET_ALLY, 2) == 0 then
+                BattleUtils:UseSkillByPriority({2,1})
+            else 
+                BattleUtils:UseSkillByPriority({1})
+            end
+        else
             BattleUtils:UseSkillByPriority({3,2,1})
         end
     elseif id == PET_ID_KUNLAI_RUNR then
@@ -187,7 +196,7 @@ function SimplePerform()
                 BattleUtils:UseSkillByPriority({1,2})
             elseif BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
                 BattleUtils:UseSkillByPriority({3,1})
-            elseif BattleUtils:GetAbilityCooldown(3) <= 1 then
+            elseif BattleUtils:GetAbilityCooldown(LE_BATTLE_PET_ALLY, 3) <= 1 then
                 BattleUtils:UseSkillByPriority({2,1})
             else
                 BattleUtils:UseSkillByPriority({1,2})
@@ -266,6 +275,7 @@ function GetSchemeRabbitPebbleArfus()
             mechanicalCount = mechanicalCount + 1
         end
     end
+
     if BattleUtils:EnemyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
         order = {3,1,2}  -- 阿尔福斯->兔->配波
     elseif undeadCount == 0 then
@@ -282,6 +292,11 @@ function GetSchemeRabbitPebbleArfus()
             BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
         end,
         Battle = function(self, round)
+            if BattleUtils:EnemyTeamIs({PET_ID_FOSSILIZED_HATCHLING, PET_ID_PERSONAL_WORLD_DESTROYER, PET_ID_GILNEAN_RAVEN}) and
+                    BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
+                C_PetBattles.ChangePet(2)
+                return 
+            end
             SimplePerform()
         end
     }

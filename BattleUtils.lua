@@ -53,25 +53,29 @@ function BattleUtils:SwitchPetByOrder(...)
 
     -- 处理不定参数：如果没有传入参数，则使用默认顺序
     local orderList = {...}
-    local useCustomOrder = #orderList > 0
-    
-    -- 如果没有传入参数，则使用默认顺序：1,2,3
-    if not useCustomOrder then
+    if orderList == 0 then
         for i = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
             orderList[i] = i
         end
     end
-    
+    local find = false
+    local activeIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+    if C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, activeIndex) == C_PetBattles.GetMaxHealth(LE_BATTLE_PET_ALLY, activeIndex) then 
+        find = true
+    end
+
+    print("SwitchPetByOrder GetActivePet:", activeIndex)
     -- 按自定义顺序检查宠物
-    for _, petIndex in ipairs(orderList) do
+    for i = 1, 2 * #orderList do
+        petIndex = orderList[((i-1)%3) + 1]
         -- 验证索引有效性
-        if petIndex >= 1 and petIndex <= C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) then
-            local health = C_PetBattles.GetHealth(LE_BATTLE_PET_ALLY, petIndex) 
-            
-            -- 检查宠物是否可以切换
+        if find and petIndex >= 1 and petIndex <= C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) then
             if C_PetBattles.CanPetSwapIn(petIndex) then
                 C_PetBattles.ChangePet(petIndex)
             end
+        end
+        if petIndex == activeIndex then
+            find = true
         end
     end
     return true
@@ -326,8 +330,8 @@ function BattleUtils:CanKillEnemy(baseDamage, abilityType)
     return finalDamage >= enemyHealth
 end
 
-function BattleUtils:GetAbilityCooldown(idx)
-    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+function BattleUtils:GetAbilityCooldown(owner, idx)
+    petIndex = C_PetBattles.GetActivePet(owner)
     
     if petIndex == 0 then
         print("GetActivePet == 0")
@@ -335,7 +339,7 @@ function BattleUtils:GetAbilityCooldown(idx)
     end
 
     local isUsable, currentCooldown, currentLockdown = 
-        C_PetBattles.GetAbilityState(LE_BATTLE_PET_ALLY, petIndex, idx)
+        C_PetBattles.GetAbilityState(owner, petIndex, idx)
     
     if isUsable then
         return 0
