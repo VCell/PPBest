@@ -34,7 +34,7 @@ local PET_ID_TOLAI_HARE = 729 -- 多莱野兔
 local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
 local PET_ID_GILNEAN_RAVEN = 630 -- 吉尔尼斯渡鸦
 local PET_ID_STUNTED_DIREHORN = 1184 -- 瘦弱恐角龙
-local PET_ID_ANUBISATH_IDOL = 1155 -- 瘦弱恐角龙
+local PET_ID_ANUBISATH_IDOL = 1155 -- 阿努比斯
 
 local BattleUtils = _G.PPBestBattleUtils
 
@@ -309,6 +309,7 @@ function GetSchemeAAB()
     return {
         schemeName = "AABScheme",
         Select = function(self)
+            C_PetBattles.ChangePet(1)
             BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
         end,
         Battle = function(self, round)
@@ -367,6 +368,8 @@ function Strategy:Init()
         self.scheme = GetSchemeRabbitPebbleArfus()
     elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_HARE, PET_ID_PEBBLE, PET_ID_ARFUS}) then
         self.scheme = GetSchemeRabbitPebbleArfus()
+    elseif BattleUtils:AllyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
+        self.scheme = GetSchemeAAB()
     end
 
     local lowLevel = false
