@@ -114,13 +114,14 @@ local Pet = {
     abilitys = {},
 }
 Pet.__index = Pet
-function Pet:new(id, health, power, speed, pettype)
+function Pet.new(id, health, power, speed, pettype)
     local pet = setmetatable({}, Pet)
     pet.id = id
     pet.health = health
     pet.power = power
     pet.speed = speed
     pet.type = pettype
+    pet.abilitys = {}
     return pet
 end
 
@@ -143,7 +144,7 @@ local EffectType = {
 
 local EffectDynamicType = {
     FLURRY = 1, -- 攻击1-2次，如果比对方快则额外攻击一次
-
+    BURROW = 2, -- 钻地 触发时需要取消id=340的aura
 }
 local TargetType = {
     ALLY = 1, --我方单体
@@ -194,7 +195,7 @@ local Ability = {
 }
 Ability.__index = Ability
 
-function Ability:new(id, type, cooldown, duration)
+function Ability.new(id, type, cooldown, duration)
     local ability = setmetatable({}, Ability)
     ability.id = id
     ability.type = type
@@ -270,41 +271,43 @@ end
 function Pet:install_ability_by_id(id, index)
     local ability = nil
     if id == AbilityID.BONE_BITE then
-        ability = Ability:new(id, TypeID.UNDEAD, 0, 0)
-        local ef = Effect:new_damage(TypeID.UNDEAD, 100, 20+self.power)
+        ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
+        local ef = Effect:new_damage(TypeID.UNDEAD, 20+self.power)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ICE_TOMB then
-        ability = Ability:new(id, TypeID.ELEMENTAL, 5, 0)
+        ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
         local ef = Effect:new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.ICE_TOMB, TargetType.ENEMY)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ARFUS_6 then
-        ability = Ability:new(id, TypeID.BEAST, 0, 3)
+        ability = Ability.new(id, TypeID.BEAST, 0, 3)
         ability.effect_list = {
             [1] = {Effect:new_damage(TypeID.BEAST, 54), Effect:new_damage(TypeID.BEAST, 54), Effect:new_damage(TypeID.BEAST, 54),
                         Effect:new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
             [2] = {Effect:new_damage(TypeID.BEAST, 90), Effect:new_damage(TypeID.BEAST, 90), Effect:new_damage(TypeID.BEAST, 90),
                         Effect:new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
-            [3] = {Effect:new_damage(TypeID.BEAST, 54), Effect:new_damage(TypeID.BEAST, 126), Effect:new_damage(TypeID.BEAST, 54),
+            [3] = {Effect:new_damage(TypeID.BEAST, 126), Effect:new_damage(TypeID.BEAST, 126), Effect:new_damage(TypeID.BEAST, 126),
                         Effect:new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
         }
 
     elseif id == AbilityID.FLURRY then
-        local ability = Ability:new(id, TypeID.CRITTER, 0, 0)
-        local ef = Effect:new(TypeID.CRITTER, EffectType.DAMAGE, 100, 10+self.power/2.0, TargetType.ENEMY)
+        ability = Ability.new(id, TypeID.CRITTER, 0, 0)
+        local ef = Effect:new_damage(TypeID.CRITTER, 10+self.power/2.0)
+        ef.dynamic_type = EffectDynamicType.FLURRY
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.DODGE then
-        ability = Ability:new(id, TypeID.CRITTER, 4, 0)
+        ability = Ability.new(id, TypeID.CRITTER, 4, 0)
         local ef = Effect:new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.BURROW then
-        ability = Ability:new(id, TypeID.CRITTER, 4, 2)
+        ability = Ability.new(id, TypeID.CRITTER, 4, 2)
         local ef1 = Effect:new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.UNDERGROUND, TargetType.ALLY)
         local ef2 = Effect:new_damage(TypeID.CRITTER, 2*self.power - 25, 80)
-        ability.effect_list = {ef1, ef2}
-    end
-    if ability == nil then
+        ef2.dynamic_type = EffectDynamicType.BURROW
+        ability.effect_list[1] = {ef1}
+        ability.effect_list[2] = {ef2}
         
     end
+
 
     self.abilitys[index] = ability
     return 

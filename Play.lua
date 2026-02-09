@@ -47,6 +47,18 @@ function AuraProcessor.get_active_speed_modifier(state, team_index)
     
 end
 
+function AuraProcessor.is_stunned(state, team_index, pet_index)
+    local team_state = state.team_states[team_index]
+    local ps = team_state.pets[pet_index]
+    for i, aura in ipairs(ps.auras) do
+        if aura.type == PD.AuraType.STUN then
+            return true
+        end
+    end
+    return false
+    
+end
+
 function AuraProcessor.get_active_accuracy_modifier(state, team_index)
     local rate = 0
     local team_state = state.team_states[team_index]
@@ -166,12 +178,14 @@ end
 local PetState = {
     current_health = 0,
     auras = {},
+    cooldown_at = {}
 }
 PetState.__index = PetState
 function PetState:new(health)
     local pet_state = setmetatable({}, PetState)
     pet_state.current_health = health
     pet_state.auras = {}
+    pet_state.cooldown_at = {0, 0, 0}
     return pet_state
 end
 
@@ -179,18 +193,18 @@ local TeamState = {
     pets = {},  -- 包含该队伍宠物状态的列表
     active_auras = {},
     ability_round = 0, --多轮技能的当前轮次
-    ability_id = 0, -- 多轮技能的技能id
+    ability_index = 0, -- 多轮技能的技能id
     active_index = 0, -- 当前出战宠物的索引
     interrupted = false, -- 当前回合是否被打断
 }
 TeamState.__index = TeamState
-function TeamState:new()
+function TeamState.new()
     local team_state = setmetatable({}, TeamState)
     team_state.pets = {}
     team_state.active_auras = {}
-    team_state.ability_state = {}
     team_state.active_index = 1
     team_state.ability_round = 0
+    team_state.ability_index = 0
     return team_state
 end
 function TeamState:change_pet(new_index)
@@ -298,7 +312,6 @@ function GameStateTemplate:get_action_order(teams, action1, action2)
 end
 
 function GameStateTemplate:process_effects(teams, player, effects)
-    print("process_effects")
     local opponent = 3 - player
     -- 处理效果列表
     for i, effect in ipairs(effects) do
@@ -422,44 +435,65 @@ function GameStateTemplate:process_player_action(teams, player, action, opponent
         local effects = nil
         if team_state.ability_round > 1 then
             -- 多轮技能逻辑
-            assert (team_state.ability_id == ability.id)
+            assert (action.value == team_state.ability_index)
             effects = ability.effect_list[team_state.ability_round]
             team_state.ability_round = team_state.ability_round + 1
             if team_state.ability_round >= ability.duration then
                 team_state.ability_round = 0
-                team_state.ability_id = 0
+                team_state.ability_index = 0
             end
         else
             -- 单轮技能逻辑，或多轮技能的第一轮
             effects = ability.effect_list[1]
             if ability.duration > 1 then
                 team_state.ability_round = 2
-                team_state.ability_id = ability.id
+                team_state.ability_index = action.value
             end
         end
         self:process_effects(teams, player, effects)
+        team_state.pets[team_state.active_index].cooldown_at[action.value] = self.round + ability.cooldown
     end
 end
 local GameRuleTemplate = {}
 function GameRuleTemplate:get_legal_actions(state, player)
     -- 返回玩家在给定状态下的合法动作列表
-    if state.changeRound > 0 then
-        local actions = {}
-        if state.changeRound == player or state.changeRound == 3 then
-            local pets = state:getPetsByPlayer(player)
+    local actions = {}
+    if state.change_round > 0 then
+        if state.change_round == player or state.change_round == 3 then
+            local pets = state.team_states[player].pets
             for i, petState in ipairs(pets) do
                 if petState.current_health > 0 then
                     table.insert(actions, Action:new('change', i))  -- 动作为选择宠物的索引
                 end
             end
         end
-        if #actions == 0 then
-            table.insert(actions, Action:new('standby', 0))  -- 无法换宠时只能待命
-        end
-        return actions
     else
-    
+        local active_index = state.team_states[player].active_index
+        if state.team_states[player].ability_round > 0 then
+            -- 多轮技能只能继续使用当前技能
+            table.insert(actions, Action:new('use', state.team_states[player].ability_index))
+        else
+            if AuraProcessor.is_stunned(state, player, active_index) then
+                table.insert(actions, Action:new('standby', 0))  -- 被晕时可以待命
+            else 
+                for i = 1, 3 do
+                    if state.team_states[player].pets[active_index].cooldown_at[i] < state.round then
+                        table.insert(actions, Action:new('use', i))  -- 动作为使用技能的索引
+                    end
+                end
+            end
+            for i, petState in ipairs(state.team_states[player].pets) do
+                if petState.current_health > 0 and i ~= state.team_states[player].active_index then
+                    table.insert(actions, Action:new('change', i))  -- 动作为选择宠物的索引
+                end
+            end
+        end 
+
     end
+    if #actions == 0 then
+        table.insert(actions, Action:new('standby', 0))  -- 无法换宠时只能待命
+    end
+    return actions
 end
 
 function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
