@@ -28,7 +28,7 @@ end
 function TestPlay.init_game_state()
     local pets1 = TestPlay.create_test_pets({PD.PetID.SPRING_RABBIT,PD.PetID.SPRING_RABBIT,PD.PetID.SPRING_RABBIT})
     local pets2 = TestPlay.create_test_pets({PD.PetID.ARFUS,PD.PetID.ARFUS,PD.PetID.ARFUS})
-    local game = Play.Game:new()
+    local game = Play.Game.new()
     assert (#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
     game.Rule.teams[2] = pets2
@@ -37,7 +37,7 @@ function TestPlay.init_game_state()
         local team_state =  Play.TeamState.new()
         for i, pet in ipairs(game.Rule.teams[player]) do
             print(pet.id)
-            local pet_state = Play.PetState:new(pet.health)
+            local pet_state = Play.PetState.new(pet.health)
             table.insert(team_state.pets, pet_state)
         end
         team_state.active_index = 1  -- 默认第一只宠物出战
@@ -64,9 +64,23 @@ function TestPlay.manual_simulation()
     TestPlay.print_state(game)
     
     local round = 1
-    local p1_seq = {3,3, 2, 1,1,1,3,3,2,1}  -- 玩家1技能使用顺序（乱舞、闪避、钻地）
-    local p2_seq = {2,3,3,3,3,3,3,2,3,3}  -- 玩家2技能使用顺序（啃骨头、寒冰之墓、宠物游行）
-    while round <= 10 do  -- 最多模拟10回合
+    local action_list = {
+        {Play.Action.new('use', 3), Play.Action.new('use', 2)},
+        {Play.Action.new('use', 3), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 2), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
+        {Play.Action.new('change', 3), Play.Action.new('change', 2)},
+        {Play.Action.new('use', 3), Play.Action.new('use', 2)},
+        {Play.Action.new('use', 3), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 2), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
+    }
+
+    for round = 1, #action_list do  -- 最多模拟10回合
         local p1_la = game.Rule:get_legal_actions(game.State,1)
         local p2_la = game.Rule:get_legal_actions(game.State, 2)
 
@@ -77,10 +91,10 @@ function TestPlay.manual_simulation()
         print_actions(p2_la)
         -- 玩家1行动（假设使用兔子乱舞技能）
         
-        local action1 = Play.Action:new('use', p1_seq[round])  -- 使用第一个技能（乱舞）
+        local action1 = action_list[round][1] -- 使用第一个技能（乱舞）
         
-        -- 玩家2行动（假设使用化石幼兽沙暴技能）
-        local action2 = Play.Action:new('use', p2_seq[round])  -- 使用第一个技能（沙暴）
+        -- 玩家2行动（假设使用化石幼兽沙暴技能） 
+        local action2 = action_list[round][2]  -- 使用第一个技能（沙暴）
         
         print(string.format("玩家1行动: %s技能%d", action1.type, action1.value))
         print(string.format("玩家2行动: %s技能%d", action2.type, action2.value))
@@ -128,9 +142,11 @@ function TestPlay.print_state(game)
                   prefix, i, pet_state.current_health))
             
             -- 显示光环
-            if #pet_state.auras > 0 then
-                print("      光环: ", TestSimulation.auras_to_string(pet_state.auras))
+            local aura_str = TestPlay.auras_to_string(pet_state.auras)
+            if #aura_str >0 then
+                print("      光环: ", TestPlay.auras_to_string(pet_state.auras))
             end
+            
         end
     end
     
@@ -138,5 +154,14 @@ function TestPlay.print_state(game)
     local utility = game.Rule:get_utility(state)
     print(string.format("\n局面评估值: %.3f (玩家1优势)", utility))
 end
+
+function TestPlay.auras_to_string(auras)
+    local res = ""
+    for i,aura in pairs(auras) do
+        res = res .. string.format("id:%d,expire:%d ", aura.id,aura.expire)
+    end
+    return res
+end
+
 
 TestPlay.manual_simulation()

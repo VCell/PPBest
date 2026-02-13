@@ -164,7 +164,7 @@ local Effect = {
     dynamic_type = 0, -- 动态伤害的类型
 }
 Effect.__index = Effect
-function Effect:new_damage(type, value, accuracy, target_type)
+function Effect.new_damage(type, value, accuracy, target_type)
     local effect = setmetatable({}, Effect)
     effect.type = type
     effect.effect_type = EffectType.DAMAGE
@@ -174,7 +174,7 @@ function Effect:new_damage(type, value, accuracy, target_type)
     return effect
 end
 
-function Effect:new(type, effect_type, accuracy, value, target_type)
+function Effect.new(type, effect_type, accuracy, value, target_type)
     local effect = setmetatable({}, Effect)
     effect.type = type
     effect.effect_type = effect_type
@@ -236,31 +236,34 @@ local AuraType = {
     END_EFFECT = 16, --特殊效果 
 }
 
-function Aura:new(id, type, duration, value)
+function Aura.new(id, type, duration, value)
     local aura = setmetatable({}, Aura)
     aura.id = id
     aura.type = type
     aura.duration = duration 
     aura.value = value
-
+    aura.keep_front = false
     return aura
 end
 
 function get_aura_by_id(aura_id, power)
     if aura_id == AuraID.ICE_TOMB then
-        local aura = Aura:new(aura_id, AuraType.END_EFFECT, 2, 0)
-        local ef1 = Effect:new(EffectType.DAMAGE, 100, 30 + 1.5 * self.power, 2, TargetType.ENEMY)
-        local ef2 = Effect:new(EffectType.AURA, 100, 0, AuraID.STUN, TargetType.ENEMY) 
+        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 2, 0)
+        local ef1 = Effect.new(EffectType.DAMAGE, 100, 30 + 1.5 * power, 2, TargetType.ENEMY)
+        local ef2 = Effect.new(EffectType.AURA, 100, 0, AuraID.STUN, TargetType.ENEMY) 
         aura.effect = {ef1, ef2}
         return aura
     elseif aura_id == AuraID.UNDEAD then
-        local aura = Aura:new(aura_id, AuraType.UNDEAD, 2, 0)
+        local aura = Aura.new(aura_id, AuraType.UNDEAD, 2, 0)
         return aura
     elseif aura_id == AuraID.SHATTER_DEFENSE then
-        local aura = Aura:new(aura_id, AuraType.DAMAGE_TAKEN, 3, 100)
+        local aura = Aura.new(aura_id, AuraType.DAMAGE_TAKEN, 3, 100)
         return aura
     elseif aura_id == AuraID.DODGE then
-        local aura = Aura:new(aura_id, AuraType.DODGE, 2, 0)
+        local aura = Aura.new(aura_id, AuraType.DODGE, 2, 0)
+        return aura
+    elseif aura_id == AuraID.UNDERGROUND then
+        local aura = Aura.new(aura_id, AuraType.UNDERGROUND, 2, 0)
         return aura
     else
         return nil
@@ -272,36 +275,36 @@ function Pet:install_ability_by_id(id, index)
     local ability = nil
     if id == AbilityID.BONE_BITE then
         ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
-        local ef = Effect:new_damage(TypeID.UNDEAD, 20+self.power)
+        local ef = Effect.new_damage(TypeID.UNDEAD, 20+self.power)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ICE_TOMB then
         ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
-        local ef = Effect:new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.ICE_TOMB, TargetType.ENEMY)
+        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.ICE_TOMB, TargetType.ENEMY)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ARFUS_6 then
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
         ability.effect_list = {
-            [1] = {Effect:new_damage(TypeID.BEAST, 54), Effect:new_damage(TypeID.BEAST, 54), Effect:new_damage(TypeID.BEAST, 54),
-                        Effect:new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
-            [2] = {Effect:new_damage(TypeID.BEAST, 90), Effect:new_damage(TypeID.BEAST, 90), Effect:new_damage(TypeID.BEAST, 90),
-                        Effect:new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
-            [3] = {Effect:new_damage(TypeID.BEAST, 126), Effect:new_damage(TypeID.BEAST, 126), Effect:new_damage(TypeID.BEAST, 126),
-                        Effect:new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+            [1] = {Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54),
+                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+            [2] = {Effect.new_damage(TypeID.BEAST, 90), Effect.new_damage(TypeID.BEAST, 90), Effect.new_damage(TypeID.BEAST, 90),
+                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+            [3] = {Effect.new_damage(TypeID.BEAST, 126), Effect.new_damage(TypeID.BEAST, 126), Effect.new_damage(TypeID.BEAST, 126),
+                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
         }
 
     elseif id == AbilityID.FLURRY then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
-        local ef = Effect:new_damage(TypeID.CRITTER, 10+self.power/2.0)
+        local ef = Effect.new_damage(TypeID.CRITTER, 10+self.power/2.0)
         ef.dynamic_type = EffectDynamicType.FLURRY
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.DODGE then
         ability = Ability.new(id, TypeID.CRITTER, 4, 0)
-        local ef = Effect:new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY)
+        local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.BURROW then
-        ability = Ability.new(id, TypeID.CRITTER, 4, 2)
-        local ef1 = Effect:new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.UNDERGROUND, TargetType.ALLY)
-        local ef2 = Effect:new_damage(TypeID.CRITTER, 2*self.power - 25, 80)
+        ability = Ability.new(id, TypeID.BEAST, 4, 2)
+        local ef1 = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.UNDERGROUND, TargetType.ALLY)
+        local ef2 = Effect.new_damage(TypeID.BEAST, 2*self.power - 25, 80)
         ef2.dynamic_type = EffectDynamicType.BURROW
         ability.effect_list[1] = {ef1}
         ability.effect_list[2] = {ef2}
@@ -321,10 +324,12 @@ return {
     WeatherID = WeatherID,
     Ability = Ability,
     Aura = Aura,
+    AuraID = AuraID,
     AbilityID = AbilityID,
     TypeID = TypeID,
     EffectType = EffectType,
     AuraType = AuraType,
     TargetType = TargetType,
     EffectDynamicType = EffectDynamicType,
+    get_aura_by_id = get_aura_by_id
 }
