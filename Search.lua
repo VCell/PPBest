@@ -240,7 +240,7 @@ local function default_simulation_policy(state, game_rules)
         local a1 = actions1[math.random(#actions1)]
         local a2 = actions2[math.random(#actions2)]
         
-        current_state = game_rules.apply_joint_action(current_state, a1, a2)
+        current_state = game_rules:apply_joint_action(current_state, a1, a2)
         depth = depth + 1
     end
     
@@ -285,7 +285,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
             local action1, action2 = pair[1], pair[2]
             
             -- 创建新状态和子节点
-            local new_state = game_rules.apply_joint_action(node.state, action1, action2)
+            local new_state = game_rules:apply_joint_action(node.state, action1, action2)
             local child_node = DUCT_MCTS.Node:new(new_state, game_rules)
             
             node:add_child(action1, action2, child_node)
@@ -470,6 +470,7 @@ DUCT_MCTS.Searcher = {
     
     -- 模拟完整游戏
     simulate_game = function(initial_state, game_rules, search_options, max_rounds)
+        --print("simulate_game", initial_state)
         max_rounds = max_rounds or 20
         search_options = search_options or {iterations = 1000}
         
@@ -505,8 +506,8 @@ DUCT_MCTS.Searcher = {
             local action1 = DUCT_MCTS.Searcher.select_best_action(root_node, 1)
             local action2 = DUCT_MCTS.Searcher.select_best_action(root_node, 2)
             
-            print(string.format("  玩家1选择: %s", action1))
-            print(string.format("  玩家2选择: %s", action2))
+            print(string.format("  玩家1选择: %s-%d", action1.type, action1.value))
+            print(string.format("  玩家2选择: %s-%d", action2.type, action2.value))
             
             -- 记录历史
             table.insert(round_history, {
@@ -517,7 +518,7 @@ DUCT_MCTS.Searcher = {
             })
             
             -- 应用动作
-            state = game_rules.apply_joint_action(state, action1, action2)
+            state = game_rules:apply_joint_action(state, action1, action2)
         end
         
         if not game_rules.is_terminal(state) then

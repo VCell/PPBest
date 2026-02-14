@@ -246,7 +246,7 @@ function TeamState:is_dead_after_aura(round)
         for i, aura in pairs(pet.auras) do
             if aura.expire <= round then
                 pet.auras[i] = nil
-                print("aura removed", aura.id, round, pet.auras[i])
+                --print("aura removed", aura.id, round, pet.auras[i])
                 if aura.id == PD.AuraID.UNDEAD then
                     pet.current_health = 0
                     if pet_index == self.active_index then
@@ -363,7 +363,7 @@ function GameStateTemplate:process_effects(teams, player, effects)
             if effect.dynamic_type == PD.EffectDynamicType.FLURRY then
                 local roll = math.random(1, 2)
                 if roll == 2 then
-                    print(string.format("player %d pet %d flurry triggered extra attack", opponent, self.team_states[opponent].active_index))
+                    --print(string.format("player %d pet %d flurry triggered extra attack", opponent, self.team_states[opponent].active_index))
                     self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
                 end
                 --对手速度慢则额外攻击一次
@@ -371,7 +371,7 @@ function GameStateTemplate:process_effects(teams, player, effects)
                     teams[player][ally_pet_index].speed >
                    AuraProcessor.get_active_speed_modifier(self, opponent) * 
                     teams[opponent][self.team_states[opponent].active_index].speed then
-                    print(string.format("player %d pet %d flurry triggered extra attack due to speed", opponent, self.team_states[opponent].active_index))
+                    --print(string.format("player %d pet %d flurry triggered extra attack due to speed", opponent, self.team_states[opponent].active_index))
                     self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
                 end
             elseif effect.dynamic_type == PD.EffectDynamicType.BURROW then
@@ -404,21 +404,21 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
     -- 处理单个效果
     if effect.effect_type == PD.EffectType.DAMAGE then
         if AuraProcessor.process_block(self, target_player, target_index) then
-            print(string.format("player %d pet %d blocked the attack", target_player, target_index))
+            --(string.format("player %d pet %d blocked the attack", target_player, target_index))
             return
         end
         if AuraProcessor.is_immune(self, target_player, target_index) then
-            print(string.format("player %d pet %d is immune to damage", target_player, target_index))
+            --print(string.format("player %d pet %d is immune to damage", target_player, target_index))
             return
         end
         local accuracy = effect.accuracy + AuraProcessor.get_active_accuracy_modifier(self, from_player)
         accuracy = accuracy - AuraProcessor.get_dodge_modifier(self, target_player, target_index)
         local roll = math.random(1, 100)
         if roll > accuracy then
-            print(string.format("player %d pet %d attack missed (roll %d > accuracy %d)", from_player, target_index, roll, accuracy))
+            --print(string.format("player %d pet %d attack missed (roll %d > accuracy %d)", from_player, target_index, roll, accuracy))
             return
         end
-        print("accuracy",accuracy,"roll",roll)
+        --print("accuracy",accuracy,"roll",roll)
         local damage = effect.value
         local damage_dealt_modifier = AuraProcessor.get_active_modifier_by_type(self, from_player, PD.AuraType.DAMAGE_DEALT)
         local damage_taken_modifier = AuraProcessor.get_active_modifier_by_type(self, target_player, PD.AuraType.DAMAGE_TAKEN)
@@ -434,7 +434,7 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
         end
         self.team_states[target_player].pets[target_index].current_health = 
             self.team_states[target_player].pets[target_index].current_health - real_damage
-        print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, self.team_states[target_player].pets[target_index].current_health))
+        --print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, self.team_states[target_player].pets[target_index].current_health))
 
     elseif effect.effect_type == PD.EffectType.HEAL then
 
@@ -461,11 +461,11 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
             --亡灵死后进入不死状态
             self.team_states[target_player].pets[target_index].current_health = 1
             self.team_states[target_player]:install_aura(PD.AuraID.UNDEAD, 0, self.round)
-            print(string.format("player %d pet %d revived by Undying", target_player, target_index))
+            --(string.format("player %d pet %d revived by Undying", target_player, target_index))
             return
         else 
             --真死了
-            print(string.format("player %d pet %d has fainted", target_player, target_index))
+            --print(string.format("player %d pet %d has fainted", target_player, target_index))
             --触发换人回合
             self:pet_dead(target_player)
             
@@ -473,7 +473,7 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
     end
 end
 function GameStateTemplate:process_player_action(teams, player, action, opponent)
-    print("process_player_action ", action.type)
+    --print("process_player_action ", action.type)
     local team_state = self.team_states[player]
     if action.type == 'change' then
         team_state:change_pet(action.value)
@@ -502,8 +502,9 @@ function GameStateTemplate:process_player_action(teams, player, action, opponent
         team_state.pets[team_state.active_index].cooldown_at[action.value] = self.round + ability.cooldown
     end
 end
+
 local GameRuleTemplate = {}
-function GameRuleTemplate:get_legal_actions(state, player)
+function GameRuleTemplate.get_legal_actions(state, player)
     -- 返回玩家在给定状态下的合法动作列表
     local actions = {}
     if state.change_round > 0 then
@@ -573,14 +574,14 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
     return state
 end
 
-function GameRuleTemplate:is_terminal(state)
+function GameRuleTemplate.is_terminal(state)
     -- 检查状态是否为终局
     if state.team_states[1]:check_loss() or state.team_states[2]:check_loss() then
         return true
     end
 end
 
-function GameRuleTemplate:get_winner(state)
+function GameRuleTemplate.get_winner(state)
     -- 返回赢家：1或2，或3表示平局
     if state.team_states[1]:check_loss() and state.team_states[2]:check_loss() then
         return 3
@@ -593,7 +594,7 @@ function GameRuleTemplate:get_winner(state)
     end
 end
 
-function GameRuleTemplate:get_utility(state)
+function GameRuleTemplate.get_utility(state)
     -- 返回玩家1的奖励值（玩家2的奖励为 constant_sum - utility）
     local p1_health = 0
     local p2_health = 0

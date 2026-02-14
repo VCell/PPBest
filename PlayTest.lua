@@ -1,5 +1,6 @@
 local PD = require "PetsData"
 local Play = require "Play"
+local Search = require "Search"
 
 local TestPlay = {}
 
@@ -164,4 +165,17 @@ function TestPlay.auras_to_string(auras)
 end
 
 
-TestPlay.manual_simulation()
+function TestPlay.simulation()
+    local game = TestPlay.init_game_state()
+    local result = Search.Searcher.simulate_game(game.State,  
+        game.Rule,           
+            {
+                iterations = 800,
+                exploration_c = 1.414,
+                simulation_policy = smart_simulation_policy
+            },20)
+end
+
+
+--TestPlay.manual_simulation()
+TestPlay.simulation()
