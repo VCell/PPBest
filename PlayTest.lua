@@ -68,7 +68,7 @@ function TestPlay.manual_simulation()
     local action_list = {
         {Play.Action.new('use', 3), Play.Action.new('use', 2)},
         {Play.Action.new('use', 3), Play.Action.new('use', 3)},
-        {Play.Action.new('use', 2), Play.Action.new('use', 3)},
+        {Play.Action.new('use', 1), Play.Action.new('use', 3)},
         {Play.Action.new('use', 1), Play.Action.new('use', 3)},
         {Play.Action.new('use', 1), Play.Action.new('use', 3)},
         {Play.Action.new('use', 1), Play.Action.new('use', 3)},
@@ -82,8 +82,8 @@ function TestPlay.manual_simulation()
     }
 
     for round = 1, #action_list do  -- 最多模拟10回合
-        local p1_la = game.Rule:get_legal_actions(game.State,1)
-        local p2_la = game.Rule:get_legal_actions(game.State, 2)
+        local p1_la = game.Rule.get_legal_actions(game.State,1)
+        local p2_la = game.Rule.get_legal_actions(game.State, 2)
 
         print(string.format("\n===== 第 %d 回合 =====", round))
         print("玩家1可选行动:")
@@ -108,7 +108,7 @@ function TestPlay.manual_simulation()
         TestPlay.print_state(game)
         
         -- 检查是否终局
-        local terminal, winner = game.Rule:is_terminal(new_state)
+        local terminal, winner = game.Rule.is_terminal(new_state)
         if terminal then
             print(string.format("\n游戏结束! 胜利者: %s", 
                   winner == 1 and "玩家1" or winner == 2 and "玩家2" or "平局"))
@@ -152,7 +152,7 @@ function TestPlay.print_state(game)
     end
     
     -- 显示评估值
-    local utility = game.Rule:get_utility(state)
+    local utility = game.Rule.get_utility(state)
     print(string.format("\n局面评估值: %.3f (玩家1优势)", utility))
 end
 
@@ -170,9 +170,8 @@ function TestPlay.simulation()
     local result = Search.Searcher.simulate_game(game.State,  
         game.Rule,           
             {
-                iterations = 800,
+                iterations = 500,
                 exploration_c = 1.414,
-                simulation_policy = smart_simulation_policy
             },20)
 end
 

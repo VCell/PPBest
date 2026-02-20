@@ -71,7 +71,7 @@ DUCT_MCTS.Node = {
             for player = 1, 2 do
                 local actions = game_rules.get_legal_actions(state, player)
                 for _, action in ipairs(actions) do
-                    node.stats[player][action] = {
+                    node.stats[player][action:to_string()] = {
                         total_reward = 0,
                         visits = 0,
                         average_reward = 0
@@ -85,11 +85,20 @@ DUCT_MCTS.Node = {
     
     -- 获取动作统计
     get_stats = function(self, player, action)
-        return self.stats[player][action] or {
-            total_reward = 0,
-            visits = 0,
-            average_reward = 0
-        }
+        -- return self.stats[player][action] or {
+        --     total_reward = 0,
+        --     visits = 0,
+        --     average_reward = 0
+        -- }
+        local key = action:to_string()
+        if not self.stats[player][key] then
+            self.stats[player][key] = {
+                total_reward = 0,
+                visits = 0,
+                average_reward = 0
+            }
+        end
+        return self.stats[player][key]
     end,
     
     -- 获取玩家总访问次数
@@ -289,7 +298,6 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
             local child_node = DUCT_MCTS.Node:new(new_state, game_rules)
             
             node:add_child(action1, action2, child_node)
-            
             table.insert(path, {
                 node = node,
                 action1 = action1,
@@ -325,6 +333,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
         stats1.total_reward = stats1.total_reward + utility
         stats1.visits = stats1.visits + 1
         stats1.average_reward = stats1.total_reward / stats1.visits
+        --print("stats1.average_reward",stats1.total_reward, stats1.visits, stats1.average_reward)
         
         -- 更新玩家2统计
         local stats2 = current_node:get_stats(2, action2)
@@ -396,6 +405,7 @@ DUCT_MCTS.Searcher = {
         
         for _, action in ipairs(actions) do
             local stats = node:get_stats(player, action)
+            --print("for _, action in ipairs(actions) do", stats.visits ,stats.average_reward)
             if stats.visits > 0 and stats.average_reward > best_avg_reward then
                 best_avg_reward = stats.average_reward
                 best_action = action

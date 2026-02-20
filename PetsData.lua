@@ -213,7 +213,7 @@ local Aura = {
     value = 0,
     expire = 0,
     keep_front = false,
-    effect = nil,
+    effects = nil,
 }
 Aura.__index = Aura
 
@@ -248,10 +248,10 @@ end
 
 function get_aura_by_id(aura_id, power)
     if aura_id == AuraID.ICE_TOMB then
-        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 2, 0)
-        local ef1 = Effect.new(EffectType.DAMAGE, 100, 30 + 1.5 * power, 2, TargetType.ENEMY)
-        local ef2 = Effect.new(EffectType.AURA, 100, 0, AuraID.STUN, TargetType.ENEMY) 
-        aura.effect = {ef1, ef2}
+        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 3, 0)
+        local ef1 = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, 30 + 1.5 * power, TargetType.ALLY)
+        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, 0, AuraID.STUN, TargetType.ALLY) 
+        aura.effects = {ef1, ef2}
         return aura
     elseif aura_id == AuraID.UNDEAD then
         local aura = Aura.new(aura_id, AuraType.UNDEAD, 2, 0)

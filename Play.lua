@@ -181,7 +181,17 @@ function Action.new(type, value)
     action.value = value
     return action
 end
-
+function Action:to_string()
+    if self.type == 'use' then
+        return '使用技能 ' .. self.value
+    elseif self.type == 'change' then
+        return '更换宠物 ' .. self.value
+    elseif self.type == 'standby' then
+        return '待机'
+    else
+        return '未知操作'
+    end
+end
 local PetState = {
     current_health = 0,
     auras = {},
@@ -234,31 +244,6 @@ function TeamState:check_type_talent()
 end
 
 
-function TeamState:is_dead_after_aura(round)
-    -- 检查并移除过期的光环,返回当前宠物是否因为光环生效死亡
-    local dead = false
-    for i, aura in ipairs(self.active_auras) do
-        if aura.expire <= round then
-            self.active_auras[i] = nil
-        end
-    end
-    for pet_index,pet in ipairs(self.pets) do
-        for i, aura in pairs(pet.auras) do
-            if aura.expire <= round then
-                pet.auras[i] = nil
-                --print("aura removed", aura.id, round, pet.auras[i])
-                if aura.id == PD.AuraID.UNDEAD then
-                    pet.current_health = 0
-                    if pet_index == self.active_index then
-                        dead = true
-                    end
-                end
-            end
-        end
-    end
-    return dead
-end
-
 function TeamState:install_aura(aura_id, power, round)
     local aura = PD.get_aura_by_id(aura_id, power)
     aura.expire = aura.duration + round - 1
@@ -304,11 +289,31 @@ function GameStateTemplate:pet_dead(player)
 end
 
 
-function GameStateTemplate:post_step()
+function GameStateTemplate:post_step(teams)
 
     for player = 1,2 do
-        if self.team_states[player]:is_dead_after_aura(self.round) then
-            self:pet_dead(player)
+        local team_state = self.team_states[player]
+        for i, aura in ipairs(team_state.active_auras) do
+            if aura.expire <= self.round then
+                team_state.active_auras[i] = nil
+            end
+        end
+        for pet_index,pet in ipairs(team_state.pets) do
+            for i, aura in pairs(pet.auras) do
+                if aura.expire <= self.round then
+                    pet.auras[i] = nil
+                    --print("aura removed", aura.id, round, pet.auras[i])
+                    if aura.id == PD.AuraID.UNDEAD then
+                        pet.current_health = 0
+                        if pet_index == team_state.active_index then
+                            self:pet_dead(player)
+                        end
+                    end
+                    if aura.type == PD.AuraType.END_EFFECT then
+                        self:process_effects(teams, player, aura.effects)
+                    end
+                end
+            end
         end
         
     end
@@ -351,6 +356,7 @@ function GameStateTemplate:get_action_order(teams, action1, action2)
 end
 
 function GameStateTemplate:process_effects(teams, player, effects)
+    --print("process_effects", player)
     local opponent = 3 - player
     local ally_pet_index = self.team_states[player].active_index
     -- 处理效果列表
@@ -404,7 +410,7 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
     -- 处理单个效果
     if effect.effect_type == PD.EffectType.DAMAGE then
         if AuraProcessor.process_block(self, target_player, target_index) then
-            --(string.format("player %d pet %d blocked the attack", target_player, target_index))
+            --print(string.format("player %d pet %d blocked the attack", target_player, target_index))
             return
         end
         if AuraProcessor.is_immune(self, target_player, target_index) then
@@ -441,6 +447,7 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
     elseif effect.effect_type == PD.EffectType.PERCENTAGE_HEAL then
         
     elseif effect.effect_type == PD.EffectType.AURA then
+        --print("aura", effect.value)
         local ts = self.team_states[target_player]
         local power = teams[target_player][ts.active_index].power
         ts:install_aura(effect.value, power, self.round)
@@ -570,7 +577,7 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
         state:process_player_action(self.teams, second_player, action[second_player], first_player)
     end
 
-    state:post_step()
+    state:post_step(self.teams)
     return state
 end
 
@@ -609,9 +616,46 @@ function GameRuleTemplate.get_utility(state)
             p2_health = p2_health + petState.current_health
         end
     end
+    if p1_health+p2_health == 0 then
+        return 0.5
+    end
     return p1_health / (p1_health + p2_health)
 end
-
+function auras_to_string(auras)
+    local res = ""
+    for i,aura in pairs(auras) do
+        res = res .. string.format("id:%d,expire:%d ", aura.id,aura.expire)
+    end
+    return res
+end
+function GameRuleTemplate.print_state(state)
+    print("\n当前状态:")
+    print(string.format("回合: %d, 天气: %d (剩余%d回合)", 
+          state.round, state.weather_id, state.weather_turns))
+    
+    for player = 1, 2 do
+        local team_state = state.team_states[player]
+        print(string.format("\n玩家%d:", player))
+        print(string.format("  活跃宠物: %d", team_state.active_index))
+        
+        for i, pet_state in ipairs(team_state.pets) do
+            local prefix = (i == team_state.active_index) and "→ " or "  "
+            print(string.format("%s宠物%d: 生命 %d", 
+                  prefix, i, pet_state.current_health))
+            
+            -- 显示光环
+            local aura_str = auras_to_string(pet_state.auras)
+            if #aura_str >0 then
+                print("      光环: ", aura_str)
+            end
+            
+        end
+    end
+    
+    -- 显示评估值
+    local utility = GameRuleTemplate.get_utility(state)
+    print(string.format("\n局面评估值: %.3f (玩家1优势)", utility))
+end
 
 local Game = {
     State = {},
