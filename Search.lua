@@ -69,7 +69,7 @@ DUCT_MCTS.Node = {
         -- 初始化统计信息
         if not node.is_terminal then
             for player = 1, 2 do
-                local actions = game_rules.get_legal_actions(state, player)
+                local actions = game_rules:get_legal_actions(state, player)
                 for _, action in ipairs(actions) do
                     node.stats[player][action:to_string()] = {
                         total_reward = 0,
@@ -124,8 +124,8 @@ DUCT_MCTS.Node = {
     
     -- 检查是否完全展开
     is_fully_expanded = function(self)
-        local actions1 = self._game_rules.get_legal_actions(self.state, 1)
-        local actions2 = self._game_rules.get_legal_actions(self.state, 2)
+        local actions1 = self._game_rules:get_legal_actions(self.state, 1)
+        local actions2 = self._game_rules:get_legal_actions(self.state, 2)
         
         for _, a1 in ipairs(actions1) do
             for _, a2 in ipairs(actions2) do
@@ -144,8 +144,8 @@ DUCT_MCTS.Node = {
     
     -- 获取未展开的动作对
     get_unexpanded_pairs = function(self)
-        local actions1 = self._game_rules.get_legal_actions(self.state, 1)
-        local actions2 = self._game_rules.get_legal_actions(self.state, 2)
+        local actions1 = self._game_rules:get_legal_actions(self.state, 1)
+        local actions2 = self._game_rules:get_legal_actions(self.state, 2)
         local unexpanded = {}
         
         for _, a1 in ipairs(actions1) do
@@ -164,7 +164,7 @@ DUCT_MCTS.Node = {
         print(string.format("Node stats (total visits: %d):", self.total_visits))
         
         local player_to_show = player or 1
-        local actions = self._game_rules.get_legal_actions(self.state, player_to_show)
+        local actions = self._game_rules:get_legal_actions(self.state, player_to_show)
         
         for _, action in ipairs(actions) do
             local stats = self:get_stats(player_to_show, action)
@@ -200,8 +200,8 @@ end
 -- ==================== DUCT选择策略 ====================
 local function select_joint_action_duct(node, exploration_c)
     local game_rules = node._game_rules
-    local actions1 = game_rules.get_legal_actions(node.state, 1)
-    local actions2 = game_rules.get_legal_actions(node.state, 2)
+    local actions1 = game_rules:get_legal_actions(node.state, 1)
+    local actions2 = game_rules:get_legal_actions(node.state, 2)
     
     local best_action1, best_action2
     local best_ucb1, best_ucb2 = -math.huge, -math.huge
@@ -242,8 +242,8 @@ local function default_simulation_policy(state, game_rules)
     local depth = 0
     
     while not game_rules.is_terminal(current_state) and depth < DUCT_MCTS.Config.max_simulation_depth do
-        local actions1 = game_rules.get_legal_actions(current_state, 1)
-        local actions2 = game_rules.get_legal_actions(current_state, 2)
+        local actions1 = game_rules:get_legal_actions(current_state, 1)
+        local actions2 = game_rules:get_legal_actions(current_state, 2)
         
         -- 随机选择动作
         local a1 = actions1[math.random(#actions1)]
@@ -398,11 +398,12 @@ DUCT_MCTS.Searcher = {
     -- 选择最佳动作（基于最高平均奖励）
     select_best_action = function(node, player)
         local game_rules = node._game_rules
-        local actions = game_rules.get_legal_actions(node.state, player)
+        local actions = game_rules:get_legal_actions(node.state, player)
         
         local best_action = nil
         local best_avg_reward = -math.huge
         
+        local reward_str = ""
         for _, action in ipairs(actions) do
             local stats = node:get_stats(player, action)
             --print("for _, action in ipairs(actions) do", stats.visits ,stats.average_reward)
@@ -410,13 +411,14 @@ DUCT_MCTS.Searcher = {
                 best_avg_reward = stats.average_reward
                 best_action = action
             end
+            reward_str = reward_str .. string.format("[%s: avg=%.3f v=%d] ", action:to_string(), stats.average_reward, stats.visits)
         end
         
         -- 回退：随机选择
         if not best_action and #actions > 0 then
             best_action = actions[math.random(#actions)]
         end
-        
+        print("action rewards: "..reward_str)
         return best_action
     end,
     
@@ -424,7 +426,7 @@ DUCT_MCTS.Searcher = {
     select_uct_action = function(node, player, exploration_c)
         exploration_c = exploration_c or DUCT_MCTS.Config.exploration_constant
         local game_rules = node._game_rules
-        local actions = game_rules.get_legal_actions(node.state, player)
+        local actions = game_rules:get_legal_actions(node.state, player)
         
         local best_action = nil
         local best_uct = -math.huge
@@ -444,7 +446,7 @@ DUCT_MCTS.Searcher = {
     get_action_distribution = function(node, player, temperature)
         temperature = temperature or 1.0  -- 温度参数，1.0为原始分布
         local game_rules = node._game_rules
-        local actions = game_rules.get_legal_actions(node.state, player)
+        local actions = game_rules:get_legal_actions(node.state, player)
         local distribution = {}
         local total_visits = 0
         

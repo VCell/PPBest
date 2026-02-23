@@ -9,26 +9,32 @@ function TestPlay.create_test_pets(petlist)
     for i, pet_id in ipairs(petlist or {}) do
         if pet_id == PD.PetID.SPRING_RABBIT then
             -- 春兔
-            local rabbit = PD.Pet.new(PD.PetID.SPRING_RABBIT, 1400, 227, 357, PD.TypeID.CRITTER)
-            rabbit:install_ability_by_id(PD.AbilityID.FLURRY, 1)  -- 乱舞
-            rabbit:install_ability_by_id(PD.AbilityID.DODGE, 2)   -- 闪避
-            rabbit:install_ability_by_id(PD.AbilityID.BURROW, 3)  -- 钻地
-            table.insert(res, rabbit)
+            local pet = PD.Pet.new(PD.PetID.SPRING_RABBIT, 1400, 227, 357, PD.TypeID.CRITTER)
+            pet:install_ability_by_id(PD.AbilityID.FLURRY, 1)  -- 乱舞
+            pet:install_ability_by_id(PD.AbilityID.DODGE, 2)   -- 闪避
+            pet:install_ability_by_id(PD.AbilityID.BURROW, 3)  -- 钻地
+            table.insert(res, pet)
         elseif pet_id == PD.PetID.ARFUS then
                 -- 阿尔福斯
-            local arfus = PD.Pet.new(PD.PetID.ARFUS, 1319, 341, 260, PD.TypeID.UNDEAD)
-            arfus:install_ability_by_id(PD.AbilityID.BONE_BITE, 1)   -- 啃骨头
-            arfus:install_ability_by_id(PD.AbilityID.ICE_TOMB, 2)    -- 寒冰之墓
-            arfus:install_ability_by_id(PD.AbilityID.ARFUS_6, 3)     -- 宠物游行
-            table.insert(res, arfus)
+            local pet = PD.Pet.new(PD.PetID.ARFUS, 1319, 341, 260, PD.TypeID.UNDEAD)
+            pet:install_ability_by_id(PD.AbilityID.BONE_BITE, 1)   -- 啃骨头
+            pet:install_ability_by_id(PD.AbilityID.ICE_TOMB, 2)    -- 寒冰之墓
+            pet:install_ability_by_id(PD.AbilityID.ARFUS_6, 3)     -- 宠物游行
+            table.insert(res, pet)
+        elseif pet_id == PD.PetID.PEBBLE then
+            local pet = PD.Pet.new(PD.PetID.ARFUS, 1969, 260, 211, PD.TypeID.ELEMENTAL)
+            pet:install_ability_by_id(PD.AbilityID.STONE_SHOT, 1)   -- 石子护盾
+            pet:install_ability_by_id(PD.AbilityID.RUPTURE, 2)    -- 石子猛击
+            pet:install_ability_by_id(PD.AbilityID.ROCK_BARRAGE, 3)     -- 石子暴击
+            table.insert(res, pet)
         end
     end
     return res
 end
 
 function TestPlay.init_game_state()
-    local pets1 = TestPlay.create_test_pets({PD.PetID.SPRING_RABBIT,PD.PetID.SPRING_RABBIT,PD.PetID.SPRING_RABBIT})
-    local pets2 = TestPlay.create_test_pets({PD.PetID.ARFUS,PD.PetID.ARFUS,PD.PetID.ARFUS})
+    local pets1 = TestPlay.create_test_pets({PD.PetID.SPRING_RABBIT, PD.PetID.PEBBLE,PD.PetID.ARFUS})
+    local pets2 = TestPlay.create_test_pets({PD.PetID.SPRING_RABBIT, PD.PetID.PEBBLE,PD.PetID.ARFUS})
     local game = Play.Game.new()
     assert (#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
@@ -41,12 +47,13 @@ function TestPlay.init_game_state()
             local pet_state = Play.PetState.new(pet.health)
             table.insert(team_state.pets, pet_state)
         end
-        team_state.active_index = 1  -- 默认第一只宠物出战
+        team_state.active_index = 0  -- 默认第一只宠物出战
         game.State.team_states[player] = team_state
         print("x", #team_state.pets)
     end
     setmetatable(game.State, {__index = Play.Game.State})
-    
+    game.State.round = 0
+    game.State.change_round = 3
     return game
 end
 function print_actions(actions)
@@ -135,8 +142,10 @@ function TestPlay.print_state(game)
     for player = 1, 2 do
         local team_state = state.team_states[player]
         print(string.format("\n玩家%d:", player))
-        print(string.format("  活跃宠物: %d", team_state.active_index))
         
+        local aura_str = TestPlay.auras_to_string(team_state.active_auras)
+        print(string.format("  活跃宠物: %d. 前排光环: %s", team_state.active_index, aura_str))
+
         for i, pet_state in ipairs(team_state.pets) do
             local prefix = (i == team_state.active_index) and "→ " or "  "
             print(string.format("%s宠物%d: 生命 %d", 
@@ -172,7 +181,7 @@ function TestPlay.simulation()
             {
                 iterations = 500,
                 exploration_c = 1.414,
-            },20)
+            },30)
 end
 
 

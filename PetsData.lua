@@ -7,8 +7,13 @@ local AbilityID = {
     SAND_STORM = 453, --沙暴
     ARCANE_SRORM = 589, --奥术风暴
     MOON_FIRE = 595, --月火术
+    STONE_RUSH = 621, --巨石奔袭 配波
     ICE_TOMB = 624,  --阿尔福斯
+    ROCK_BARRAGE = 628, --岩石弹幕 配波
+    QUAKE = 644, --地震
     BONE_BITE = 648,    --阿尔福斯
+    STONE_SHOT = 801, --投石 配波
+    RUPTURE = 814, --割裂 配波
     ARFUS_2 = 2530, --阿尔福斯 致命梦境
     ARFUS_3 = 2531, --阿尔福斯 狂飙
     ARFUS_4 = 2532,  --阿尔福斯 横扫
@@ -22,7 +27,8 @@ local AuraID = {
     UNDERGROUND = 340, --钻地
     STUN = 927, --眩晕
     SHATTER_DEFENSE = 542, --破碎防御
-    ICE_TOMB = 623 -- 阿尔福斯 寒冰之墓
+    ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
+    ROCK_BARRAGE = 627, -- 配波 岩石弹幕
 }
 
 local WeatherID = {
@@ -129,7 +135,7 @@ function Pet:SetAbility(ability, index)
     self.abilitys[index] = ability
 end
 
-function Pet:GetAbility(index)
+function Pet:get_ability(index)
     return self.abilitys[index]
 end
 
@@ -138,8 +144,9 @@ local EffectType = {
     HEAL = 2,
     PERCENTAGE_HEAL = 3,
     AURA = 4,
-    WEATHER = 5,
-    OTHER = 6,
+    HIT_AURA = 5, --只在击中后触发的aura
+    WEATHER = 6, 
+    OTHER = 7,
 }
 
 local EffectDynamicType = {
@@ -249,8 +256,9 @@ end
 function get_aura_by_id(aura_id, power)
     if aura_id == AuraID.ICE_TOMB then
         local aura = Aura.new(aura_id, AuraType.END_EFFECT, 3, 0)
+        aura.keep_front = true
         local ef1 = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, 30 + 1.5 * power, TargetType.ALLY)
-        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, 0, AuraID.STUN, TargetType.ALLY) 
+        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.HIT_AURA, 100, AuraID.STUN, TargetType.ALLY) 
         aura.effects = {ef1, ef2}
         return aura
     elseif aura_id == AuraID.UNDEAD then
@@ -264,6 +272,14 @@ function get_aura_by_id(aura_id, power)
         return aura
     elseif aura_id == AuraID.UNDERGROUND then
         local aura = Aura.new(aura_id, AuraType.UNDERGROUND, 2, 0)
+        return aura
+    elseif aura_id == AuraID.STUN then
+        local aura = Aura.new(aura_id, AuraType.STUN, 2, 0)
+        return aura
+    elseif aura_id == AuraID.ROCK_BARRAGE then
+        local aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
+        aura.keep_front = true
+        aura.effects = {Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ENEMY)}
         return aura
     else
         return nil
@@ -285,13 +301,12 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
         ability.effect_list = {
             [1] = {Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54),
-                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+                        Effect.new(TypeID.BEAST, EffectType.HIT_AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
             [2] = {Effect.new_damage(TypeID.BEAST, 90), Effect.new_damage(TypeID.BEAST, 90), Effect.new_damage(TypeID.BEAST, 90),
-                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+                        Effect.new(TypeID.BEAST, EffectType.HIT_AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
             [3] = {Effect.new_damage(TypeID.BEAST, 126), Effect.new_damage(TypeID.BEAST, 126), Effect.new_damage(TypeID.BEAST, 126),
-                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+                        Effect.new(TypeID.BEAST, EffectType.HIT_AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
         }
-
     elseif id == AbilityID.FLURRY then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
         local ef = Effect.new_damage(TypeID.CRITTER, 10+self.power/2.0)
@@ -308,7 +323,25 @@ function Pet:install_ability_by_id(id, index)
         ef2.dynamic_type = EffectDynamicType.BURROW
         ability.effect_list[1] = {ef1}
         ability.effect_list[2] = {ef2}
-        
+    elseif id == AbilityID.STONE_SHOT then
+        ability = Ability.new(id, TypeID.ELEMENTAL, 0, 0)
+        local ef = Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 1.1, 95, TargetType.ENEMY)
+        ability.effect_list[1] = {ef}
+    elseif id == AbilityID.RUPTURE then
+        ability = Ability.new(id, TypeID.ELEMENTAL, 4, 0)
+        local ef1 = Effect.new_damage(TypeID.ELEMENTAL, 30+self.power*1.5, 95, TargetType.ENEMY)
+        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.HIT_AURA,100, AuraID.STUN,TargetType.ENEMY)
+        ability.effect_list[1] = {ef1,ef2}    
+    elseif id == AbilityID.ROCK_BARRAGE then
+        ability = Ability.new(id, TypeID.ELEMENTAL, 2, 0)
+        ability.effect_list = {
+            [1] = {Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
+                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
+                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
+                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
+                     Effect.new(TypeID.ELEMENTAL, EffectType.AURA,100, AuraID.ROCK_BARRAGE,TargetType.ENEMY),
+                    },
+        }
     end
 
 

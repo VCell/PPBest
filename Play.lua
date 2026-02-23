@@ -182,15 +182,7 @@ function Action.new(type, value)
     return action
 end
 function Action:to_string()
-    if self.type == 'use' then
-        return '使用技能 ' .. self.value
-    elseif self.type == 'change' then
-        return '更换宠物 ' .. self.value
-    elseif self.type == 'standby' then
-        return '待机'
-    else
-        return '未知操作'
-    end
+    return self.type .. self.value
 end
 local PetState = {
     current_health = 0,
@@ -243,20 +235,6 @@ function TeamState:check_type_talent()
     return
 end
 
-
-function TeamState:install_aura(aura_id, power, round)
-    local aura = PD.get_aura_by_id(aura_id, power)
-    aura.expire = aura.duration + round - 1
-    local aura_list = nil
-    if aura.keep_front then
-        self.active_auras[aura.id] = aura
-    else
-        --print("install_aura",aura.id)
-        self.pets[self.active_index].auras[aura.id] = aura
-    end
-    
-end
-
 function TeamState:check_loss()
     for i, petState in ipairs(self.pets) do
         if petState.current_health > 0 then
@@ -288,14 +266,36 @@ function GameStateTemplate:pet_dead(player)
     self.team_states[player].interrupted = true
 end
 
+function GameStateTemplate:install_aura(teams, player, pet_index, aura_id, power)
+    local aura = PD.get_aura_by_id(aura_id, power)
+    aura.expire = aura.duration + self.round - 1
+    local ts = self.team_states[player]
+    if aura.keep_front then
+        ts.active_auras[aura.id] = aura
+    else
+        if aura.type == PD.AuraType.STUN then
+            if teams[player][pet_index].type == PD.TypeID.CRITTER then
+                return false
+            end
+            if self.weather_id == PD.WeatherID.ARCANE_SRORM then
+                return false
+            end
+        end
+        ts.pets[pet_index].auras[aura.id] = aura
+    end
+
+end
 
 function GameStateTemplate:post_step(teams)
 
     for player = 1,2 do
         local team_state = self.team_states[player]
-        for i, aura in ipairs(team_state.active_auras) do
+        for i, aura in pairs(team_state.active_auras) do
             if aura.expire <= self.round then
                 team_state.active_auras[i] = nil
+                if aura.type == PD.AuraType.END_EFFECT then
+                    self:process_effects(teams, player, aura.effects)
+                end
             end
         end
         for pet_index,pet in ipairs(team_state.pets) do
@@ -337,13 +337,13 @@ function GameStateTemplate:get_action_order(teams, action1, action2)
     local speed2 = AuraProcessor.get_active_speed_modifier(self, 2) * teams[2][team2.active_index].speed /100.0
     --总是先手属性的技能+1000速度
     if action1.type == 'use' then
-        local ability1 = teams[1][team1.active_index]:GetAbility(action1.value)
+        local ability1 = teams[1][team1.active_index]:get_ability(action1.value)
         if ability1.aways_first then
             speed1 = speed1 + 1000
         end
     end
     if action2.type == 'use' then
-        local ability2 = teams[2][team2.active_index]:GetAbility(action2.value)
+        local ability2 = teams[2][team2.active_index]:get_ability(action2.value)
         if ability2.aways_first then
             speed2 = speed2 + 1000
         end
@@ -359,18 +359,25 @@ function GameStateTemplate:process_effects(teams, player, effects)
     --print("process_effects", player)
     local opponent = 3 - player
     local ally_pet_index = self.team_states[player].active_index
+    local hit = false
     -- 处理效果列表
     for i, effect in ipairs(effects) do
         if effect.target_type == PD.TargetType.ALLY then 
             self.apply_effect(self,teams, effect, player, player, ally_pet_index)
         elseif effect.target_type == PD.TargetType.ENEMY then
-            
-            self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
+            if effect.effect_type == PD.EffectType.HIT_AURA then
+                if hit then
+                    self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
+                else 
+                    --print("HIT_AURA effect did not trigger because the attack missed or was blocked")
+                end
+            end
+            hit = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index) or hit
             if effect.dynamic_type == PD.EffectDynamicType.FLURRY then
                 local roll = math.random(1, 2)
                 if roll == 2 then
                     --print(string.format("player %d pet %d flurry triggered extra attack", opponent, self.team_states[opponent].active_index))
-                    self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
+                    hit = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index) or hit
                 end
                 --对手速度慢则额外攻击一次
                 if AuraProcessor.get_active_speed_modifier(self, player) * 
@@ -378,12 +385,13 @@ function GameStateTemplate:process_effects(teams, player, effects)
                    AuraProcessor.get_active_speed_modifier(self, opponent) * 
                     teams[opponent][self.team_states[opponent].active_index].speed then
                     --print(string.format("player %d pet %d flurry triggered extra attack due to speed", opponent, self.team_states[opponent].active_index))
-                    self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
+                    hit = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index) or hit
                 end
             elseif effect.dynamic_type == PD.EffectDynamicType.BURROW then
                 --钻地状态在攻击后结束 
                 self.team_states[player]:remove_aura(PD.AuraID.UNDERGROUND, ally_pet_index)
             end
+            
         elseif effect.target_type == PD.TargetType.ALLY_TEAM then
             for i, petState in ipairs(self.team_states[player].pets) do
                 self.apply_effect(self,teams, effect, player,player, i)
@@ -411,18 +419,18 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
     if effect.effect_type == PD.EffectType.DAMAGE then
         if AuraProcessor.process_block(self, target_player, target_index) then
             --print(string.format("player %d pet %d blocked the attack", target_player, target_index))
-            return
+            return false
         end
         if AuraProcessor.is_immune(self, target_player, target_index) then
             --print(string.format("player %d pet %d is immune to damage", target_player, target_index))
-            return
+            return false
         end
         local accuracy = effect.accuracy + AuraProcessor.get_active_accuracy_modifier(self, from_player)
         accuracy = accuracy - AuraProcessor.get_dodge_modifier(self, target_player, target_index)
         local roll = math.random(1, 100)
         if roll > accuracy then
             --print(string.format("player %d pet %d attack missed (roll %d > accuracy %d)", from_player, target_index, roll, accuracy))
-            return
+            return false
         end
         --print("accuracy",accuracy,"roll",roll)
         local damage = effect.value
@@ -435,22 +443,21 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
         --print("damage", damage, "real_damage",real_damage,"damage_dealt_modifier", damage_dealt_modifier, "damage_taken_modifier",damage_taken_modifier,"effective_rate",effective_rate)
         local defend = AuraProcessor.get_defand(self, target_player, target_index)
         real_damage = real_damage - defend
-        if real_damage < 0 then
-            real_damage = 0
+        if real_damage <= 0 then
+            return false
         end
         self.team_states[target_player].pets[target_index].current_health = 
             self.team_states[target_player].pets[target_index].current_health - real_damage
         --print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, self.team_states[target_player].pets[target_index].current_health))
-
     elseif effect.effect_type == PD.EffectType.HEAL then
 
     elseif effect.effect_type == PD.EffectType.PERCENTAGE_HEAL then
         
-    elseif effect.effect_type == PD.EffectType.AURA then
+    elseif effect.effect_type == PD.EffectType.AURA or effect.effect_type == PD.EffectType.HIT_AURA then
         --print("aura", effect.value)
         local ts = self.team_states[target_player]
         local power = teams[target_player][ts.active_index].power
-        ts:install_aura(effect.value, power, self.round)
+        self:install_aura(teams, target_player, target_index, effect.value, power)
     elseif effect.effect_type == PD.EffectType.WEATHER then
 
     elseif effect.effect_type == PD.EffectType.OTHER then
@@ -467,7 +474,7 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
         elseif teams[target_player][target_index].type == PD.TypeID.UNDEAD then
             --亡灵死后进入不死状态
             self.team_states[target_player].pets[target_index].current_health = 1
-            self.team_states[target_player]:install_aura(PD.AuraID.UNDEAD, 0, self.round)
+            self:install_aura(teams, target_player, target_index, PD.AuraID.UNDEAD, 0)
             --(string.format("player %d pet %d revived by Undying", target_player, target_index))
             return
         else 
@@ -478,6 +485,7 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
             
         end
     end
+    return true
 end
 function GameStateTemplate:process_player_action(teams, player, action, opponent)
     --print("process_player_action ", action.type)
@@ -485,7 +493,7 @@ function GameStateTemplate:process_player_action(teams, player, action, opponent
     if action.type == 'change' then
         team_state:change_pet(action.value)
     elseif action.type == 'use' then
-        local ability = teams[player][team_state.active_index]:GetAbility(action.value)
+        local ability = teams[player][team_state.active_index]:get_ability(action.value)
         -- 使用技能逻辑
         local effects = nil
         if team_state.ability_round > 1 then
@@ -511,7 +519,7 @@ function GameStateTemplate:process_player_action(teams, player, action, opponent
 end
 
 local GameRuleTemplate = {}
-function GameRuleTemplate.get_legal_actions(state, player)
+function GameRuleTemplate:get_legal_actions(state, player)
     -- 返回玩家在给定状态下的合法动作列表
     local actions = {}
     if state.change_round > 0 then
@@ -533,7 +541,8 @@ function GameRuleTemplate.get_legal_actions(state, player)
                 table.insert(actions, Action.new('standby', 0))  -- 被晕时可以待命
             else 
                 for i = 1, 3 do
-                    if state.team_states[player].pets[active_index].cooldown_at[i] < state.round then
+                    if self.teams[player][active_index]:get_ability(i) and
+                     state.team_states[player].pets[active_index].cooldown_at[i] < state.round then
                         table.insert(actions, Action.new('use', i))  -- 动作为使用技能的索引
                     end
                 end
