@@ -41,6 +41,41 @@ function OptionPanel:Initialize()
     return true
 end
 
+
+-- 创建下拉框的初始化函数
+local function InitializeDropDown(self, level)
+    local info = UIDropDownMenu_CreateInfo()
+    
+    -- 选项1
+    info.text = "默认"
+    info.value = "default"
+    info.func = function(self) 
+        -- 当选择该项时触发
+        UIDropDownMenu_SetSelectedValue(dropdownFrame, self.value)
+        _G.PPBestConfig.mode = self.value
+        print("选择了: " .. self.text)
+    end
+    info.checked = function() 
+        return _G.PPBestConfig.mode ==  "default"
+    end
+    UIDropDownMenu_AddButton(info, level)
+    
+    -- 选项2
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "使用AI"
+    info.value = "ai"
+    info.func = function(self)
+        UIDropDownMenu_SetSelectedValue(dropdownFrame, self.value)
+        _G.PPBestConfig.mode = self.value
+        print("选择了: " .. self.text)
+    end
+    info.checked = function()
+        return MyAddonSettings.option ==  "ai"
+    end
+    UIDropDownMenu_AddButton(info, level)
+end
+
+
 -- 创建UI元素
 function OptionPanel:CreateUI()
     -- 标题
@@ -81,6 +116,23 @@ function OptionPanel:CreateUI()
         end
     end)
     
+    local modDropdownFrame = CreateFrame("Frame", nil, PPBestOptions, "UIDropDownMenuTemplate")
+    modDropdownFrame:SetPoint("TOPLEFT", hotkeyLabel, "BOTTOMLEFT", 0, -10)
+    setHotkeyButton:SetSize(120, 25)
+    modDropdownFrame:SetScript("OnShow", function(self)
+        UIDropDownMenu_SetWidth(self, 150) -- 设置宽度
+        UIDropDownMenu_SetButtonWidth(self, 124) -- 标准宽度
+        UIDropDownMenu_Initialize(self, InitializeDropDown)
+        
+        -- 设置当前选中的值（从保存的变量中读取）
+        local currentValue = _G.PPBestConfig.mode or "default" -- 默认C
+        UIDropDownMenu_SetSelectedValue(self, currentValue)
+    end)
+    
+    -- 添加一个文本标签
+    local label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("LEFT", dropdownFrame, "RIGHT", 5, 0)
+    label:SetText("请选择一个选项:")
     -- 创建按键捕获框架（延迟创建，避免不必要的开销）
     self.captureButton = setHotkeyButton
 end

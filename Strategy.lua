@@ -1,4 +1,5 @@
-
+local _, PPBest = ...
+local AII = PPBest.SearchInterface
 
 local TARGET_EXP = '我要经验'
 local TARGET_WIN = '我要胜场'
@@ -103,6 +104,8 @@ function GetCooperateScheme(myTarget, enemyTarget)
         end,
     }
 end
+
+
 
 function SimplePerform()
     local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
@@ -314,6 +317,30 @@ function GetSchemeAAB()
         end,
         Battle = function(self, round)
             SimplePerform()
+        end
+    }
+end
+
+function GetSchemeAI()
+    return {
+        schemeName = "AIScheme",
+        action = nil,
+        action_round = 0,
+        StartSearh = function(self)
+            AII.init_rule()
+            AII.init_state()
+            local selfRef = self
+            AII.search(function(best_action,round) 
+                selfRef.action = best_action
+                selfRef.action_round = round
+            end)
+        end,
+        Select = function(self)
+            
+        end,
+        Battle = function(self, round)
+            local actions = _G.PPBestAI:DecideActions()
+            BattleUtils:PerformActions(actions)
         end
     }
 end

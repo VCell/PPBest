@@ -1,6 +1,8 @@
-
+local _,PPBest = ...
+local AI = PPBest.AI
 
 local AbilityID = {
+    NONE = 0, --用于技能不明时的默认技能
     BURROW = 159, --兔子 钻地
     DODGE = 312, --兔子 闪避
     FLURRY = 360, --兔子 乱舞
@@ -253,7 +255,7 @@ function Aura.new(id, type, duration, value)
     return aura
 end
 
-function get_aura_by_id(aura_id, power)
+function Aura.new_aura_by_id(aura_id, power)
     if aura_id == AuraID.ICE_TOMB then
         local aura = Aura.new(aura_id, AuraType.END_EFFECT, 3, 0)
         aura.keep_front = true
@@ -288,6 +290,9 @@ function get_aura_by_id(aura_id, power)
 end
 
 function Pet:install_ability_by_id(id, index)
+    if self.abilitys[index] ~= nil and self.abilitys[index].id ~= AbilityID.NONE then
+        return nil
+    end
     local ability = nil
     if id == AbilityID.BONE_BITE then
         ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
@@ -343,26 +348,46 @@ function Pet:install_ability_by_id(id, index)
                     },
         }
     end
-
-
-    self.abilitys[index] = ability
-    return 
+    if ability ~= nil then
+        self.abilitys[index] = ability
+        return ability
+    end
 end
 
+function Pet:install_default_ability()
+    if self.abilitys[1] == nil then
+        local ab = Ability.new(AbilityID.NONE, self.type, 0, 0)
+        ab.effect_list[1] = {Effect.new_damage(self.type, 20+self.power)}
+        self.abilitys[1] = ab
+    end
+end
 
+-- return {
+--     Pet = Pet,
+--     PetID = PetID,
+--     WeatherID = WeatherID,
+--     Ability = Ability,
+--     Aura = Aura,
+--     AuraID = AuraID,
+--     AbilityID = AbilityID,
+--     TypeID = TypeID,
+--     EffectType = EffectType,
+--     AuraType = AuraType,
+--     TargetType = TargetType,
+--     EffectDynamicType = EffectDynamicType,
+--     get_aura_by_id = get_aura_by_id
+-- }
 
-return {
-    Pet = Pet,
-    PetID = PetID,
-    WeatherID = WeatherID,
-    Ability = Ability,
-    Aura = Aura,
-    AuraID = AuraID,
-    AbilityID = AbilityID,
-    TypeID = TypeID,
-    EffectType = EffectType,
-    AuraType = AuraType,
-    TargetType = TargetType,
-    EffectDynamicType = EffectDynamicType,
-    get_aura_by_id = get_aura_by_id
-}
+AI.Pet = Pet
+AI.PetID = PetID
+AI.WeatherID = WeatherID
+AI.Ability = Ability
+AI.Aura = Aura
+AI.AuraID = AuraID
+AI.AbilityID = AbilityID
+AI.TypeID = TypeID
+AI.EffectType = EffectType
+AI.AuraType = AuraType
+AI.TargetType = TargetType
+AI.EffectDynamicType = EffectDynamicType
+AI.get_aura_by_id = get_aura_by_id

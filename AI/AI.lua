@@ -1,0 +1,3 @@
+local _,PPBest = ...
+
+PPBest.AI = {}

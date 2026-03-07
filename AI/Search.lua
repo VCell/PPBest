@@ -2,9 +2,11 @@
 -- duct_mcts_template.lua
 -- 通用DUCT MCTS算法模板，适用于同时移动游戏
 
-local math = require("math")
+--local math = require("math")
 
 -- ==================== 导出模块 ====================
+local _, PPBest = ...
+local AI = PPBest.AI
 
 local DUCT_MCTS = {}
 -- ==================== 游戏规则接口 ====================
@@ -547,4 +549,5 @@ DUCT_MCTS.Searcher = {
     end
 }
 
-return DUCT_MCTS
+-- return DUCT_MCTS
+AI.DUCT_MCTS = DUCT_MCTS

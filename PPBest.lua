@@ -1,6 +1,10 @@
 -- PPBest.lua
-local PPBest = CreateFrame("Frame")
-PPBest:RegisterEvent("ADDON_LOADED")
+
+local _, PPBest = ...
+local LogFrame = PPBest.LogFrame
+
+local PPBestFrame = CreateFrame("Frame")
+PPBestFrame:RegisterEvent("ADDON_LOADED")
 
 local PPBest_TITLE = "PPBest"
 local BattleUtils = _G.PPBestBattleUtils
@@ -10,7 +14,7 @@ local Strategy = _G.PPBestStrategy
 -- 配置变量
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
-    
+    mode = "default", --default,ai
 }
 
 -- 按钮创建
@@ -86,7 +90,7 @@ function PPBest_SetupHotkey()
 end
 
 -- 事件处理
-PPBest:SetScript("OnEvent", function(self, event, ...)
+PPBestFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
         local addonName = ...
         if addonName == PPBest_TITLE then
@@ -102,6 +106,8 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
             print("|cFF00FF00PPBest 已加载|r")
         end
     elseif event == "PET_BATTLE_OPENING_START" then
+        LogFrame:Create()
+        LogFrame:AddLog("EVENT: PET_BATTLE_OPENING_START")
         isInPetBattle = true
         if autoButton then
             autoButton:SetShown(true)
@@ -115,7 +121,10 @@ PPBest:SetScript("OnEvent", function(self, event, ...)
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
-        Strategy:OnRoundComplete()
+
+    elseif event == "PET_BATTLE_PET_ROUND_RESULTS" then
+        local round = ...
+        Strategy:OnRoundComplete(round)
     elseif event == "PET_BATTLE_FINAL_ROUND" then
         Strategy:OnFinalRound(...)
     end
