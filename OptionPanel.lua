@@ -70,7 +70,7 @@ local function InitializeDropDown(self, level)
         print("选择了: " .. self.text)
     end
     info.checked = function()
-        return MyAddonSettings.option ==  "ai"
+        return _G.PPBestConfig.mode ==  "ai"
     end
     UIDropDownMenu_AddButton(info, level)
 end
@@ -116,8 +116,13 @@ function OptionPanel:CreateUI()
         end
     end)
     
+    -- 添加一个文本标签
+    local label = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", setHotkeyButton, "BOTTOMLEFT", 5, 0)
+    label:SetText("战斗模式:")
+    -- 创建按键捕获框架（延迟创建，避免不必要的开销）
     local modDropdownFrame = CreateFrame("Frame", nil, PPBestOptions, "UIDropDownMenuTemplate")
-    modDropdownFrame:SetPoint("TOPLEFT", hotkeyLabel, "BOTTOMLEFT", 0, -10)
+    modDropdownFrame:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -10)
     setHotkeyButton:SetSize(120, 25)
     modDropdownFrame:SetScript("OnShow", function(self)
         UIDropDownMenu_SetWidth(self, 150) -- 设置宽度
@@ -128,12 +133,7 @@ function OptionPanel:CreateUI()
         local currentValue = _G.PPBestConfig.mode or "default" -- 默认C
         UIDropDownMenu_SetSelectedValue(self, currentValue)
     end)
-    
-    -- 添加一个文本标签
-    local label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetPoint("LEFT", dropdownFrame, "RIGHT", 5, 0)
-    label:SetText("请选择一个选项:")
-    -- 创建按键捕获框架（延迟创建，避免不必要的开销）
+
     self.captureButton = setHotkeyButton
 end
 

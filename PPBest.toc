@@ -5,7 +5,12 @@
 ## Author: 狮心-戒虑牧
 ## SavedVariables: PPBestConfig, PPBestHistory
 
-
+AI\AI.lua
+AI\PetsData.lua
+AI\Search.lua
+AI\Play.lua
+LogFrame.lua
+SearchInterface.lua
 BattleUtils.lua
 Strategy.lua
 PPBest.lua

@@ -100,7 +100,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             self:RegisterEvent("PET_BATTLE_ACTION_SELECTED")
             self:RegisterEvent("PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
             self:RegisterEvent("PET_BATTLE_FINAL_ROUND") 
-
+            self:RegisterEvent("PET_BATTLE_PET_ROUND_RESULTS") 
             CreateAutoButton()
             PPBest_SetupHotkey()
             print("|cFF00FF00PPBest 已加载|r")
@@ -119,10 +119,11 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             autoButton:SetShown(false)
         end
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
-        
+        LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
-
+        LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
     elseif event == "PET_BATTLE_PET_ROUND_RESULTS" then
+        LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_RESULTS", ...)
         local round = ...
         Strategy:OnRoundComplete(round)
     elseif event == "PET_BATTLE_FINAL_ROUND" then

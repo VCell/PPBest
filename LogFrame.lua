@@ -6,14 +6,14 @@ local LogFrame = {
 
 function LogFrame:Create()
     -- 创建主框架
-    local logFrame = CreateFrame("Frame", "MyAddonLogFrame", UIParent, "UIPanelDialogTemplate")
-    logFrame:SetSize(400, 300)
-    logFrame:SetPoint("CENTER")
+    local logFrame = CreateFrame("Frame", "PPBestLogFrame", UIParent, "UIPanelDialogTemplate")
+    logFrame:SetSize(300, 400)
+    logFrame:SetPoint("LEFT")
     logFrame:SetMovable(true)
     logFrame:EnableMouse(true)
     logFrame:SetClampedToScreen(true)
     logFrame:SetFrameStrata("DIALOG") -- 设置层级，避免被其他UI遮挡
-    logFrame:Hide() -- 默认隐藏
+    --logFrame:Hide() -- 默认隐藏
 
     -- 设置标题
     logFrame.title = logFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -42,7 +42,7 @@ function LogFrame:Create()
     logText:SetPoint("TOPRIGHT", 0, 0)
     logText:SetJustifyH("LEFT")
     logText:SetJustifyV("TOP")
-    logText:SetText("") -- 初始为空
+    logText:SetText("test") -- 初始为空
 
     -- 调整文本区域大小以适应父框架
     logText:SetWidth(360)
@@ -81,7 +81,7 @@ function LogFrame:RefreshLogDisplay()
     end
     
     -- 更新文本显示
-    self.logText:SetText(table.concat(lines, "\n"))
+    self.text:SetText(table.concat(lines, "\n"))
     
     -- 计算总高度并调整滚动区域
     local numLines = #lines
@@ -110,7 +110,7 @@ function LogFrame:AddLog(message, r, g, b)
     end
     
     -- 更新显示窗口（如果可见）
-    if self.logFrame:IsShown() then
+    if self.frame:IsShown() then
         self:RefreshLogDisplay()
     end
 end
