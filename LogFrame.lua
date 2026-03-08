@@ -1,10 +1,15 @@
 local _,PPBest = ...
 
 local LogFrame = {
-    logHistory = {}, -- 存储日志历史
+    logs = "", -- 存储日志历史
 }
 
 function LogFrame:Create()
+
+    if self.frame then
+        self.frame:Show()
+        return
+    end
     -- 创建主框架
     local logFrame = CreateFrame("Frame", "PPBestLogFrame", UIParent, "UIPanelDialogTemplate")
     logFrame:SetSize(300, 400)
@@ -70,45 +75,19 @@ function LogFrame:RefreshLogDisplay()
     local totalHeight = 0
     local lineHeight = 14 -- 每行高度
     
-    -- 从最新的开始显示（倒序）
-    for i = #self.logHistory, 1, -1 do
-        local entry = self.logHistory[i]
-        local timeStr = date("%H:%M:%S", entry.time)
-        local coloredLine = string.format("|cFF%02x%02x%02x[%s]|r %s", 
-            entry.r * 255, entry.g * 255, entry.b * 255,
-            timeStr, entry.text)
-        tinsert(lines, coloredLine)
-    end
-    
     -- 更新文本显示
-    self.text:SetText(table.concat(lines, "\n"))
-    
-    -- 计算总高度并调整滚动区域
-    local numLines = #lines
-    totalHeight = numLines * lineHeight + 20
-    self.scrollChild:SetHeight(math.max(totalHeight, 100))
+    self.text:SetText(self.logs)
     
     -- 自动滚动到底部（显示最新消息）
     self.scrollArea:SetVerticalScroll(self.scrollChild:GetHeight())
 end
 
-function LogFrame:AddLog(message, r, g, b)
+function LogFrame:AddLog(message)
     if not message then return end
-    
-    -- 保存到历史记录
-    tinsert(self.logHistory, {
-        text = message,
-        time = time(),
-        r = r or 1,
-        g = g or 1,
-        b = b or 1
-    })
-    
-    -- 限制历史记录数量（可选，防止内存占用过大）
-    if #self.logHistory > 1000 then
-        tremove(self.logHistory, 1)
-    end
-    
+    local timeStr = date("%H:%M:%S")
+    self.logs = self.logs .. string.format("%s %s\n", timeStr, message)
+
+    self.logs = self.logs:sub(-10000)
     -- 更新显示窗口（如果可见）
     if self.frame:IsShown() then
         self:RefreshLogDisplay()
