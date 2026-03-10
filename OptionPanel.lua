@@ -258,20 +258,4 @@ function OptionPanel:Open()
     --InterfaceOptionsFrame_OpenToCategory("PPBest") -- 调用两次确保展开
 end
 
--- 暴露模块到全局
-
--- 自动初始化
-local frame = CreateFrame("Frame")
-frame:RegisterEvent("ADDON_LOADED")
-frame:SetScript("OnEvent", function(self, event, addonName)
-    if event == "ADDON_LOADED" and addonName == "PPBest" then
-        self:UnregisterEvent("ADDON_LOADED")
-        
-        -- 初始化设置面板
-        if OptionPanel:Initialize() then
-            --print("PPBest: 设置面板已加载")
-        end
-    end
-end)
-
 PPBest.OptionPanel = OptionPanel

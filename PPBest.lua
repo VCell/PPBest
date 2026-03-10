@@ -38,7 +38,7 @@ end
 
 -- 执行自动战斗
 local function PerformAutoBattle()
-    BattleUtils:BuildTeamByLevel(0)
+    BattleUtils:BuildTeamByLevel(25)
 
     if C_PetBattles.IsInBattle() then 
         if C_PetBattles.ShouldShowPetSelect() then
