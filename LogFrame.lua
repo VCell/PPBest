@@ -12,7 +12,7 @@ function LogFrame:Create()
     end
     -- 创建主框架
     local logFrame = CreateFrame("Frame", "PPBestLogFrame", UIParent, "UIPanelDialogTemplate")
-    logFrame:SetSize(300, 400)
+    logFrame:SetSize(400, 300)
     logFrame:SetPoint("LEFT")
     logFrame:SetMovable(true)
     logFrame:EnableMouse(true)
@@ -38,7 +38,7 @@ function LogFrame:Create()
 
     -- 创建用于显示文本的子框架（实际内容放在这里）
     local scrollChild = CreateFrame("Frame", "MyAddonLogChild", scrollArea)
-    scrollChild:SetSize(360, 1000) -- 宽度匹配，高度可扩展
+    scrollChild:SetSize(360, 300) -- 宽度匹配，高度可扩展
     scrollArea:SetScrollChild(scrollChild)
 
     -- 创建显示日志的文本框
@@ -47,11 +47,11 @@ function LogFrame:Create()
     logText:SetPoint("TOPRIGHT", 0, 0)
     logText:SetJustifyH("LEFT")
     logText:SetJustifyV("TOP")
-    logText:SetText("test") -- 初始为空
-
-    -- 调整文本区域大小以适应父框架
+    logText:SetText("") -- 初始为空
+    local fontName, fontSize, fontFlags = logText:GetFont()
+    logText:SetFont(fontName, 10, fontFlags) --设置字号
     logText:SetWidth(360)
-    logText:SetHeight(1000) -- 初始高度，会根据内容自动扩展
+    logText:SetHeight(300) -- 初始高度，会根据内容自动扩展
 
     -- 清空日志按钮
     local clearButton = CreateFrame("Button", nil, logFrame, "UIPanelButtonTemplate")
@@ -73,13 +73,12 @@ end
 function LogFrame:RefreshLogDisplay()
     local lines = {}
     local totalHeight = 0
-    local lineHeight = 14 -- 每行高度
     
     -- 更新文本显示
     self.text:SetText(self.logs)
     
-    -- 自动滚动到底部（显示最新消息）
-    self.scrollArea:SetVerticalScroll(self.scrollChild:GetHeight())
+    -- -- 自动滚动到底部（显示最新消息）
+    -- self.scrollArea:SetVerticalScroll(self.scrollChild:GetHeight())
 end
 
 function LogFrame:AddLog(message)

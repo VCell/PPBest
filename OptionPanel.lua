@@ -42,37 +42,30 @@ function OptionPanel:Initialize()
 end
 
 
+local function GetDropDownMenuItemInfo(text, key)
+    local info = UIDropDownMenu_CreateInfo()
+
+end
+
 -- 创建下拉框的初始化函数
 local function InitializeDropDown(self, level)
-    local info = UIDropDownMenu_CreateInfo()
-    
-    -- 选项1
-    info.text = "默认"
-    info.value = "default"
-    info.func = function(self) 
-        -- 当选择该项时触发
-        UIDropDownMenu_SetSelectedValue(dropdownFrame, self.value)
-        _G.PPBestConfig.mode = self.value
-        print("选择了: " .. self.text)
+    local options = {
+        { text = "默认", value = "default" },
+        { text = "互刷-协助方", value = "assist" },
+        { text = "互刷-人物经验", value = "want_exp" },
+        { text = "互刷-胜场", value = "want_win" },
+        { text = "互刷-宠物等级", value = "want_petlevel" },
+    }
+    for _, option in ipairs(options) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = option.text
+        info.value = option.value
+        info.func = function(self)
+            UIDropDownMenu_SetSelectedValue(self, self.value)
+            _G.PPBestConfig.mode = self.value
+        end
+        UIDropDownMenu_AddButton(info,level)
     end
-    info.checked = function() 
-        return _G.PPBestConfig.mode ==  "default"
-    end
-    UIDropDownMenu_AddButton(info, level)
-    
-    -- 选项2
-    info = UIDropDownMenu_CreateInfo()
-    info.text = "使用AI"
-    info.value = "ai"
-    info.func = function(self)
-        UIDropDownMenu_SetSelectedValue(dropdownFrame, self.value)
-        _G.PPBestConfig.mode = self.value
-        print("选择了: " .. self.text)
-    end
-    info.checked = function()
-        return _G.PPBestConfig.mode ==  "ai"
-    end
-    UIDropDownMenu_AddButton(info, level)
 end
 
 
@@ -83,15 +76,10 @@ function OptionPanel:CreateUI()
     title:SetPoint("TOPLEFT", 16, -16)
     title:SetText("PPBest 宠物对战助手")
     
-    -- 描述
-    local description = PPBestOptions:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
-    description:SetText("简单的宠物对战自动插件")
-    
     -- 分隔线
     local line = PPBestOptions:CreateTexture(nil, "ARTWORK")
     line:SetColorTexture(0.5, 0.5, 0.5, 0.5)
-    line:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -10)
+    line:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
     line:SetSize(600, 1)
     
     -- 当前快捷键显示
@@ -108,7 +96,7 @@ function OptionPanel:CreateUI()
     setHotkeyButton:SetPoint("TOPLEFT", hotkeyLabel, "BOTTOMLEFT", 0, -10)
     setHotkeyButton:SetSize(120, 25)
     setHotkeyButton:SetText("设置快捷键")
-    
+    self.captureButton = setHotkeyButton
     -- 设置按钮点击事件
     setHotkeyButton:SetScript("OnClick", function(self)
         if not isCapturingKey then
@@ -117,24 +105,67 @@ function OptionPanel:CreateUI()
     end)
     
     -- 添加一个文本标签
-    local label = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetPoint("TOPLEFT", setHotkeyButton, "BOTTOMLEFT", 5, 0)
-    label:SetText("战斗模式:")
-    -- 创建按键捕获框架（延迟创建，避免不必要的开销）
+    local modLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    modLabel:SetPoint("TOPLEFT", setHotkeyButton, "BOTTOMLEFT", 0, -10)
+    modLabel:SetText("战斗模式:")
+    
     local modDropdownFrame = CreateFrame("Frame", nil, PPBestOptions, "UIDropDownMenuTemplate")
-    modDropdownFrame:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -10)
-    setHotkeyButton:SetSize(120, 25)
+    modDropdownFrame:SetPoint("TOPLEFT", modLabel, "BOTTOMLEFT", 0, -10)
+    modDropdownFrame:SetSize(120, 25)
     modDropdownFrame:SetScript("OnShow", function(self)
         UIDropDownMenu_SetWidth(self, 150) -- 设置宽度
         UIDropDownMenu_SetButtonWidth(self, 124) -- 标准宽度
-        UIDropDownMenu_Initialize(self, InitializeDropDown)
-        
-        -- 设置当前选中的值（从保存的变量中读取）
-        local currentValue = _G.PPBestConfig.mode or "default" -- 默认C
+        UIDropDownMenu_Initialize(self, 
+            function (self, level)
+                local options = {
+                    { text = "默认", value = "default" },
+                    { text = "互刷-协助方", value = "assist" },
+                    { text = "互刷-人物经验", value = "want_exp" },
+                    { text = "互刷-胜场", value = "want_win" },
+                    { text = "互刷-宠物等级", value = "want_petlevel" },
+                }
+                for _, option in ipairs(options) do
+                    local info = UIDropDownMenu_CreateInfo()
+                    info.text = option.text
+                    info.value = option.value
+                    info.func = function(self)
+                        UIDropDownMenu_SetSelectedValue(modDropdownFrame, self.value)
+                        _G.PPBestConfig.mode = self.value
+                    end
+                    UIDropDownMenu_AddButton(info,level)
+                end
+            end
+        )
+        local currentValue = _G.PPBestConfig.mode or "default" 
         UIDropDownMenu_SetSelectedValue(self, currentValue)
     end)
 
-    self.captureButton = setHotkeyButton
+    local targetNameLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    targetNameLabel:SetPoint("TOPLEFT", modDropdownFrame, "BOTTOMLEFT", 0, -10)
+    targetNameLabel:SetText("互刷目标ID(名字-服务器)：")
+
+    local targetNameBox = CreateFrame("EditBox", nil, PPBestOptions, "InputBoxTemplate")
+    targetNameBox:SetSize(200, 20)
+    targetNameBox:SetPoint("TOPLEFT", targetNameLabel, "BOTTOMLEFT", 0, -10)
+    targetNameBox:SetAutoFocus(false)                -- 不自动获得焦点
+    targetNameBox:SetText(_G.PPBestConfig.assist_target or "")       -- 显示保存的内容
+    targetNameBox:SetScript("OnEnterPressed", function(self)
+        _G.PPBestConfig.assist_target = self:GetText()
+        -- print("已保存: " .. self:GetText())
+    end)
+
+    -- 创建确认按钮
+    local targetNameButton = CreateFrame("Button", nil, PPBestOptions, "GameMenuButtonTemplate")
+    targetNameButton:SetSize(80, 25)
+    targetNameButton:SetPoint("LEFT", targetNameBox, "RIGHT", 10, 0)
+    targetNameButton:SetText("保存")
+    targetNameButton:SetScript("OnClick", function()
+        local text = targetNameBox:GetText()
+        _G.PPBestConfig.assist_target = text
+        -- print("已保存: " .. text)
+        targetNameBox:ClearFocus()  -- 保存后取消焦点
+    end)
+
 end
 
 -- 开始捕获按键

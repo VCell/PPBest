@@ -1,6 +1,7 @@
 -- PPBest.lua
 
 local _, PPBest = ...
+local Const = PPBest.Const
 local LogFrame = PPBest.LogFrame
 
 local PPBestFrame = CreateFrame("Frame")
@@ -11,16 +12,12 @@ local BattleUtils = _G.PPBestBattleUtils
 local OptionPanel = _G.PPBestOptionPanel
 local Strategy = _G.PPBestStrategy
 
--- 配置变量
-PPBestConfig = PPBestConfig or {
-    hotkey = "F8",
-    mode = "default", --default,ai
-}
 
 -- 按钮创建
 local autoButton
 local isInPetBattle = false
-
+local lastQueryTime = 0
+local MIN_QUERY_INTERVAL = 20
 -- 执行自动战斗
 local function PerformAutoBattle()
     if not C_PetBattles.IsInBattle() then 
@@ -31,14 +28,17 @@ local function PerformAutoBattle()
         end
         return
     end
+    if PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
+        
+    else
+        if C_PetBattles.ShouldShowPetSelect() then
+            Strategy:PerformSelect()
+            return
+        end
 
-    if C_PetBattles.ShouldShowPetSelect() then
-        Strategy:PerformSelect()
-        return
-    end
-
-    if C_PetBattles.IsSkipAvailable() then
-        Strategy:PerformBattle()
+        if C_PetBattles.IsSkipAvailable() then
+            Strategy:PerformBattle()
+        end
     end
 
 end
@@ -101,6 +101,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             self:RegisterEvent("PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
             self:RegisterEvent("PET_BATTLE_FINAL_ROUND") 
             self:RegisterEvent("PET_BATTLE_PET_ROUND_RESULTS") 
+            self:RegisterEvent("CHAT_MSG_WHISPER")
             CreateAutoButton()
             PPBest_SetupHotkey()
             print("|cFF00FF00PPBest 已加载|r")
@@ -128,6 +129,10 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         Strategy:OnRoundComplete(round)
     elseif event == "PET_BATTLE_FINAL_ROUND" then
         Strategy:OnFinalRound(...)
+    elseif event == "CHAT_MSG_WHISPER" then
+        local msg,sender = ...
+        -- print("MSG:", msg, ", sender:", sender)
+        -- SendChatMessage("ccc", "WHISPER", nil, sender)
     end
 end)
 
