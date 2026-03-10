@@ -27,7 +27,7 @@ local BattleUtils = {
 
 function BattleUtils:BuildTeamForPetLevel()
     local oldGuid = C_PetJournal.GetPetLoadOutInfo(3)
-    local _,_,oldLevel = C_PetBattles.GetPetInfoByPetID(oldGuid)
+    local _,_,oldLevel = C_PetJournal.GetPetInfoByPetID(oldGuid)
     if oldLevel == 25 then
         local numPets, numOwned = C_PetJournal.GetNumPets()
         if numPets<numOwned then
@@ -105,7 +105,7 @@ function BattleUtils:GetBattleTeamLevel()
     local totalLevel = 0
     for i=1,3 do
         local guid = C_PetJournal.GetPetLoadOutInfo(i)
-        local _,_,level = C_PetBattles.GetPetInfoByPetID(guid)
+        local _,_,level = C_PetJournal.GetPetInfoByPetID(guid)
         totalLevel = totalLevel + level
     end
     return totalLevel
