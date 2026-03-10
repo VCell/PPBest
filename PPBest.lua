@@ -39,8 +39,6 @@ end
 
 -- 执行自动战斗
 local function PerformAutoBattle()
-    BattleUtils:BuildTeamByLevel(25)
-
     if C_PetBattles.IsInBattle() then 
         if C_PetBattles.ShouldShowPetSelect() then
             Strategy:PerformSelect()
@@ -59,7 +57,7 @@ local function PerformAutoBattle()
                 --回复队友消息，告知目标等级
                 BattleUtils:BuildTeamForPetLevel()
                 local level = BattleUtils:GetBattleTeamLevel()
-                local msg = string.format("%s %s %s", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, level)
+                local msg = string.format("%s %s %d", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, level)
                 SendChatMessage(msg, "WHISPER", nil, CooperateController.assistId)
                 CooperateController.state = STATE_PLAYING
             elseif CooperateController.state == STATE_PLAYING then
@@ -69,12 +67,12 @@ local function PerformAutoBattle()
             end
         elseif PPBestConfig.mode == Const.MODE_ASSIST then
             if CooperateController.state == STATE_WAITING_INFO then
-                if time - lastQueryTime > MIN_QUERY_INTERVAL then 
+                if time() - lastQueryTime > MIN_QUERY_INTERVAL then 
                     -- 发送查询消息给队友
                     local target = PPBestConfig.assist_target
                     if target and target ~= "" then
-                        SendChatMessage("PPBest_QUERY", "WHISPER", nil, target)
-                        lastQueryTime = time
+                        SendChatMessage(PPBEST_MSG_PREFIX .. " query", "WHISPER", nil, target)
+                        lastQueryTime = time()
                     else
                         print("请在设置中填写互刷目标ID（名字-服务器）")
                     end
@@ -148,10 +146,10 @@ local function parseAutoMsgInfo(msg)
     local parts = {strsplit(" ", msg)}
     assert(#parts >= 2, "消息格式错误")
     local res = {
-        target = parts[1],
+        target = parts[2],
     }
     if #parts > 2 then
-        res.level = tonumber(parts[2])
+        res.level = tonumber(parts[3])
     end
     return res
 end
