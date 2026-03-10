@@ -22,6 +22,7 @@ local lastQueryTime = 0
 
 local STATE_WAITING_INFO = "waiting_info"
 local STATE_WAITING_START = "waiting_start"
+local STATE_PLAYING = "playing"
 local CooperateController = {
     state = STATE_WAITING_INFO,
     assistId = "",
@@ -56,10 +57,12 @@ local function PerformAutoBattle()
                 print("等待队友消息中...")
             elseif CooperateController.state == STATE_WAITING_START then
                 --回复队友消息，告知目标等级
-
+                BattleUtils:BuildTeamForPetLevel()
                 local level = BattleUtils:GetBattleTeamLevel()
                 local msg = string.format("%s %s %s", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, level)
                 SendChatMessage(msg, "WHISPER", nil, CooperateController.assistId)
+                CooperateController.state = STATE_PLAYING
+            elseif CooperateController.state == STATE_PLAYING then
                 C_PetBattles.StartPVPMatchmaking()
                 C_PetBattles.AcceptQueuedPVPMatch()
                 StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
@@ -77,6 +80,9 @@ local function PerformAutoBattle()
                     end
                 end
             elseif CooperateController.state == STATE_WAITING_START then
+                BattleUtils:BuildTeamByLevel(CooperateController.targetLevel)
+                CooperateController.state = STATE_PLAYING
+            elseif CooperateController.state == STATE_PLAYING then
                 C_PetBattles.StartPVPMatchmaking()
                 C_PetBattles.AcceptQueuedPVPMatch()
                 StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
