@@ -1,5 +1,6 @@
 local _, PPBest = ...
 local AII = PPBest.SearchInterface
+local BattleUtils = PPBest.BattleUtils
 
 local TARGET_EXP = '我要经验'
 local TARGET_WIN = '我要胜场'
@@ -36,8 +37,6 @@ local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
 local PET_ID_GILNEAN_RAVEN = 630 -- 吉尔尼斯渡鸦
 local PET_ID_STUNTED_DIREHORN = 1184 -- 瘦弱恐角龙
 local PET_ID_ANUBISATH_IDOL = 1155 -- 阿努比斯
-
-local BattleUtils = _G.PPBestBattleUtils
 
 PPBestHistory = PPBestHistory or {
     version = 1,
@@ -339,7 +338,7 @@ function GetSchemeAI()
             
         end,
         Battle = function(self, round)
-            local actions = _G.PPBestAI:DecideActions()
+            local actions = AII:DecideActions()
             BattleUtils:PerformActions(actions)
         end
     }
@@ -495,4 +494,4 @@ function Strategy:PerformBattle()
     self.scheme:Battle(self.round)
 end
 
-_G.PPBestStrategy = Strategy
+PPBest.Strategy = Strategy

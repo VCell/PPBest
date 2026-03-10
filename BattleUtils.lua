@@ -1,3 +1,5 @@
+local _, PPBest = ...
+
 -- BattleUtils.lua
 local BattleUtils = {
     WEATHER_ID_ARCANE_STORM = 590, 
@@ -22,6 +24,78 @@ local BattleUtils = {
 
     debug = false,
 }
+
+local function find_three_sum(x, target)
+    -- 创建一个表来存储每个值对应的索引列表
+    local value_to_indices = {}
+    for i, v in ipairs(x) do
+        if not value_to_indices[v] then
+            value_to_indices[v] = {}
+        end
+        table.insert(value_to_indices[v], i)
+    end
+    
+    -- 遍历所有可能的第一个值
+    for a_idx, a_val in ipairs(x) do
+        for b_idx, b_val in ipairs(x) do
+            -- 避免使用相同的索引
+            if a_idx ~= b_idx then
+                local c_val = target - a_val - b_val
+                -- 检查c_val是否在有效范围内
+                if c_val >= 1 and c_val <= 25 then
+                    -- 获取c_val对应的索引列表
+                    local indices_c = value_to_indices[c_val]
+                    if indices_c then
+                        -- 查找一个不等于a_idx和b_idx的索引
+                        for _, c_idx in ipairs(indices_c) do
+                            if c_idx ~= a_idx and c_idx ~= b_idx then
+                                return a_idx, b_idx, c_idx
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return nil
+end
+
+function BattleUtils:BuildTeamForPetLevel()
+
+end
+
+function BattleUtils:BuildTeamByLevel(level)
+    local numPets, numOwned = C_PetJournal.GetNumPets()
+    print("总宠物数量:", numPets, "已拥有宠物数量:", numOwned)
+    for i in 1, numOwned do
+        local guid, _,_,_, tLevel,_,_, name = C_PetJournal.GetPetInfoByIndex(i)
+        print("宠物ID:", guid, "等级:", tLevel, "名字:", name)
+    end
+
+    C_PetJournal.SetPetLoadOutInfo(1, teamPetIDs[petName1])
+    C_PetJournal.SetPetLoadOutInfo(2, teamPetIDs[petName2])
+    C_PetJournal.SetPetLoadOutInfo(3, teamPetIDs[petName3])
+end
+
+function BattleUtils:GetBattleTeamLevel()
+    local totalLevel = 0
+    local petCount = 0
+    
+    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
+        local level = C_PetBattles.GetLevel(LE_BATTLE_PET_ALLY, petIndex) 
+        if level > 0 then
+            totalLevel = totalLevel + level
+            petCount = petCount + 1
+        end
+    end
+    
+    if petCount == 0 then
+        return 1 -- 默认等级为1，避免除以0
+    end
+    
+    return math.floor(totalLevel / petCount)
+end
 
 -- 切换到血量最高的宠物
 function BattleUtils:SwitchToHighestHealthPet()
@@ -357,4 +431,4 @@ function BattleUtils:Debug(message)
     end
 end
 
-_G.PPBestBattleUtils = BattleUtils
+PPBest.BattleUtils = BattleUtils

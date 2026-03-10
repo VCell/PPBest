@@ -1,4 +1,7 @@
--- PPBest_Options.lua
+local _, PPBest = ...
+local Const = PPBest.Const
+
+
 local OptionPanel = {}
 
 -- 模块的局部变量
@@ -47,28 +50,6 @@ local function GetDropDownMenuItemInfo(text, key)
 
 end
 
--- 创建下拉框的初始化函数
-local function InitializeDropDown(self, level)
-    local options = {
-        { text = "默认", value = "default" },
-        { text = "互刷-协助方", value = "assist" },
-        { text = "互刷-人物经验", value = "want_exp" },
-        { text = "互刷-胜场", value = "want_win" },
-        { text = "互刷-宠物等级", value = "want_petlevel" },
-    }
-    for _, option in ipairs(options) do
-        local info = UIDropDownMenu_CreateInfo()
-        info.text = option.text
-        info.value = option.value
-        info.func = function(self)
-            UIDropDownMenu_SetSelectedValue(self, self.value)
-            _G.PPBestConfig.mode = self.value
-        end
-        UIDropDownMenu_AddButton(info,level)
-    end
-end
-
-
 -- 创建UI元素
 function OptionPanel:CreateUI()
     -- 标题
@@ -89,7 +70,7 @@ function OptionPanel:CreateUI()
     
     hotkeyText = PPBestOptions:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     hotkeyText:SetPoint("LEFT", hotkeyLabel, "RIGHT", 10, 0)
-    hotkeyText:SetText(_G.PPBestConfig and _G.PPBestConfig.hotkey or "F8")
+    hotkeyText:SetText(PPBestConfig and PPBestConfig.hotkey or "F8")
     
     -- 设置快捷键按钮
     local setHotkeyButton = CreateFrame("Button", nil, PPBestOptions, "UIPanelButtonTemplate")
@@ -118,11 +99,12 @@ function OptionPanel:CreateUI()
         UIDropDownMenu_Initialize(self, 
             function (self, level)
                 local options = {
-                    { text = "默认", value = "default" },
-                    { text = "互刷-协助方", value = "assist" },
-                    { text = "互刷-人物经验", value = "want_exp" },
-                    { text = "互刷-胜场", value = "want_win" },
-                    { text = "互刷-宠物等级", value = "want_petlevel" },
+                    { text = "单刷-默认策略", value = Const.MODE_DEFAULT },
+                    { text = "单刷-AI", value = Const.MODE_AI },
+                    { text = "互刷-协助方", value = Const.MODE_ASSIST },
+                    { text = "互刷-人物经验", value = Const.MODE_WANT_EXP },
+                    { text = "互刷-胜场", value = Const.MODE_WANT_WIN },
+                    { text = "互刷-宠物等级", value = Const.MODE_WANT_PET_LEVEL },
                 }
                 for _, option in ipairs(options) do
                     local info = UIDropDownMenu_CreateInfo()
@@ -130,13 +112,13 @@ function OptionPanel:CreateUI()
                     info.value = option.value
                     info.func = function(self)
                         UIDropDownMenu_SetSelectedValue(modDropdownFrame, self.value)
-                        _G.PPBestConfig.mode = self.value
+                        PPBestConfig.mode = self.value
                     end
                     UIDropDownMenu_AddButton(info,level)
                 end
             end
         )
-        local currentValue = _G.PPBestConfig.mode or "default" 
+        local currentValue = PPBestConfig.mode or "default" 
         UIDropDownMenu_SetSelectedValue(self, currentValue)
     end)
 
@@ -148,9 +130,9 @@ function OptionPanel:CreateUI()
     targetNameBox:SetSize(200, 20)
     targetNameBox:SetPoint("TOPLEFT", targetNameLabel, "BOTTOMLEFT", 0, -10)
     targetNameBox:SetAutoFocus(false)                -- 不自动获得焦点
-    targetNameBox:SetText(_G.PPBestConfig.assist_target or "")       -- 显示保存的内容
+    targetNameBox:SetText(PPBestConfig.assist_target or "")       -- 显示保存的内容
     targetNameBox:SetScript("OnEnterPressed", function(self)
-        _G.PPBestConfig.assist_target = self:GetText()
+        PPBestConfig.assist_target = self:GetText()
         -- print("已保存: " .. self:GetText())
     end)
 
@@ -161,7 +143,7 @@ function OptionPanel:CreateUI()
     targetNameButton:SetText("保存")
     targetNameButton:SetScript("OnClick", function()
         local text = targetNameBox:GetText()
-        _G.PPBestConfig.assist_target = text
+        PPBestConfig.assist_target = text
         -- print("已保存: " .. text)
         targetNameBox:ClearFocus()  -- 保存后取消焦点
     end)
@@ -207,8 +189,8 @@ function OptionPanel:StartKeyCapture()
             local newHotkey = modifiers .. key
             
             -- 更新配置
-            if _G.PPBestConfig then
-                _G.PPBestConfig.hotkey = newHotkey
+            if PPBestConfig then
+                PPBestConfig.hotkey = newHotkey
                 
                 -- 更新显示
                 if hotkeyText then
@@ -265,8 +247,8 @@ end
 
 -- 刷新设置面板
 function OptionPanel:Refresh()
-    if hotkeyText and _G.PPBestConfig then
-        hotkeyText:SetText(_G.PPBestConfig.hotkey or "F8")
+    if hotkeyText and PPBestConfig then
+        hotkeyText:SetText(PPBestConfig.hotkey or "F8")
     end
 end
 
@@ -277,7 +259,6 @@ function OptionPanel:Open()
 end
 
 -- 暴露模块到全局
-_G.PPBestOptionPanel = OptionPanel
 
 -- 自动初始化
 local frame = CreateFrame("Frame")
@@ -293,4 +274,4 @@ frame:SetScript("OnEvent", function(self, event, addonName)
     end
 end)
 
-return OptionPanel
+PPBest.OptionPanel = OptionPanel

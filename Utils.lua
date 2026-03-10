@@ -14,4 +14,3 @@ PPBest.Const = {
     MODE_WANT_WIN = "want_win",
     MODE_WANT_PET_LEVEL = "want_pet_level"
 }
-

@@ -3,34 +3,44 @@
 local _, PPBest = ...
 local Const = PPBest.Const
 local LogFrame = PPBest.LogFrame
+local OptionPanel = PPBest.OptionPanel
+local BattleUtils = PPBest.BattleUtils
+local Strategy = PPBest.Strategy
 
 local PPBestFrame = CreateFrame("Frame")
 PPBestFrame:RegisterEvent("ADDON_LOADED")
 
-local PPBest_TITLE = "PPBest"
-local BattleUtils = _G.PPBestBattleUtils
-local OptionPanel = _G.PPBestOptionPanel
-local Strategy = _G.PPBestStrategy
+local PPBEST_TITLE = "PPBest"
+local MIN_QUERY_INTERVAL = 20
 
+local PPBEST_MSG_PREFIX = "PPBestAutoInfo"
 
 -- 按钮创建
 local autoButton
 local isInPetBattle = false
 local lastQueryTime = 0
-local MIN_QUERY_INTERVAL = 20
+
+local STATE_WAITING_INFO = "waiting_info"
+local STATE_WAITING_START = "waiting_start"
+local CooperateController = {
+    state = STATE_WAITING_INFO,
+    assistId = "",
+    target = "",
+    targetLevel = 0,
+}
+function CooperateController:Reset()
+    self.state = STATE_WAITING_INFO
+    self.assist_id = ""
+    self.target = ""
+    self.targetLevel = 0
+end
+
+
 -- 执行自动战斗
 local function PerformAutoBattle()
-    if not C_PetBattles.IsInBattle() then 
-        if not Strategy:ShouldRest() then
-            C_PetBattles.StartPVPMatchmaking()
-            C_PetBattles.AcceptQueuedPVPMatch()
-            StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
-        end
-        return
-    end
-    if PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
-        
-    else
+    BattleUtils:BuildTeamByLevel(0)
+
+    if C_PetBattles.IsInBattle() then 
         if C_PetBattles.ShouldShowPetSelect() then
             Strategy:PerformSelect()
             return
@@ -38,6 +48,45 @@ local function PerformAutoBattle()
 
         if C_PetBattles.IsSkipAvailable() then
             Strategy:PerformBattle()
+            return
+        end
+    else 
+        if PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
+            if CooperateController.state == STATE_WAITING_INFO then
+                print("等待队友消息中...")
+            elseif CooperateController.state == STATE_WAITING_START then
+                --回复队友消息，告知目标等级
+
+                local level = BattleUtils:GetBattleTeamLevel()
+                local msg = string.format("%s %s %s", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, level)
+                SendChatMessage(msg, "WHISPER", nil, CooperateController.assistId)
+                C_PetBattles.StartPVPMatchmaking()
+                C_PetBattles.AcceptQueuedPVPMatch()
+                StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+            end
+        elseif PPBestConfig.mode == Const.MODE_ASSIST then
+            if CooperateController.state == STATE_WAITING_INFO then
+                if time - lastQueryTime > MIN_QUERY_INTERVAL then 
+                    -- 发送查询消息给队友
+                    local target = PPBestConfig.assist_target
+                    if target and target ~= "" then
+                        SendChatMessage("PPBest_QUERY", "WHISPER", nil, target)
+                        lastQueryTime = time
+                    else
+                        print("请在设置中填写互刷目标ID（名字-服务器）")
+                    end
+                end
+            elseif CooperateController.state == STATE_WAITING_START then
+                C_PetBattles.StartPVPMatchmaking()
+                C_PetBattles.AcceptQueuedPVPMatch()
+                StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+            end
+        else 
+            if not Strategy:ShouldRest() then
+                C_PetBattles.StartPVPMatchmaking()
+                C_PetBattles.AcceptQueuedPVPMatch()
+                StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+            end
         end
     end
 
@@ -81,7 +130,7 @@ local function CreateAutoButton()
 end
 
 -- 键盘快捷键设置
-function PPBest_SetupHotkey()
+local function PPBest_SetupHotkey()
     local key = PPBestConfig.hotkey
     if key and key ~= "" and autoButton then
         _G["BINDING_NAME_CLICK PPBestAutoButton:LeftButton"] = "PPBest 自动对战"
@@ -89,11 +138,23 @@ function PPBest_SetupHotkey()
     end
 end
 
+local function parseAutoMsgInfo(msg)
+    local parts = {strsplit(" ", msg)}
+    assert(#parts >= 2, "消息格式错误")
+    local res = {
+        target = parts[1],
+    }
+    if #parts > 2 then
+        res.level = tonumber(parts[2])
+    end
+    return res
+end
+
 -- 事件处理
 PPBestFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
         local addonName = ...
-        if addonName == PPBest_TITLE then
+        if addonName == PPBEST_TITLE then
             self:UnregisterEvent("ADDON_LOADED")
             self:RegisterEvent("PET_BATTLE_OPENING_START")
             self:RegisterEvent("PET_BATTLE_CLOSE")
@@ -102,6 +163,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             self:RegisterEvent("PET_BATTLE_FINAL_ROUND") 
             self:RegisterEvent("PET_BATTLE_PET_ROUND_RESULTS") 
             self:RegisterEvent("CHAT_MSG_WHISPER")
+            OptionPanel:Initialize()
             CreateAutoButton()
             PPBest_SetupHotkey()
             print("|cFF00FF00PPBest 已加载|r")
@@ -119,6 +181,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         if autoButton then
             autoButton:SetShown(false)
         end
+        CooperateController:Reset()
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
@@ -131,6 +194,21 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         Strategy:OnFinalRound(...)
     elseif event == "CHAT_MSG_WHISPER" then
         local msg,sender = ...
+        --消息开头是PPBestAutoInfo 说明是插件间的交互信息
+        if string.sub(msg, 1, #PPBEST_MSG_PREFIX) == PPBEST_MSG_PREFIX then
+            local res = parseAutoMsgInfo(msg)
+            
+            if res.target == "query" and (PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL) then 
+                CooperateController.assistId = sender
+                CooperateController.state = STATE_WAITING_START
+                print("收到队友查询")
+            elseif res.target == Const.MODE_WANT_PET_LEVEL and PPBestConfig.mode == Const.MODE_ASSIST then
+                CooperateController.targetLevel = res.level
+                CooperateController.state = STATE_WAITING_START
+                print("收到队友目标等级:", res.level)
+            end
+
+        end
         -- print("MSG:", msg, ", sender:", sender)
         -- SendChatMessage("ccc", "WHISPER", nil, sender)
     end
