@@ -39,8 +39,10 @@ function OptionPanel:Initialize()
     self:CreateUI()
     
     -- 注册到接口选项
-    InterfaceOptions_AddCategory(PPBestOptions)
-    
+    --InterfaceOptions_AddCategory(PPBestOptions)
+    local category, layout = Settings.RegisterCanvasLayoutCategory(PPBestOptions, PPBestOptions.name)
+    Settings.RegisterAddOnCategory(category)
+
     return true
 end
 
