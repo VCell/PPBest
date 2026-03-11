@@ -28,12 +28,14 @@ local CooperateController = {
     assistId = "",
     target = "",
     targetLevel = {},
+    startTime = time()
 }
 function CooperateController:Reset()
     self.state = STATE_WAITING_INFO
     self.assist_id = ""
     self.target = ""
     self.targetLevel = {}
+    self.startTime = time()
 end
 
 
@@ -87,9 +89,15 @@ local function PerformAutoBattle()
                 BattleUtils:BuildTeamByLevel(CooperateController.targetLevel)
                 CooperateController.state = STATE_PLAYING
             elseif CooperateController.state == STATE_PLAYING then
-                C_PetBattles.StartPVPMatchmaking()
-                C_PetBattles.AcceptQueuedPVPMatch()
-                StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+                if time() - CooperateController.startTime >120 then
+                    print("等待队友过久，重新开始匹配")
+                    C_PetBattles.CancelPVPDuel()
+                    CooperateController:Reset()
+                else
+                    C_PetBattles.StartPVPMatchmaking()
+                    C_PetBattles.AcceptQueuedPVPMatch()
+                    StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
+                end
             end
         else 
             if not Strategy:ShouldRest() then
