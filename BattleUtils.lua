@@ -35,7 +35,7 @@ function BattleUtils:BuildTeamForPetLevel()
             return false
         end
         for i = 1, numPets do
-            local guid,_,_,_,_,level,favorite = C_PetJournal.GetPetInfoByIndex(i)
+            local guid,_,_,_,level,favorite = C_PetJournal.GetPetInfoByIndex(i)
             if favorite and level<25 then
                 C_PetJournal.SetPetLoadOutInfo(3, guid)
                 return true
