@@ -92,7 +92,7 @@ local function PerformAutoBattle()
             elseif CooperateController.state == STATE_PLAYING then
                 if time() - CooperateController.startTime >120 then
                     print("等待队友过久，重新开始匹配")
-                    C_PetBattles.CancelPVPDuel()
+                    C_PetBattles.StopPVPMatchmaking()
                     CooperateController:Reset()
                 else
                     C_PetBattles.StartPVPMatchmaking()
