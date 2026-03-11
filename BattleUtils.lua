@@ -56,7 +56,7 @@ function BattleUtils:BuildTeamByLevel(targetLevels)
     end
     local index = 1
     for i = 1, numPets do
-        local guid,_,owned,_,_,level = C_PetJournal.GetPetInfoByIndex(i)
+        local guid,_,owned,_,level = C_PetJournal.GetPetInfoByIndex(i)
         if owned then
             if level == targetLevels[index] then
                 C_PetJournal.SetPetLoadOutInfo(index, guid)
