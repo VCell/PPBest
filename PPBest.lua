@@ -11,7 +11,7 @@ local PPBestFrame = CreateFrame("Frame")
 PPBestFrame:RegisterEvent("ADDON_LOADED")
 
 local PPBEST_TITLE = "PPBest"
-local MIN_QUERY_INTERVAL = 20
+local MIN_QUERY_INTERVAL = 10
 
 local PPBEST_MSG_PREFIX = "PPBestAutoInfo"
 
@@ -76,6 +76,7 @@ local function PerformAutoBattle()
         elseif PPBestConfig.mode == Const.MODE_ASSIST then
             if CooperateController.state == STATE_WAITING_INFO then
                 if time() - lastQueryTime > MIN_QUERY_INTERVAL then 
+                    CooperateController.startTime = time()
                     -- 发送查询消息给队友
                     local target = PPBestConfig.assist_target
                     if target and target ~= "" then
