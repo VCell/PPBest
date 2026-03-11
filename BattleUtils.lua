@@ -45,61 +45,89 @@ function BattleUtils:BuildTeamForPetLevel()
     return false
 end
 
-function BattleUtils:BuildTeamByLevel(targetLevel)
-    C_PetJournal.ClearSearchFilter() 
+function BattleUtils:BuildTeamByLevel(targetLevels)
+    --先排序
+    table.sort(targetLevels, function(a,b) return a>b end)
+    C_PetJournal.ClearSearchFilter()
     local numPets, numOwned = C_PetJournal.GetNumPets()
     if numPets<numOwned then
         print("清空宠物手册的筛选栏再试")
         return false
     end
-    local levelToGuid = {}
+    local index = 1
     for i = 1, numPets do
-        local guid, _,owned,_, tLevel = C_PetJournal.GetPetInfoByIndex(i)
+        local guid,_,owned,_,_,level = C_PetJournal.GetPetInfoByIndex(i)
         if owned then
-            if not levelToGuid[tLevel] then 
-                levelToGuid[tLevel] = {}
-            end
-            table.insert(levelToGuid[tLevel], guid)
-        end
-    end
-
-    local levelCount = {}
-    for i = 1, 25 do levelCount[i] = 0 end
-    local found = false
-
-    for i = 25,1,-1 do
-        if found then break end
-        for j = i, 1, -1 do
-            local k = targetLevel-i-j
-            if k>=1 and k <= 25 then
-                levelCount[i] = levelCount[i] + 1
-                levelCount[j] = levelCount[j] + 1
-                levelCount[k] = levelCount[k] + 1
-                if levelCount[i]<=#levelToGuid[i] and levelCount[j]<=#levelToGuid[j] and levelCount[k]<=#levelToGuid[k] then
-                    found = true
+            if level == targetLevels[index] then
+                C_PetJournal.SetPetLoadOutInfo(index, guid)
+                index = index + 1
+                if index > #targetLevels then
                     break
-                else
-                    levelCount[i] = levelCount[i] - 1
-                    levelCount[j] = levelCount[j] - 1
-                    levelCount[k] = levelCount[k] - 1
                 end
             end
         end
-
     end
-    
-    local res = {}
-    for i = 1, 25 do  
-        while levelCount[i]>0 do 
-            table.insert(res, levelToGuid[i][levelCount[i]])
-            levelCount[i] = levelCount[i] - 1
-        end
-    end
-    assert(#res==3)
-    for i = 1,3 do
-        C_PetJournal.SetPetLoadOutInfo(i, res[i])
+    if index <= #targetLevels then
+        print("没有目标等级：", targetLevels[1], targetLevels[2], targetLevels[3])
+        return false
     end
 end
+
+-- function BattleUtils:BuildTeamByLevel(targetLevel)
+--     C_PetJournal.ClearSearchFilter() 
+--     local numPets, numOwned = C_PetJournal.GetNumPets()
+--     if numPets<numOwned then
+--         print("清空宠物手册的筛选栏再试")
+--         return false
+--     end
+--     local levelToGuid = {}
+--     for i = 1, numPets do
+--         local guid, _,owned,_, tLevel = C_PetJournal.GetPetInfoByIndex(i)
+--         if owned then
+--             if not levelToGuid[tLevel] then 
+--                 levelToGuid[tLevel] = {}
+--             end
+--             table.insert(levelToGuid[tLevel], guid)
+--         end
+--     end
+
+--     local levelCount = {}
+--     for i = 1, 25 do levelCount[i] = 0 end
+--     local found = false
+
+--     for i = 25,1,-1 do
+--         if found then break end
+--         for j = i, 1, -1 do
+--             local k = targetLevel-i-j
+--             if k>=1 and k <= 25 then
+--                 levelCount[i] = levelCount[i] + 1
+--                 levelCount[j] = levelCount[j] + 1
+--                 levelCount[k] = levelCount[k] + 1
+--                 if levelCount[i]<=#levelToGuid[i] and levelCount[j]<=#levelToGuid[j] and levelCount[k]<=#levelToGuid[k] then
+--                     found = true
+--                     break
+--                 else
+--                     levelCount[i] = levelCount[i] - 1
+--                     levelCount[j] = levelCount[j] - 1
+--                     levelCount[k] = levelCount[k] - 1
+--                 end
+--             end
+--         end
+
+--     end
+    
+--     local res = {}
+--     for i = 1, 25 do  
+--         while levelCount[i]>0 do 
+--             table.insert(res, levelToGuid[i][levelCount[i]])
+--             levelCount[i] = levelCount[i] - 1
+--         end
+--     end
+--     assert(#res==3)
+--     for i = 1,3 do
+--         C_PetJournal.SetPetLoadOutInfo(i, res[i])
+--     end
+-- end
 
 function BattleUtils:GetBattleTeamLevel()
     local totalLevel = 0

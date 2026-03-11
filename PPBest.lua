@@ -27,13 +27,13 @@ local CooperateController = {
     state = STATE_WAITING_INFO,
     assistId = "",
     target = "",
-    targetLevel = 0,
+    targetLevel = {},
 }
 function CooperateController:Reset()
     self.state = STATE_WAITING_INFO
     self.assist_id = ""
     self.target = ""
-    self.targetLevel = 0
+    self.targetLevel = {}
 end
 
 
@@ -56,8 +56,14 @@ local function PerformAutoBattle()
             elseif CooperateController.state == STATE_WAITING_START then
                 --回复队友消息，告知目标等级
                 BattleUtils:BuildTeamForPetLevel()
-                local level = BattleUtils:GetBattleTeamLevel()
-                local msg = string.format("%s %s %d", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, level)
+                local levels = {}
+                for i=1,3 do
+                    local guid = C_PetJournal.GetPetLoadOutInfo(i)
+                    local _,_,level = C_PetJournal.GetPetInfoByPetID(guid)
+                    table.insert(levels, level)
+                end
+                local msg = string.format("%s %s %d %d %d", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, 
+                        levels[1], levels[2], levels[3])  
                 SendChatMessage(msg, "WHISPER", nil, CooperateController.assistId)
                 CooperateController.state = STATE_PLAYING
             elseif CooperateController.state == STATE_PLAYING then
@@ -148,8 +154,11 @@ local function parseAutoMsgInfo(msg)
     local res = {
         target = parts[2],
     }
-    if #parts > 2 then
-        res.level = tonumber(parts[3])
+
+    if #parts == 5 then
+        res.level1 = tonumber(parts[3])
+        res.level2 = tonumber(parts[4])
+        res.level3 = tonumber(parts[5])
     end
     return res
 end
@@ -205,11 +214,11 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             if res.target == "query" and (PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL) then 
                 CooperateController.assistId = sender
                 CooperateController.state = STATE_WAITING_START
-                print("收到队友查询")
+                --print("收到队友查询")
             elseif res.target == Const.MODE_WANT_PET_LEVEL and PPBestConfig.mode == Const.MODE_ASSIST then
-                CooperateController.targetLevel = res.level
+                CooperateController.targetLevel = {res.level1, res.level2, res.level3}
                 CooperateController.state = STATE_WAITING_START
-                print("收到队友目标等级:", res.level)
+                --print("收到队友目标等级:", res.level1, res.level2, res.level3)
             end
 
         end
