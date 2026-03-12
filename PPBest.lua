@@ -64,7 +64,7 @@ local function PerformAutoBattle()
                     local _,_,level = C_PetJournal.GetPetInfoByPetID(guid)
                     table.insert(levels, level)
                 end
-                local msg = string.format("%s %s %d %d %d", PPBEST_MSG_PREFIX, Const.MODE_WANT_PET_LEVEL, 
+                local msg = string.format("%s %s %d %d %d", PPBEST_MSG_PREFIX, PPBestConfig.mode, 
                         levels[1], levels[2], levels[3])  
                 SendChatMessage(msg, "WHISPER", nil, CooperateController.assistId)
                 CooperateController.state = STATE_PLAYING
@@ -204,7 +204,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             autoButton:SetShown(false)
         end
         CooperateController:Reset()
-        lastQueryTime = time() + 10
+        lastQueryTime = time()
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         --LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
