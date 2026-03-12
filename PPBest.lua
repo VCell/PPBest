@@ -26,14 +26,14 @@ local STATE_PLAYING = "playing"
 local CooperateController = {
     state = STATE_WAITING_INFO,
     assistId = "",
-    target = "",
+    targetMode = "",
     targetLevel = {},
     startTime = time()
 }
 function CooperateController:Reset()
     self.state = STATE_WAITING_INFO
     self.assist_id = ""
-    self.target = ""
+    self.targetMode = ""
     self.targetLevel = {}
     self.startTime = time()
 end
@@ -52,12 +52,12 @@ local function PerformAutoBattle()
             return
         end
     else 
-        if PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
+        if  Const.isCooperateMainMode(PPBestConfig.mode) then
             if CooperateController.state == STATE_WAITING_INFO then
                 print("等待队友消息中...")
             elseif CooperateController.state == STATE_WAITING_START then
                 --回复队友消息，告知目标等级
-                BattleUtils:BuildTeamForPetLevel()
+                BattleUtils:checkTeamByMode(PPBestConfig.mode)
                 local levels = {}
                 for i=1,3 do
                     local guid = C_PetJournal.GetPetLoadOutInfo(i)
@@ -78,7 +78,7 @@ local function PerformAutoBattle()
                 if time() - lastQueryTime > MIN_QUERY_INTERVAL then 
                     CooperateController.startTime = time()
                     -- 发送查询消息给队友
-                    local target = PPBestConfig.assist_target
+                    local target = PPBestConfig.assistTarget
                     if target and target ~= "" then
                         SendChatMessage(PPBEST_MSG_PREFIX .. " query", "WHISPER", nil, target)
                         lastQueryTime = time()
@@ -197,13 +197,14 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         if autoButton then
             autoButton:SetShown(true)
         end
-        Strategy:Init()
+        Strategy:Init(CooperateController.targetMode)
     elseif event == "PET_BATTLE_CLOSE" then
         isInPetBattle = false
         if autoButton then
             autoButton:SetShown(false)
         end
         CooperateController:Reset()
+        lastQueryTime = time() + 10
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         --LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
@@ -220,13 +221,14 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         if string.sub(msg, 1, #PPBEST_MSG_PREFIX) == PPBEST_MSG_PREFIX then
             local res = parseAutoMsgInfo(msg)
             
-            if res.target == "query" and (PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL) then 
+            if res.target == "query" and Const.isCooperateMainMode(PPBestConfig.mode) then 
                 CooperateController.assistId = sender
                 CooperateController.state = STATE_WAITING_START
                 --print("收到队友查询")
-            elseif res.target == Const.MODE_WANT_PET_LEVEL and PPBestConfig.mode == Const.MODE_ASSIST then
+            elseif Const.isCooperateMainMode(res.target) and PPBestConfig.mode == Const.MODE_ASSIST then
                 CooperateController.targetLevel = {res.level1, res.level2, res.level3}
                 CooperateController.state = STATE_WAITING_START
+                CooperateController.targetMode = res.target
                 --print("收到队友目标等级:", res.level1, res.level2, res.level3)
             end
 

@@ -132,9 +132,9 @@ function OptionPanel:CreateUI()
     targetNameBox:SetSize(200, 20)
     targetNameBox:SetPoint("TOPLEFT", targetNameLabel, "BOTTOMLEFT", 0, -10)
     targetNameBox:SetAutoFocus(false)                -- 不自动获得焦点
-    targetNameBox:SetText(PPBestConfig.assist_target or "")       -- 显示保存的内容
+    targetNameBox:SetText(PPBestConfig.assistTarget or "")       -- 显示保存的内容
     targetNameBox:SetScript("OnEnterPressed", function(self)
-        PPBestConfig.assist_target = self:GetText()
+        PPBestConfig.assistTarget = self:GetText()
         -- print("已保存: " .. self:GetText())
     end)
 
@@ -145,7 +145,7 @@ function OptionPanel:CreateUI()
     targetNameButton:SetText("保存")
     targetNameButton:SetScript("OnClick", function()
         local text = targetNameBox:GetText()
-        PPBestConfig.assist_target = text
+        PPBestConfig.assistTarget = text
         -- print("已保存: " .. text)
         targetNameBox:ClearFocus()  -- 保存后取消焦点
     end)

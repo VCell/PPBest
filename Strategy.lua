@@ -3,16 +3,6 @@ local AII = PPBest.SearchInterface
 local BattleUtils = PPBest.BattleUtils
 local Const = PPBest.Const
 
-local TARGET_EXP = '我要经验'
-local TARGET_WIN = '我要胜场'
-local TARGET_ASSIST = '我要送'
-
-local COOPERATE_TARGETS = {
-    TARGET_EXP,
-    TARGET_WIN,
-    TARGET_ASSIST,
-}
-
 local MAX_RECORDS = 200
 local LOSS_REST_TIME = 30  -- 失败后休息时间，单位秒
 
@@ -64,73 +54,26 @@ function Strategy:Forfeit()
     C_PetBattles.ForfeitGame()
 end
 
-local function GetSchemeByMode()
-    if PPBestConfig.mode == Const.MODE_ASSIST then
-        return {
-            schemeName = "CooperateAssistScheme",
-            Select = function(self)
-                C_PetBattles.ChangePet(1)
-            end,
-            Battle = function(self, round)
-                Strategy:Forfeit()
-            end,
-
-        }
-    elseif PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
-        return {
-            schemeName = "CooperatePetLevelScheme",
-            Select = function(self)
-                C_PetBattles.ChangePet(3)
-            end,
-            Battle = function(self, round)
-                
-            end,
-        }
-    end
-end
-
-function GetCooperateScheme(myTarget, enemyTarget)
+local function GetCooperateForfeitScheme(timeout, firstPetIndex)
     local startTime = time()
     return {
-        schemeName = "CooperateScheme",
+        schemeName = "CooperateForfeitScheme",
 
         Select = function(self)
-            if not enemyTarget then
-                Strategy:Forfeit()
-                return
-            end
-            BattleUtils:SwitchToHighestHealthPet()
+            C_PetBattles.ChangePet(firstPetIndex)
         end,
         Battle = function(self, round)
-            if myTarget == TARGET_ASSIST then
-                if lossCount >=10 then
-                    -- 辅助方每10场要赢一场
-                    return
-                end
-                if enemyTarget == TARGET_EXP and time() - startTime < 60 then
-                    return
-                end
-                Strategy:Forfeit()
-            elseif myTarget == TARGET_WIN then
-                if time() - startTime > 10 then
-                    Strategy:Forfeit()
-                end
+            if lossCount >=10 then 
                 local skillSlot = math.random(1,3)
                 BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
-            elseif myTarget == TARGET_EXP then
-                if time() - startTime > 75 then
-                    Strategy:Forfeit()
-                end
-                local skillSlot = math.random(1,3)
-                BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
-            else
+                return
+            end
+            if time() - startTime > timeout then
                 Strategy:Forfeit()
             end
         end,
     }
 end
-
-
 
 function SimplePerform()
     local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
@@ -402,7 +345,7 @@ function Strategy:AddBattleRecord(result)
 end
 
 
-function Strategy:Init()
+function Strategy:Init(targetMode)
     self.startTime = time()
     self.scheme = GetSimpleScheme()
     self.opponentTeam = {}
@@ -411,6 +354,28 @@ function Strategy:Init()
     self.lossTime = nil
     self.forfeited = false
     
+    if PPBestConfig.mode == Const.MODE_ASSIST then
+        if targetMode == Const.MODE_WANT_EXP then
+            self.scheme = GetCooperateForfeitScheme(60, 1)
+            return
+        else 
+            self.scheme = GetCooperateForfeitScheme(0, 1)
+            return
+        end
+    elseif PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
+        --15s投降 因为辅助方预期立刻投降
+        self.scheme = GetCooperateForfeitScheme(15, 3)
+        return
+    elseif PPBestConfig.mode == Const.MODE_WANT_EXP then
+        --70s投降，因为辅助方预期60s投降
+        self.scheme = GetCooperateForfeitScheme(70, 1)
+        return
+    elseif PPBestConfig.mode == Const.MODE_WANT_WIN then
+        --不投降，直到赢了才投降
+        self.scheme = GetCooperateForfeitScheme(15, 1)
+        return
+    end
+
     -- 处理己方宠物信息
     if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
         self.scheme = GetScheme3Nexus()
@@ -428,18 +393,6 @@ function Strategy:Init()
     local myTarget = nil
     local enemyTarget = nil
 
-    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ALLY) do
-        local name = C_PetBattles.GetName(LE_BATTLE_PET_ALLY, petIndex)
-        local level = C_PetBattles.GetLevel(LE_BATTLE_PET_ALLY, petIndex)
-        if level < 25 then
-            lowLevel = true
-        end
-        if name == TARGET_EXP or name == TARGET_WIN or name == TARGET_ASSIST then
-            myTarget = name
-        end
-    end
-
-
     -- 处理对手宠物信息
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
         local name = C_PetBattles.GetName(LE_BATTLE_PET_ENEMY, petIndex)
@@ -454,16 +407,9 @@ function Strategy:Init()
             quality = quality,
             id = id,
         })
-        if name == TARGET_EXP or name == TARGET_WIN or name == TARGET_ASSIST then
-            enemyTarget = name
-        end
+
     end
-    if lowLevel and myTarget ~= nil then
-        self.scheme = GetCooperateScheme(myTarget, enemyTarget)
-    end
-    if PPBestConfig.mode == Const.MODE_ASSIST or PPBestConfig.mode == Const.MODE_WANT_PET_LEVEL then
-        self.scheme = GetSchemeByMode()
-    end
+
     if not C_PetBattles.IsPlayerNPC(LE_BATTLE_PET_ENEMY) then
         self.recording = true
     end
