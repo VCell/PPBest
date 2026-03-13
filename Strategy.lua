@@ -294,7 +294,12 @@ function GetSchemeAI()
         schemeName = "AIScheme",
         action = nil,
         action_round = 0,
+        InitPets = function(self)
+            -- 开局调用
+            AII.init_rule()
+        end,
         StartSearh = function(self)
+            --回合结束调用
             AII.init_rule()
             AII.init_state()
             local selfRef = self
@@ -303,7 +308,7 @@ function GetSchemeAI()
                 selfRef.action_round = round
             end)
         end,
-        Select = function(self)
+        Select = function(self, round)
             
         end,
         Battle = function(self, round)

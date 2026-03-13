@@ -4,6 +4,7 @@ PPBestConfig = PPBestConfig or {
     hotkey = "F8",
     mode = "default", --default,ai
     assistTarget = "",
+    enableLogWindow = false,
 }
 
 local Const = {

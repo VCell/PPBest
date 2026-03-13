@@ -5,7 +5,8 @@ local LogFrame = {
 }
 
 function LogFrame:Create()
-
+    if not PPBestConfig.enableLogWindow then return end
+    local selfRef = self
     if self.frame then
         self.frame:Show()
         return
@@ -60,6 +61,7 @@ function LogFrame:Create()
     clearButton:SetText("清空")
     clearButton:SetScript("OnClick", function()
         logText:SetText("")
+        selfRef.logs = "" -- 清空日志历史
         scrollChild:SetHeight(20) -- 重置高度
     end)
 
@@ -82,6 +84,7 @@ function LogFrame:RefreshLogDisplay()
 end
 
 function LogFrame:AddLog(message)
+    if not PPBestConfig.enableLogWindow then return end
     if not message then return end
     local timeStr = date("%H:%M:%S")
     self.logs = self.logs .. string.format("%s %s\n", timeStr, message)

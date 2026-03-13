@@ -90,7 +90,7 @@ function OptionPanel:CreateUI()
     -- 添加一个文本标签
     local modLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     modLabel:SetPoint("TOPLEFT", setHotkeyButton, "BOTTOMLEFT", 0, -10)
-    modLabel:SetText("战斗模式:")
+    modLabel:SetText("使用模式:")
     
     local modDropdownFrame = CreateFrame("Frame", nil, PPBestOptions, "UIDropDownMenuTemplate")
     modDropdownFrame:SetPoint("TOPLEFT", modLabel, "BOTTOMLEFT", 0, -10)
@@ -104,9 +104,9 @@ function OptionPanel:CreateUI()
                     { text = "单刷-默认策略", value = Const.MODE_DEFAULT },
                     { text = "单刷-AI", value = Const.MODE_AI },
                     { text = "互刷-协助方", value = Const.MODE_ASSIST },
-                    { text = "互刷-人物经验", value = Const.MODE_WANT_EXP },
-                    { text = "互刷-胜场", value = Const.MODE_WANT_WIN },
-                    { text = "互刷-宠物等级", value = Const.MODE_WANT_PET_LEVEL },
+                    { text = "互刷-我要角色经验", value = Const.MODE_WANT_EXP },
+                    { text = "互刷-我要胜场数", value = Const.MODE_WANT_WIN },
+                    { text = "互刷-我要宠物等级", value = Const.MODE_WANT_PET_LEVEL },
                 }
                 for _, option in ipairs(options) do
                     local info = UIDropDownMenu_CreateInfo()
@@ -149,7 +149,19 @@ function OptionPanel:CreateUI()
         -- print("已保存: " .. text)
         targetNameBox:ClearFocus()  -- 保存后取消焦点
     end)
+    
+    local logLaber = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    logLaber:SetPoint("TOPLEFT", targetNameBox, "BOTTOMLEFT", 0, -10)
+    logLaber:SetText("日志")
 
+    local logCheckButton = CreateFrame("CheckButton", nil, PPBestOptions, "ChatConfigCheckButtonTemplate")
+    logCheckButton:SetPoint("TOPLEFT", logLaber, "BOTTOMLEFT", 0, -10)
+    logCheckButton.Text:SetText("开启日志窗口")
+    logCheckButton.tooltip = "开启/关闭开启日志窗口"
+    logCheckButton:SetChecked(PPBestConfig.enableLogWindow or false)
+    logCheckButton:SetScript("OnClick", function(self)
+        PPBestConfig.enableLogWindow = self:GetChecked()
+    end)
 end
 
 -- 开始捕获按键
