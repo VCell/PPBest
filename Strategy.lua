@@ -298,9 +298,8 @@ function GetSchemeAI()
             -- 开局调用
             AII.init_rule()
         end,
-        StartSearh = function(self)
+        StartSearch = function(self)
             --回合结束调用
-            AII.init_rule()
             AII.init_state()
             local selfRef = self
             AII.search(function(best_action,round) 
@@ -352,7 +351,7 @@ end
 
 function Strategy:Init(targetMode)
     self.startTime = time()
-    self.scheme = GetSimpleScheme()
+    self.scheme = nil
     self.opponentTeam = {}
     self.recording = false
     self.round = 0
@@ -379,19 +378,25 @@ function Strategy:Init(targetMode)
         --不投降，直到赢了才投降
         self.scheme = GetCooperateForfeitScheme(15, 1)
         return
+    elseif PPBestConfig.mode == Const.MODE_AI then
+        --15s投降 因为辅助方预期立刻投降
+        self.scheme = GetSchemeAI()
+    else 
+        -- 处理己方宠物信息
+        if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
+            self.scheme = GetScheme3Nexus()
+        elseif BattleUtils:AllyTeamIs({PET_ID_SPRINT_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+            self.scheme = GetSchemeRabbitPebbleArfus()
+        elseif BattleUtils:AllyTeamIs({PET_ID_MOUNTAIN_COTTONTAIL, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+            self.scheme = GetSchemeRabbitPebbleArfus()
+        elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_HARE, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+            self.scheme = GetSchemeRabbitPebbleArfus()
+        elseif BattleUtils:AllyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
+            self.scheme = GetSchemeAAB()
+        end
     end
-
-    -- 处理己方宠物信息
-    if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
-        self.scheme = GetScheme3Nexus()
-    elseif BattleUtils:AllyTeamIs({PET_ID_SPRINT_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-        self.scheme = GetSchemeRabbitPebbleArfus()
-    elseif BattleUtils:AllyTeamIs({PET_ID_MOUNTAIN_COTTONTAIL, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-        self.scheme = GetSchemeRabbitPebbleArfus()
-    elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_HARE, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-        self.scheme = GetSchemeRabbitPebbleArfus()
-    elseif BattleUtils:AllyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
-        self.scheme = GetSchemeAAB()
+    if not self.scheme then
+        self.scheme = GetSimpleScheme()
     end
 
     local lowLevel = false
@@ -418,11 +423,16 @@ function Strategy:Init(targetMode)
     if not C_PetBattles.IsPlayerNPC(LE_BATTLE_PET_ENEMY) then
         self.recording = true
     end
-
-    --BattleUtils:Debug("Using scheme: " .. self.scheme.schemeName)
+    if type(self.scheme.InitPets) == "function" then
+        self.scheme:InitPets()
+    end
+    BattleUtils:Debug("Using scheme: " .. self.scheme.schemeName)
 end
 
 function Strategy:OnRoundComplete()
+    if type(self.scheme.OnRoundComplete) == "function" then
+        self.scheme:StartSearch()
+    end
     self.round = self.round + 1
 end
 

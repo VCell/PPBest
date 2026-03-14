@@ -73,7 +73,13 @@ function SearchInterface:init_state()
     end
 
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
-
+    if weather_id then
+        local weather = AI.Aura.new_aura_by_id(weather_id, 280)
+        weather.duration = duration
+        if weather then
+            self.game.Rule.weather = weather
+        end
+    end
 
     if C_PetBattles.ShouldShowPetSelect() then
         

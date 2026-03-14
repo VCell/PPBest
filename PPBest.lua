@@ -191,8 +191,8 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             print("|cFF00FF00PPBest 已加载|r")
         end
     elseif event == "PET_BATTLE_OPENING_START" then
-        --LogFrame:Create()
-        --:AddLog("EVENT: PET_BATTLE_OPENING_START")
+        LogFrame:Create()
+        LogFrame:AddLog("EVENT: PET_BATTLE_OPENING_START")
         isInPetBattle = true
         if autoButton then
             autoButton:SetShown(true)
@@ -206,12 +206,12 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         CooperateController:Reset()
         lastQueryTime = time()
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
-        --LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
+        LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
-        --LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
+        LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
     elseif event == "PET_BATTLE_PET_ROUND_RESULTS" then
-        --LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_RESULTS", ...)
         local round = ...
+        LogFrame:AddLog(string.format("EVENT: PET_BATTLE_PET_ROUND_RESULTS, round: %d", round))
         Strategy:OnRoundComplete(round)
     elseif event == "PET_BATTLE_FINAL_ROUND" then
         Strategy:OnFinalRound(...)
