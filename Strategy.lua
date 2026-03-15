@@ -2,7 +2,7 @@ local _, PPBest = ...
 local AII = PPBest.SearchInterface
 local BattleUtils = PPBest.BattleUtils
 local Const = PPBest.Const
-
+local LogFrame = PPBest.LogFrame
 local MAX_RECORDS = 200
 local LOSS_REST_TIME = 30  -- 失败后休息时间，单位秒
 
@@ -297,12 +297,14 @@ function GetSchemeAI()
         action_round = 0,
         InitPets = function(self)
             -- 开局调用
-            AII.InitRule()
+            LogFrame.AddLog("AIScheme.InitPets")
+            AII:InitRule()
         end,
         StartSearch = function(self)
-            AII.InitState()
+            LogFrame.AddLog("AIScheme.StartSearch")
+            AII:InitState()
             local selfRef = self
-            AII.search(function(best_action,round) 
+            AII:search(function(best_action,round) 
                 selfRef.action = best_action
                 selfRef.action_round = round
             end)
@@ -430,7 +432,8 @@ function Strategy:Init(targetMode)
 end
 
 function Strategy:OnRoundComplete()
-    if type(self.scheme.OnRoundComplete) == "function" then
+    LogFrame.AddLog("OnRoundComplete "..type(self.scheme.StartSearch))
+    if type(self.scheme.StartSearch) == "function" then
         self.scheme:StartSearch()
     end
     self.round = self.round + 1

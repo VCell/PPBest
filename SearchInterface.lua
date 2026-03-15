@@ -50,17 +50,18 @@ end
 
 function SearchInterface:InitState()
     for player = 1, 2 do
-        local team_state = Play.TeamState.new()
+        local team_state = AI.TeamState.new()
         for pet_index = 1,3 do
             local health = C_PetBattles.GetHealth(player, pet_index)
-            local pet_state = Play.PetState.new(health)
+            local pet_state = AI.PetState.new(health)
             table.insert(team_state.pets, pet_state)
             local aura_count = C_PetBattles.GetNumAuras(player, pet_index)
             for aura_index = 1, aura_count do
                 local aura_id, _, duration = C_PetBattles.GetAuraInfo(player, pet_index, aura_index)
+                LogFrame:AddLog(string.format("宠物%d aura:%d duration:%d",pet_index, aura_id, duration))
                 local aura = AI.Aura.new_aura_by_id(aura_id, 280)
-                aura.duration = duration
                 if aura then
+                    aura.duration = duration
                     if aura.keep_front then
                         team_state.active_auras[aura_id] = aura
                     else
@@ -71,12 +72,12 @@ function SearchInterface:InitState()
             --获取技能cd情况
             if player == LE_BATTLE_PET_ALLY then
                 for ab_index = 1,3 do
-                    local _, _, _, cooldown, _, _, _ = C_PetBattles.GetAbilityInfo(player, ab_index)
-                    local ability = team_state.pets[ab_index].abilitys[1]
-                    if ability then
-                        ability.cooldown = cooldown
-                    end
-                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d",pet_index, ab_index, ability.cooldown))
+                    local _, cooldown = C_PetBattles.GetAbilityState(player,pet_index, ab_index)
+                    -- local ability = team_state.pets[ab_index].abilitys[1]
+                    -- if ability then
+                    --     ability.cooldown = cooldown
+                    -- end
+                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d",pet_index, ab_index, cooldown))
                 end
             end
         end
@@ -100,9 +101,9 @@ function SearchInterface:search(result_callback)
         print("未初始化游戏规则")
         return
     end
-    local searcher = AI.Searcher.new(self.game)
-    local best_action = searcher:search()
-    result_callback(best_action)
+    -- local searcher = AI.Searcher.new(self.game)
+    -- local best_action = searcher:search()
+    -- result_callback(best_action)
     
 end
 

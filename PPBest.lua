@@ -212,7 +212,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
     elseif event == "PET_BATTLE_PET_ROUND_RESULTS" then
         local round = ...
-        LogFrame:AddLog(string.format("EVENT: PET_BATTLE_PET_ROUND_RESULTS, round: %d", round))
+        LogFrame:AddLog(string.format("EVENT: PET_BATTLE_PET_ROUND_RESULTS, round: [%d]", round))
         Strategy:OnRoundComplete(round)
     elseif event == "PET_BATTLE_FINAL_ROUND" then
         Strategy:OnFinalRound(...)
