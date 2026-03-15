@@ -57,7 +57,7 @@ function OptionPanel:CreateUI()
     -- 标题
     local title = PPBestOptions:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("PPBest 宠物对战助手")
+    title:SetText("PPBest 宠物对战一键助手")
     
     -- 分隔线
     local line = PPBestOptions:CreateTexture(nil, "ARTWORK")
@@ -126,7 +126,7 @@ function OptionPanel:CreateUI()
 
     local targetNameLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     targetNameLabel:SetPoint("TOPLEFT", modDropdownFrame, "BOTTOMLEFT", 0, -10)
-    targetNameLabel:SetText("互刷目标ID(名字-服务器)：")
+    targetNameLabel:SetText("辅助目标ID(只有辅助方需要填写，格式：名字-服务器)：")
 
     local targetNameBox = CreateFrame("EditBox", nil, PPBestOptions, "InputBoxTemplate")
     targetNameBox:SetSize(200, 20)

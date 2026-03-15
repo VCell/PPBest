@@ -1,6 +1,6 @@
 local _, PPBest = ...
 local AI = PPBest.AI
-
+local LogFrame = PPBest.LogFrame
 local SearchInterface = {
     game = nil,
 }
@@ -37,7 +37,7 @@ local function get_team(player)
     end
 end
 
-function SearchInterface:init_rule()
+function SearchInterface:InitRule()
     if not C_PetBattles.IsInBattle() then
         return false
     end
@@ -48,16 +48,16 @@ function SearchInterface:init_rule()
     }
 end
 
-function SearchInterface:init_state()
+function SearchInterface:InitState()
     for player = 1, 2 do
         local team_state = Play.TeamState.new()
-        for ab_index = 1,3 do
-            local health = C_PetBattles.GetHealth(player, ab_index)
+        for pet_index = 1,3 do
+            local health = C_PetBattles.GetHealth(player, pet_index)
             local pet_state = Play.PetState.new(health)
             table.insert(team_state.pets, pet_state)
-            local aura_count = C_PetBattles.GetNumAuras(player, ab_index)
+            local aura_count = C_PetBattles.GetNumAuras(player, pet_index)
             for aura_index = 1, aura_count do
-                local aura_id, _, duration = C_PetBattles.GetAuraInfo(player, ab_index, aura_index)
+                local aura_id, _, duration = C_PetBattles.GetAuraInfo(player, pet_index, aura_index)
                 local aura = AI.Aura.new_aura_by_id(aura_id, 280)
                 aura.duration = duration
                 if aura then
@@ -66,6 +66,17 @@ function SearchInterface:init_state()
                     else
                         pet_state.auras[aura_id] = aura
                     end
+                end
+            end
+            --获取技能cd情况
+            if player == LE_BATTLE_PET_ALLY then
+                for ab_index = 1,3 do
+                    local _, _, _, cooldown, _, _, _ = C_PetBattles.GetAbilityInfo(player, ab_index)
+                    local ability = team_state.pets[ab_index].abilitys[1]
+                    if ability then
+                        ability.cooldown = cooldown
+                    end
+                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d",pet_index, ab_index, ability.cooldown))
                 end
             end
         end
@@ -77,14 +88,11 @@ function SearchInterface:init_state()
         local weather = AI.Aura.new_aura_by_id(weather_id, 280)
         weather.duration = duration
         if weather then
-            self.game.Rule.weather = weather
+            self.game.State.weather = weather
         end
+        LogFrame:AddLog(string.format("天气: %s, 持续回合数: %d", weather.name, weather.duration))
     end
-
-    if C_PetBattles.ShouldShowPetSelect() then
-        
-    end
-    
+  
 end
 
 function SearchInterface:search(result_callback)

@@ -291,16 +291,16 @@ end
 
 function GetSchemeAI()
     return {
+        --todo 需要确认事件次序。确认回合结束时buff和cd的时间
         schemeName = "AIScheme",
         action = nil,
         action_round = 0,
         InitPets = function(self)
             -- 开局调用
-            AII.init_rule()
+            AII.InitRule()
         end,
         StartSearch = function(self)
-            --回合结束调用
-            AII.init_state()
+            AII.InitState()
             local selfRef = self
             AII.search(function(best_action,round) 
                 selfRef.action = best_action
@@ -311,8 +311,8 @@ function GetSchemeAI()
             
         end,
         Battle = function(self, round)
-            local actions = AII:DecideActions()
-            BattleUtils:PerformActions(actions)
+            -- local actions = AII:DecideActions()
+            -- BattleUtils:PerformActions(actions)
         end
     }
 end
