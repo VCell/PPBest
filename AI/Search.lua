@@ -73,7 +73,7 @@ DUCT_MCTS.Node = {
             for player = 1, 2 do
                 local actions = game_rules:get_legal_actions(state, player)
                 for _, action in ipairs(actions) do
-                    node.stats[player][action:to_string()] = {
+                    node.stats[player][tostring(action)] = {
                         total_reward = 0,
                         visits = 0,
                         average_reward = 0
@@ -405,7 +405,7 @@ DUCT_MCTS.Searcher = {
         local best_action = nil
         local best_avg_reward = -math.huge
         
-        local reward_str = ""
+        local reward_info = {}
         for _, action in ipairs(actions) do
             local stats = node:get_stats(player, action)
             --print("for _, action in ipairs(actions) do", stats.visits ,stats.average_reward)
@@ -413,15 +413,15 @@ DUCT_MCTS.Searcher = {
                 best_avg_reward = stats.average_reward
                 best_action = action
             end
-            reward_str = reward_str .. string.format("[%s: avg=%.3f v=%d] ", action:to_string(), stats.average_reward, stats.visits)
+            table.insert(reward_info, string.format("[%s: avg=%.3f v=%d]", tostring(action), stats.average_reward, stats.visits))
         end
         
         -- 回退：随机选择
         if not best_action and #actions > 0 then
             best_action = actions[math.random(#actions)]
         end
-        print("action rewards: "..reward_str)
-        return best_action
+        print("action rewards: "..table.concat(reward_info, ""))
+        return best_action, reward_info
     end,
     
     -- 选择UCT值最高的动作（用于tree policy）

@@ -48,7 +48,8 @@ function SearchInterface:InitRule()
     }
 end
 
-function SearchInterface:InitState()
+function SearchInterface:InitState(round)
+    self.game.State.round = round
     for player = 1, 2 do
         local team_state = AI.TeamState.new()
         for pet_index = 1,3 do
@@ -96,15 +97,38 @@ function SearchInterface:InitState()
   
 end
 
-function SearchInterface:search(result_callback)
+function SearchInterface:SetChangePetState(round)
+    if round == 0 then 
+        --开局先选人
+        self.game.State.change_round = 3
+    else
+        local change_round = 0
+        for player = 1, 2 do
+            local active = C_PetBattles.GetActivePet(player)
+            if C_PetBattles.GetHealth(player, active) <= 0 then
+                change_round = player + change_round
+            end
+        end
+        if not change_round then
+            self.game.State.change_round = round
+        end
+    end
+end
+
+function SearchInterface:DecideActions()
     if not self.game then
         print("未初始化游戏规则")
         return
     end
-    -- local searcher = AI.Searcher.new(self.game)
-    -- local best_action = searcher:search()
-    -- result_callback(best_action)
-    
+    local root = AI.DUCT_MCTS.Searcher.run_search(self.game.State, self.game.Rule, {
+                iterations = 500,
+                exploration_c = 1.414,
+            })
+    local acction, info = self.AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)
+    for _, line in ipairs(info) do
+        LogFrame:AddLog(string.format("DUCT_MCTS %d  %s", round, line))
+    end
+    return acction
 end
 
 PPBest.SearchInterface = SearchInterface

@@ -289,6 +289,16 @@ function GetSchemeAAB()
     }
 end
 
+local function performAction(action)
+    if action.type == "change" then
+        C_PetBattles.ChangePet(action.value)
+    elseif action.type == "use" then
+        C_PetBattles.UseAbility(action.value)
+    elseif action.type == "standby" then
+        C_PetBattles.SkipTurn()
+    end
+end
+
 function GetSchemeAI()
     return {
         --todo 需要确认事件次序。确认回合结束时buff和cd的时间
@@ -297,24 +307,29 @@ function GetSchemeAI()
         action_round = 0,
         InitPets = function(self)
             -- 开局调用
-            LogFrame.AddLog("AIScheme.InitPets")
             AII:InitRule()
         end,
-        StartSearch = function(self)
-            LogFrame.AddLog("AIScheme.StartSearch")
-            AII:InitState()
-            local selfRef = self
-            AII:search(function(best_action,round) 
-                selfRef.action = best_action
-                selfRef.action_round = round
-            end)
-        end,
         Select = function(self, round)
-            
+            if round == self.action_round then
+                return 
+            end
+            AII:InitState()
+            AII:SetChangePetState(round)
+            local action = AII:DecideActions(round)
+            assert(action and action.type == "change", "error action")
+            performAction(action)
+            self.action = action
+            self.action_round = round
         end,
         Battle = function(self, round)
-            -- local actions = AII:DecideActions()
-            -- BattleUtils:PerformActions(actions)
+            if round == self.action_round then
+                return 
+            end
+            AII:InitState()
+            local action = AII:DecideActions(round)
+            performAction(action)
+            self.action = action
+            self.action_round = round
         end
     }
 end

@@ -178,15 +178,16 @@ local Action = {
     value = 0,  -- 技能索引或宠物索引
 }
 Action.__index = Action
+Action.__tostring = function (self)
+    return self.type .. self.value
+end
 function Action.new(type, value)
     local action = setmetatable({}, Action)
     action.type = type
     action.value = value
     return action
 end
-function Action:to_string()
-    return self.type .. self.value
-end
+
 local PetState = {
     current_health = 0,
     auras = {},
