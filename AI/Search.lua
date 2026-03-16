@@ -92,7 +92,7 @@ DUCT_MCTS.Node = {
         --     visits = 0,
         --     average_reward = 0
         -- }
-        local key = action:to_string()
+        local key = tostring(action)
         if not self.stats[player][key] then
             self.stats[player][key] = {
                 total_reward = 0,
