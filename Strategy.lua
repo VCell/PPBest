@@ -313,7 +313,7 @@ function GetSchemeAI()
             if round == self.action_round then
                 return 
             end
-            AII:InitState()
+            AII:InitState(round)
             AII:SetChangePetState(round)
             local action = AII:DecideActions(round)
             assert(action and action.type == "change", "error action")
@@ -325,7 +325,7 @@ function GetSchemeAI()
             if round == self.action_round then
                 return 
             end
-            AII:InitState()
+            AII:InitState(round)
             local action = AII:DecideActions(round)
             performAction(action)
             self.action = action
@@ -494,7 +494,7 @@ function Strategy:ShouldRest()
 end
 
 function Strategy:PerformSelect()
-    self.scheme:Select()
+    self.scheme:Select(self.round)
 end
 
 function Strategy:PerformBattle()

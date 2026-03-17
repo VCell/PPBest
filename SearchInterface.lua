@@ -35,6 +35,7 @@ local function get_team(player)
         end
         table.insert(team, pet)
     end
+    return team
 end
 
 function SearchInterface:InitRule()
@@ -82,7 +83,7 @@ function SearchInterface:InitState(round)
                 end
             end
         end
-        
+        self.game.State.team_states[player] = team_state
     end
 
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
@@ -124,7 +125,7 @@ function SearchInterface:DecideActions()
                 iterations = 500,
                 exploration_c = 1.414,
             })
-    local acction, info = self.AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)
+    local acction, info = AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)
     for _, line in ipairs(info) do
         LogFrame:AddLog(string.format("DUCT_MCTS %d  %s", round, line))
     end

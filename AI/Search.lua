@@ -367,32 +367,32 @@ DUCT_MCTS.Searcher = {
         print(string.format("Starting DUCT-MCTS search (%d iterations)...", iterations))
         
         local root_node = DUCT_MCTS.Node:new(initial_state, game_rules)
-        local start_time = os.clock()
+        -- local start_time = os.clock()
         local completed_iterations = 0
         
         for i = 1, iterations do
             -- 检查时间预算
-            if time_budget_ms then
-                local current_time = os.clock()
-                if (current_time - start_time) * 1000 >= time_budget_ms then
-                    print(string.format("Time budget exceeded after %d iterations", i-1))
-                    break
-                end
-            end
+            -- if time_budget_ms then
+            --     local current_time = os.clock()
+            --     if (current_time - start_time) * 1000 >= time_budget_ms then
+            --         print(string.format("Time budget exceeded after %d iterations", i-1))
+            --         break
+            --     end
+            -- end
             
             run_simulation(root_node, exploration_c, simulation_policy)
             completed_iterations = i
             
             -- 进度显示
-            if i % 500 == 0 then
-                local elapsed = (os.clock() - start_time) * 1000
-                print(string.format("  Completed %d iterations (%.1f ms)", i, elapsed))
-            end
+            -- if i % 500 == 0 then
+            --     local elapsed = (os.clock() - start_time) * 1000
+            --     print(string.format("  Completed %d iterations (%.1f ms)", i, elapsed))
+            -- end
         end
         
-        local total_time = (os.clock() - start_time) * 1000
-        print(string.format("Search completed: %d iterations in %.1f ms (%.1f iter/sec)", 
-              completed_iterations, total_time, completed_iterations / (total_time / 1000)))
+        -- local total_time = (os.clock() - start_time) * 1000
+        -- print(string.format("Search completed: %d iterations in %.1f ms (%.1f iter/sec)", 
+        --       completed_iterations, total_time, completed_iterations / (total_time / 1000)))
         
         return root_node
     end,
