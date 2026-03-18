@@ -37,14 +37,18 @@ local Rules = {
     get_utility = function(state)
         -- 返回玩家1的奖励值（玩家2的奖励为 constant_sum - utility）
         error("get_utility not implemented")
-    end
+    end,
+
+    evaluate_action = function(self,state, player, action)
+        error("evaluate_action not implemented")
+    end,
     
 }  -- 游戏规则接口，需要用户实现
 
 -- ==================== 配置 ====================
 DUCT_MCTS.Config = {
     exploration_constant = 1.414,  -- 默认探索系数 √2
-    max_simulation_depth = 100,    -- 模拟最大深度
+    max_simulation_depth = 50,    -- 模拟最大深度
     enable_debug_log = false       -- 调试日志开关
 }
 
@@ -238,6 +242,41 @@ local function select_joint_action_duct(node, exploration_c)
     return best_action1, best_action2
 end
 
+-- 启发式动作选择
+local function select_action_heuristic(game_rules, state, player, actions)
+    local best_action = nil
+    local best_score = -math.huge
+    
+    for _, action in ipairs(actions) do
+        local score = game_rules:evaluate_action(state, player, action)
+        if score > best_score then
+            best_score = score
+            best_action = action
+        end
+    end
+    
+    return best_action or actions[math.random(#actions)]
+end
+
+local function smart_simulation_policy(state, game_rules)
+    local current_state = state
+    local depth = 0
+    
+    while not game_rules.is_terminal(current_state) and depth < 20 do
+        local actions1 = game_rules:get_legal_actions(current_state, 1)
+        local actions2 = game_rules:get_legal_actions(current_state, 2)
+        
+        -- 使用启发式选择而非随机
+        local a1 = select_action_heuristic(game_rules, current_state, 1, actions1)
+        local a2 = select_action_heuristic(game_rules, current_state, 2, actions2)
+        
+        current_state = game_rules:apply_joint_action(current_state, a1, a2)
+        depth = depth + 1
+    end
+    
+    return game_rules.get_utility(current_state)
+end
+
 -- ==================== 默认模拟策略 ====================
 local function default_simulation_policy(state, game_rules)
     local current_state = state
@@ -361,7 +400,8 @@ DUCT_MCTS.Searcher = {
         options = options or {}
         local iterations = options.iterations or 1000
         local exploration_c = options.exploration_c or DUCT_MCTS.Config.exploration_constant
-        local simulation_policy = options.simulation_policy or default_simulation_policy
+        local simulation_policy = options.simulation_policy or smart_simulation_policy
+        --local simulation_policy = options.simulation_policy or default_simulation_policy
         local time_budget_ms = options.time_budget_ms
         
         print(string.format("Starting DUCT-MCTS search (%d iterations)...", iterations))

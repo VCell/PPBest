@@ -133,7 +133,7 @@ function Pet.new(id, health, power, speed, pettype)
     return pet
 end
 
-function Pet:SetAbility(ability, index)
+function Pet:set_ability(ability, index)
     self.abilitys[index] = ability
 end
 

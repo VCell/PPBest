@@ -28,7 +28,7 @@ local function DeepCopy(object)
     return _copy(object)
 end
 
-function update_change_round(old, player)
+local function update_change_round(old, player)
     if old == 0 or old == 3-player then 
         return old + player
     else 
@@ -371,12 +371,14 @@ function GameStateTemplate:process_effects(teams, player, effects)
         elseif effect.target_type == AI.TargetType.ENEMY then
             if effect.effect_type == AI.EffectType.HIT_AURA then
                 if hit then
+                    --print("HIT_AURA effect triggered")
                     self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index)
                 else 
                     --print("HIT_AURA effect did not trigger because the attack missed or was blocked")
                 end
+            else
+                hit = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index) or hit
             end
-            hit = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index) or hit
             if effect.dynamic_type == AI.EffectDynamicType.FLURRY then
                 local roll = math.random(1, 2)
                 if roll == 2 then
@@ -523,6 +525,40 @@ function GameStateTemplate:process_player_action(teams, player, action, opponent
 end
 
 local GameRuleTemplate = {}
+function GameRuleTemplate:evaluate_action(state, player, action)
+    -- 评估玩家在给定状态下的动作
+   local score = 0
+    
+    if action.type == 'use' then
+        -- 技能优先级评估
+        local pet = self.teams[player][state.team_states[player].active_index]
+        local ability = pet:get_ability(action.value)
+        
+        -- 考虑克制关系
+        local opponent = self.teams[3-player][state.team_states[3-player].active_index]
+        local effectiveness = AI.TypeID.GetEffectiveness(ability.type, opponent.type)
+        score = score + effectiveness * 10
+        
+        -- 考虑技能冷却
+        if ability.cooldown > 0 then
+            score = score + ability.cooldown  -- 高冷却技能通常更强
+        end
+        
+    elseif action.type == 'change' then
+        -- 换宠评估
+        local new_pet = self.teams[player][action.value]
+        local opponent = self.teams[3-player][state.team_states[3-player].active_index]
+        
+        -- 克制关系
+        local effectiveness = AI.TypeID.GetEffectiveness(new_pet.type, opponent.type)
+        score = score + effectiveness * 15
+        
+    elseif action.type == 'standby' then
+        score = -10  -- 待命通常不是好选择
+    end
+    return score
+end
+
 function GameRuleTemplate:get_legal_actions(state, player)
     -- 返回玩家在给定状态下的合法动作列表
     local actions = {}
@@ -577,6 +613,7 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
             state.team_states[2]:change_pet(action2.value)
         end
         state.change_round = 0
+        state.round = state.round + 1
         return state
     end
 
