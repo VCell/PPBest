@@ -95,7 +95,7 @@ function SearchInterface:InitState(round)
         end
         LogFrame:AddLog(string.format("天气: %s, 持续回合数: %d", weather.name, weather.duration))
     end
-  
+    self.game.State.change_round = 0
 end
 
 function SearchInterface:SetChangePetState(round)
