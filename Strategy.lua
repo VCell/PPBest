@@ -24,6 +24,7 @@ local PET_ID_SCOURGED_WHELPLING = 538 -- 痛苦的雏龙
 local PET_ID_KUNLAI_RUNR = 1166 -- 昆莱小雪人
 local PET_ID_GRASSLANDS_COTTONTAIL = 443 -- 草地短尾兔
 local PET_ID_TOLAI_HARE = 729 -- 多莱野兔
+local PET_ID_TOLAI_RABBIT = 730 -- 多莱兔子
 local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
 local PET_ID_GILNEAN_RAVEN = 630 -- 吉尔尼斯渡鸦
 local PET_ID_STUNTED_DIREHORN = 1184 -- 瘦弱恐角龙
@@ -142,7 +143,8 @@ function SimplePerform()
             BattleUtils:UseSkillByPriority({3})
         end
     elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL or 
-            id == PET_ID_MOUNTAIN_COTTONTAIL or id == PET_ID_TOLAI_HARE then
+            id == PET_ID_MOUNTAIN_COTTONTAIL or id == PET_ID_TOLAI_HARE
+            or id == PET_ID_TOLAI_RABBIT then
         if  enemyId == PET_ID_SCOURGED_WHELPLING or enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
             if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
                 BattleUtils:UseSkillByPriority({3,2,1})
@@ -408,6 +410,8 @@ function Strategy:Init(targetMode)
         elseif BattleUtils:AllyTeamIs({PET_ID_MOUNTAIN_COTTONTAIL, PET_ID_PEBBLE, PET_ID_ARFUS}) then
             self.scheme = GetSchemeRabbitPebbleArfus()
         elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_HARE, PET_ID_PEBBLE, PET_ID_ARFUS}) then
+            self.scheme = GetSchemeRabbitPebbleArfus()
+        elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
             self.scheme = GetSchemeRabbitPebbleArfus()
         elseif BattleUtils:AllyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
             self.scheme = GetSchemeAAB()
