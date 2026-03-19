@@ -77,7 +77,7 @@ function SearchInterface:InitState(round)
                     local _, cooldown = C_PetBattles.GetAbilityState(player,pet_index, ab_index)
                     -- 设置技能冷却时间
                     pet_state.cooldown_at[ab_index] = round + cooldown - 1
-                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d, cooldown_at: %d, cooldown: %d",pet_index, ab_index, cooldown, pet_state.cooldown_at[ab_index], cooldown))
+                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d, round: %d, cooldown_at: %d, cooldown: %d",pet_index, ab_index, cooldown, round, pet_state.cooldown_at[ab_index]))
                 end
             end
         end
