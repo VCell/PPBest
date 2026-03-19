@@ -196,7 +196,7 @@ end
 local Ability = {
     id = 0,
     type = 0,
-    cooldown = 0,
+    cooldown = 0, --冷却回合数。例如第1回合释放，cooldown=1，代表第3回合才能再用
     duration = 0,   --持续回合数
     aways_first = false,
     effect_list = {}, --二维数组 第一层是回合数，第二层是该回合的效果

@@ -43,7 +43,6 @@ end
 local function PerformAutoBattle()
     if C_PetBattles.IsInBattle() then 
         if C_PetBattles.ShouldShowPetSelect() then
-            LogFrame:AddLog("需要选择宠物")
             Strategy:PerformSelect()
             return
         end

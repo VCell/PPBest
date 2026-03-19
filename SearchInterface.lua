@@ -75,14 +75,14 @@ function SearchInterface:InitState(round)
             if player == LE_BATTLE_PET_ALLY then
                 for ab_index = 1,3 do
                     local _, cooldown = C_PetBattles.GetAbilityState(player,pet_index, ab_index)
-                    -- local ability = team_state.pets[ab_index].abilitys[1]
-                    -- if ability then
-                    --     ability.cooldown = cooldown
-                    -- end
-                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d",pet_index, ab_index, cooldown))
+                    -- 设置技能冷却时间
+                    pet_state.cooldown_at[ab_index] = round + cooldown - 1
+                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d, cooldown_at: %d",pet_index, ab_index, cooldown, pet_state.cooldown_at[ab_index]))
                 end
             end
         end
+        -- 设置当前活跃宠物
+        team_state.active_index = C_PetBattles.GetActivePet(player)
         self.game.State.team_states[player] = team_state
     end
 
@@ -116,7 +116,7 @@ function SearchInterface:SetChangePetState(round)
     end
 end
 
-function SearchInterface:DecideActions()
+function SearchInterface:DecideActions(round)
     if not self.game then
         print("未初始化游戏规则")
         return

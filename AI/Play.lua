@@ -191,7 +191,7 @@ end
 local PetState = {
     current_health = 0,
     auras = {},
-    cooldown_at = {}
+    cooldown_at = {} --冷却回合数组。cooldown_at[i]=x表示第i个技能在x+1回合中才可以用
 }
 PetState.__index = PetState
 function PetState.new(health)

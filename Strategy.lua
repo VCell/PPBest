@@ -304,7 +304,7 @@ function GetSchemeAI()
         --todo 需要确认事件次序。确认回合结束时buff和cd的时间
         schemeName = "AIScheme",
         action = nil,
-        action_round = 0,
+        action_round = -1,
         InitPets = function(self)
             -- 开局调用
             AII:InitRule()
