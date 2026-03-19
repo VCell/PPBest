@@ -446,12 +446,9 @@ function Strategy:Init(targetMode)
     BattleUtils:Debug("Using scheme: " .. self.scheme.schemeName)
 end
 
-function Strategy:OnRoundComplete()
-    LogFrame.AddLog("OnRoundComplete "..type(self.scheme.StartSearch))
-    if type(self.scheme.StartSearch) == "function" then
-        self.scheme:StartSearch()
-    end
-    self.round = self.round + 1
+function Strategy:OnRoundComplete(round)
+    LogFrame.AddLog("OnRoundComplete")
+    self.round = round + 1
 end
 
 function Strategy:OnFinalRound(...)
