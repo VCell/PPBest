@@ -290,6 +290,7 @@ function GetSchemeAAB()
 end
 
 local function performAction(action)
+    LogFrame:AddLog("Perform action: " .. action.type .. " " .. action.value)
     if action.type == "change" then
         C_PetBattles.ChangePet(action.value)
     elseif action.type == "use" then
