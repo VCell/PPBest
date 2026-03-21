@@ -4,8 +4,11 @@ local AI = PPBest.AI
 local AbilityID = {
     NONE = 0, --用于技能不明时的默认技能
     BURROW = 159, --兔子 钻地
+    SHADOW_SLASH = 210, --暗影鞭笞 90命中率亡灵普攻
+    CURSE_OF_DOOM = 218, --厄运诅咒 
     DODGE = 312, --兔子 闪避
     FLURRY = 360, --兔子 乱舞
+    SHADOW_SHOCK = 422, --暗影震击 85命中率亡灵普攻
     SAND_STORM = 453, --沙暴
     ARCANE_SRORM = 589, --奥术风暴
     MOON_FIRE = 595, --月火术
@@ -13,7 +16,8 @@ local AbilityID = {
     ICE_TOMB = 624,  --阿尔福斯
     ROCK_BARRAGE = 628, --岩石弹幕 配波
     QUAKE = 644, --地震
-    BONE_BITE = 648,    --阿尔福斯
+    BONE_BITE = 648,    --噬骨 100命中率亡灵普攻
+    HAUNT = 652, --鬼影缠身 
     STONE_SHOT = 801, --投石 配波
     RUPTURE = 814, --割裂 配波
     ARFUS_2 = 2530, --阿尔福斯 致命梦境
@@ -24,6 +28,7 @@ local AbilityID = {
 }
 
 local AuraID = {
+    CURSE_OF_DOOM = 217, --厄运诅咒
     UNDEAD = 242, --亡灵
     DODGE = 311, --闪避
     UNDERGROUND = 340, --钻地
@@ -31,6 +36,7 @@ local AuraID = {
     SHATTER_DEFENSE = 542, --破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
+    HAUNT = 653, -- 鬼影缠身
 }
 
 local WeatherID = {
@@ -58,6 +64,8 @@ local PetID = {
     MOUNTAIN_COTTONTAIL = 391, -- 高山短尾兔
     SCOURGED_WHELPLING = 538, -- 痛苦的雏龙
     FEL_FLAME = 519, -- 邪焰
+    TOLAI_HARE = 729, -- 多莱野兔
+    TOLAI_HARE_PUP = 730, -- 多莱兔仔
     ANUBISATH_IDOL = 1155, -- 阿奴比萨斯
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     UNBORN_VALKYR = 1238, --幼年瓦格里
@@ -242,7 +250,8 @@ local AuraType = {
     FLYING = 13,
     UNDERGROUND = 14,
     UNDEAD = 15,
-    END_EFFECT = 16, --特殊效果 
+    POSSESSION = 16, --附身类效果，例如鬼影缠身
+    END_EFFECT = 17, --结束时生效
 }
 
 function Aura.new(id, type, duration, value)
@@ -283,6 +292,14 @@ function Aura.new_aura_by_id(aura_id, power)
         aura.keep_front = true
         aura.effects = {Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ENEMY)}
         return aura
+    elseif aura_id == AuraID.CURSE_OF_DOOM then
+        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 4, 100)
+        aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 40+2*power, TargetType.ENEMY)}
+        return aura
+    elseif aura_id == AuraID.HAUNT then
+        local aura = Aura.new(aura_id, AuraType.POSSESSION, 9, 100)
+        aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ENEMY)}
+        return aura
     else
         return nil
     end
@@ -290,13 +307,18 @@ function Aura.new_aura_by_id(aura_id, power)
 end
 
 function Pet:install_ability_by_id(id, index)
-    if self.abilitys[index] ~= nil and self.abilitys[index].id ~= AbilityID.NONE then
-        return nil
-    end
     local ability = nil
     if id == AbilityID.BONE_BITE then
         ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
         local ef = Effect.new_damage(TypeID.UNDEAD, 20+self.power)
+        ability.effect_list[1] = {ef}
+    elseif id == AbilityID.SHADOW_SHOCK then
+        ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
+        local ef = Effect.new_damage(TypeID.UNDEAD, (20+self.power) * 1.3, 85)
+        ability.effect_list[1] = {ef}
+    elseif id == AbilityID.SHADOW_SLASH then
+        ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
+        local ef = Effect.new_damage(TypeID.UNDEAD, (20+self.power) * 1.2, 90)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ICE_TOMB then
         ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
@@ -347,6 +369,10 @@ function Pet:install_ability_by_id(id, index)
                      Effect.new(TypeID.ELEMENTAL, EffectType.AURA,100, AuraID.ROCK_BARRAGE,TargetType.ENEMY),
                     },
         }
+    elseif id == AbilityID.CURSE_OF_DOOM then
+        ability = Ability.new(id, TypeID.UNDEAD, 5, 0)
+        local ef = Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.CURSE_OF_DOOM, TargetType.ENEMY)
+        ability.effect_list[1] = {ef}
     end
     if ability ~= nil then
         self.abilitys[index] = ability

@@ -704,7 +704,7 @@ function GameRuleTemplate.print_state(state)
     
     -- 显示评估值
     local utility = GameRuleTemplate.get_utility(state)
-    print(string.format("\n局面评估值: %.3f (玩家1优势)", utility))
+    print(string.format("\n局面评估值: %.3f（玩家1的胜率）", utility))
 end
 
 local Game = {

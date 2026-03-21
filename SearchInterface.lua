@@ -5,6 +5,15 @@ local SearchInterface = {
     game = nil,
 }
 
+local function set_possible_abilitys(pet)
+    if pet.id == AI.PetID.SPRING_RABBIT or pet.id == AI.PetID.MOUNTAIN_COTTONTAIL or
+             pet.id == AI.PetID.TOLAI_HARE_PUP or pet.id == AI.PetID.TOLAI_HARE  then 
+        pet:install_ability_by_id(AI.AbilityID.FLURRY, 1)  -- 乱舞
+        pet:install_ability_by_id(AI.AbilityID.DODGE, 2)   -- 闪避
+        pet:install_ability_by_id(AI.AbilityID.BURROW, 3)  -- 钻地
+    end
+end
+
 local function get_team(player) 
     local team = {}
     local count = C_PetBattles.GetNumPets(player)
@@ -29,6 +38,8 @@ local function get_team(player)
 
                 end
             end
+        else
+            set_possible_abilitys(pet)
         end
         if pet.abilitys[1] == nil then
             pet:install_default_ability()
