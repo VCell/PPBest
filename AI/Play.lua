@@ -3,6 +3,7 @@
 
 local _,PPBest = ...
 local AI = PPBest.AI
+local Bit = PPBest.Bit
 
 -- 辅助函数：深拷贝表
 local function DeepCopy(object)
@@ -90,11 +91,18 @@ function AuraProcessor.get_active_accuracy_modifier(state, team_index)
     
 end
 
-function AuraProcessor.is_immune(state, team_index, pet_index)
+function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
     local team_state = state.team_states[team_index]
     local ps = team_state.pets[pet_index]
     for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.FLYING or aura.type == AI.AuraType.UNDERGROUND then
+        if aura.type == AI.AuraType.FLYING and not Bit.band(ignore_bit, AI.IgnoreBit.FLYING) then
+            return true
+        end
+        if aura.type == AI.AuraType.BURROW and not Bit.band(ignore_bit, AI.IgnoreBit.BURROW) then
+            return true
+        end
+        if aura.type == AI.AuraType.BLOCK and not Bit.band(ignore_bit, AI.IgnoreBit.BLOCK) then
+            --todo 计算格挡次数
             return true
         end
     end
@@ -305,16 +313,24 @@ function GameStateTemplate:post_step(teams)
         for pet_index,pet in ipairs(team_state.pets) do
             for i, aura in pairs(pet.auras) do
                 if aura.expire <= self.round then
+                    --处理buff到期时的特殊效果
                     pet.auras[i] = nil
                     --print("aura removed", aura.id, round, pet.auras[i])
-                    if aura.id == AI.AuraID.UNDEAD then
+                    if aura.type == AI.AuraType.UNDEAD then
                         pet.current_health = 0
                         if pet_index == team_state.active_index then
                             self:pet_dead(player)
                         end
-                    end
-                    if aura.type == AI.AuraType.END_EFFECT then
+                    elseif aura.type == AI.AuraType.END_EFFECT then
                         self:process_effects(teams, player, aura.effects)
+                    elseif aura.type == AI.AuraType.POSSESSION then
+                        pet.current_health = aura.value
+                    end
+                else 
+                    --处理dot类扣血
+                    if aura.type == AI.AuraType.POSSESSION  or 
+                        aura.type == AI.AuraType.DOT then
+                        
                     end
                 end
             end
@@ -420,14 +436,11 @@ function GameStateTemplate:process_effects(teams, player, effects)
     end
 end
 
-function GameStateTemplate:apply_effect(teams,  effect, from_player, target_player, target_index)
-    -- 处理单个效果
-    if effect.effect_type == AI.EffectType.DAMAGE then
-        if AuraProcessor.process_block(self, target_player, target_index) then
-            --print(string.format("player %d pet %d blocked the attack", target_player, target_index))
-            return false
-        end
-        if AuraProcessor.is_immune(self, target_player, target_index) then
+-- 处理单个效果
+function GameStateTemplate:apply_effect(teams, effect, from_player, target_player, target_index)
+    --需要进行命中判定
+    if effect.effect_type == AI.EffectType.DAMAGE or effect.effect_type == AI.EffectType.AURA then
+        if AuraProcessor.is_immune(self, target_player, target_index, effect.ignore_bit) then
             --print(string.format("player %d pet %d is immune to damage", target_player, target_index))
             return false
         end
@@ -438,7 +451,9 @@ function GameStateTemplate:apply_effect(teams,  effect, from_player, target_play
             --print(string.format("player %d pet %d attack missed (roll %d > accuracy %d)", from_player, target_index, roll, accuracy))
             return false
         end
-        --print("accuracy",accuracy,"roll",roll)
+    end
+
+    if effect.effect_type == AI.EffectType.DAMAGE then
         local damage = effect.value
         local damage_dealt_modifier = AuraProcessor.get_active_modifier_by_type(self, from_player, AI.AuraType.DAMAGE_DEALT)
         local damage_taken_modifier = AuraProcessor.get_active_modifier_by_type(self, target_player, AI.AuraType.DAMAGE_TAKEN)

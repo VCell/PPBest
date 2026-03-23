@@ -1,6 +1,6 @@
 local _,PPBest = ...
 local AI = PPBest.AI
-
+local Bit = PPBest.Bit
 local AbilityID = {
     NONE = 0, --用于技能不明时的默认技能
     BURROW = 159, --兔子 钻地
@@ -170,6 +170,17 @@ local TargetType = {
     ENEMY_TEAM = 4, --敌方全体
     ENEMY_BACK = 5, --敌方后排
 }
+
+-- 描述Effect能够无视哪些免疫类效果
+local IgnoreBit = {
+    FLYING = 1, -- 浮空类效果
+    DODGE = 2, -- 闪避
+    BURROW = 4, -- 下潜
+    BLOCK = 8, -- 按次数格挡
+}
+
+local IGNORE_BIT_ALL = Bit.bor(IgnoreBit.FLYING, IgnoreBit.DODGE, IgnoreBit.BLOCK, IgnoreBit.BURROW)
+
 local Effect = {
     type = 0, -- 伤害属性
     effect_type = 0,
@@ -177,7 +188,7 @@ local Effect = {
     value = 0,
     --duration = 0,
     target_type = 0,
-    certain = false, -- 无需判定
+    immune_bit = 0, -- 判定类型：0 判定全部生效。1 无视闪避 浮空 下潜 
     dynamic_type = 0, -- 动态伤害的类型
 }
 Effect.__index = Effect
@@ -191,13 +202,14 @@ function Effect.new_damage(type, value, accuracy, target_type)
     return effect
 end
 
-function Effect.new(type, effect_type, accuracy, value, target_type)
+function Effect.new(type, effect_type, accuracy, value, target_type, ignore_bit)
     local effect = setmetatable({}, Effect)
     effect.type = type
     effect.effect_type = effect_type
     effect.accuracy = accuracy 
     effect.value = value
     effect.target_type = target_type 
+    effect.ignore_bit = ignore_bit or 0
     return effect
 end
 
@@ -235,7 +247,7 @@ local Aura = {
 Aura.__index = Aura
 
 local AuraType = {
-    DOT = 1,
+    DOT = 1, -- effects预期有一个，每轮执行
     HOT = 2,
     DAMAGE_TAKEN = 3, --百分比影响受到的伤害
     DAMAGE_DEALT = 4, --百分比影响造成的伤害
@@ -250,8 +262,8 @@ local AuraType = {
     FLYING = 13,
     UNDERGROUND = 14,
     UNDEAD = 15,
-    POSSESSION = 16, --附身类效果，例如鬼影缠身
-    END_EFFECT = 17, --结束时生效
+    POSSESSION = 16, --附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
+    END_EFFECT = 17, --结束时生效 effects可以有多个，都在结束时生效
 }
 
 function Aura.new(id, type, duration, value)
@@ -264,7 +276,7 @@ function Aura.new(id, type, duration, value)
     return aura
 end
 
-function Aura.new_aura_by_id(aura_id, power)
+function Aura.new_aura_by_id(aura_id, power, health)
     if aura_id == AuraID.ICE_TOMB then
         local aura = Aura.new(aura_id, AuraType.END_EFFECT, 3, 0)
         aura.keep_front = true
@@ -290,7 +302,9 @@ function Aura.new_aura_by_id(aura_id, power)
     elseif aura_id == AuraID.ROCK_BARRAGE then
         local aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
         aura.keep_front = true
-        aura.effects = {Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ENEMY)}
+        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ENEMY)
+        ef.certain_type = 1
+        aura.effects = {ef}
         return aura
     elseif aura_id == AuraID.CURSE_OF_DOOM then
         local aura = Aura.new(aura_id, AuraType.END_EFFECT, 4, 100)
@@ -298,7 +312,10 @@ function Aura.new_aura_by_id(aura_id, power)
         return aura
     elseif aura_id == AuraID.HAUNT then
         local aura = Aura.new(aura_id, AuraType.POSSESSION, 9, 100)
-        aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ENEMY)}
+        local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ENEMY)
+        ef1.certain_type = 1
+        aura.effects = {ef1}
+        aura.value = health
         return aura
     else
         return nil
@@ -322,7 +339,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ICE_TOMB then
         ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
-        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.ICE_TOMB, TargetType.ENEMY)
+        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.ICE_TOMB, TargetType.ENEMY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ARFUS_6 then
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
@@ -366,7 +383,7 @@ function Pet:install_ability_by_id(id, index)
                      Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
                      Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
                      Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
-                     Effect.new(TypeID.ELEMENTAL, EffectType.AURA,100, AuraID.ROCK_BARRAGE,TargetType.ENEMY),
+                     Effect.new(TypeID.ELEMENTAL, EffectType.AURA,100, AuraID.ROCK_BARRAGE,TargetType.ENEMY, IGNORE_BIT_ALL),
                     },
         }
     elseif id == AbilityID.CURSE_OF_DOOM then
@@ -416,4 +433,4 @@ AI.EffectType = EffectType
 AI.AuraType = AuraType
 AI.TargetType = TargetType
 AI.EffectDynamicType = EffectDynamicType
-AI.get_aura_by_id = get_aura_by_id
+AI.IgnoreBit = IgnoreBit

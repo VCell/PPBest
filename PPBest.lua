@@ -238,7 +238,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         -- SendChatMessage("ccc", "WHISPER", nil, sender)
     elseif event == "CHAT_MSG_PET_BATTLE_COMBAT_LOG" then
         local msg = ...
-        LogFrame:AddLog(msg[1])
+        LogFrame:AddLog(msg)
     end
 end)
 

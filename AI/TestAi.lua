@@ -15,9 +15,9 @@ end
 local AI = PPBest.AI
 
 -- 加载需要测试的模块
-local PetsDataPath = "AI/PetsData.lua"
-local SearchPath = "AI/Search.lua"
-local PlayPath = "AI/Play.lua"
+-- local PetsDataPath = "AI/PetsData.lua"
+-- local SearchPath = "AI/Search.lua"
+-- local PlayPath = "AI/Play.lua"
 
 -- 模拟dofile函数
 local function dofile(path)
@@ -39,10 +39,15 @@ local function dofile(path)
 end
 
 -- 加载模块
-dofile(PetsDataPath)
-dofile(PlayPath)
-dofile(SearchPath)
-
+local dofile_list = {
+    "Utils.lua",
+    "AI/PetsData.lua",
+    "AI/Search.lua",
+    "AI/Play.lua",
+}
+for _, path in ipairs(dofile_list) do
+    dofile(path)
+end
 
 -- 测试类
 local TestAI = {
