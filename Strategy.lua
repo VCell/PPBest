@@ -29,6 +29,7 @@ local PET_ID_SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
 local PET_ID_GILNEAN_RAVEN = 630 -- 吉尔尼斯渡鸦
 local PET_ID_STUNTED_DIREHORN = 1184 -- 瘦弱恐角龙
 local PET_ID_ANUBISATH_IDOL = 1155 -- 阿努比斯
+local PET_ID_LIFELIKE_TOAD = 95 -- 逼真蟾蜍
 
 PPBestHistory = PPBestHistory or {
     version = 1,
@@ -189,6 +190,22 @@ function SimplePerform()
         else 
             BattleUtils:UseSkillByPriority({2,3,1})
         end
+    elseif id==PET_ID_LIFELIKE_TOAD then
+        if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_AQUATIC) or 
+                BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_CRITTER) then
+            if BattleUtils:GetActivePetHealth() < 1000 then
+                BattleUtils:UseSkillByPriority({2,1})
+            else 
+                BattleUtils:UseSkillByPriority({1,2})
+            end
+        else 
+            if BattleUtils:GetActivePetHealth() < 1100 then
+                BattleUtils:UseSkillByPriority({2,3})
+            else 
+                BattleUtils:UseSkillByPriority({3,2})
+            end
+        end
+        BattleUtils:UseSkillByPriority({3,2,1})
     else 
         local skillSlot = math.random(1,3)
         BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
