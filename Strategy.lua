@@ -137,12 +137,6 @@ function SimplePerform()
         else
             BattleUtils:UseSkillByPriority({3,2,1})
         end
-    elseif id == PET_ID_MOJO then
-        if BattleUtils:GetActivePetHealth() < 1000 then
-            BattleUtils:UseSkillByPriority({2,3})
-        else
-            BattleUtils:UseSkillByPriority({3})
-        end
     elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL or 
             id == PET_ID_MOUNTAIN_COTTONTAIL or id == PET_ID_TOLAI_HARE
             or id == PET_ID_TOLAI_RABBIT then
@@ -190,16 +184,16 @@ function SimplePerform()
         else 
             BattleUtils:UseSkillByPriority({2,3,1})
         end
-    elseif id==PET_ID_LIFELIKE_TOAD then
+    elseif id==PET_ID_LIFELIKE_TOAD or id == PET_ID_MOJO then
         if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_AQUATIC) or 
                 BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_CRITTER) then
-            if BattleUtils:GetActivePetHealth() < 1000 then
+            if BattleUtils:GetActivePetHealth(LE_BATTLE_PET_ALLY) < 1000 then
                 BattleUtils:UseSkillByPriority({2,1})
             else 
                 BattleUtils:UseSkillByPriority({1,2})
             end
         else 
-            if BattleUtils:GetActivePetHealth() < 1100 then
+            if BattleUtils:GetActivePetHealth(LE_BATTLE_PET_ALLY) < 1100 then
                 BattleUtils:UseSkillByPriority({2,3})
             else 
                 BattleUtils:UseSkillByPriority({3,2})

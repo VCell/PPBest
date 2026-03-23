@@ -384,7 +384,7 @@ function BattleUtils:DetermineWinner()
 end
 
 function BattleUtils:GetActivePetHealth(petOwner)
-    petIndex = C_PetBattles.GetActivePet(petOwner)
+    local petIndex = C_PetBattles.GetActivePet(petOwner)
     return C_PetBattles.GetHealth(petOwner, petIndex)
 end
 
