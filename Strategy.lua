@@ -294,7 +294,7 @@ function GetSchemeAAB()
         schemeName = "AABScheme",
         Select = function(self)
             C_PetBattles.ChangePet(1)
-            BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
+            BattleUtils:SwitchPetByOrder({1,2,3})
         end,
         Battle = function(self, round)
             SimplePerform()

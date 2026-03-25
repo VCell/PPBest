@@ -154,9 +154,9 @@ local EffectType = {
     HEAL = 2,
     PERCENTAGE_HEAL = 3,
     AURA = 4,
-    HIT_AURA = 5, --只在击中后触发的aura
     WEATHER = 6, 
-    OTHER = 7,
+    FEIGN_DEATH = 7, -- 假死
+    OTHER = 8, -- 其他
 }
 
 local EffectDynamicType = {
@@ -189,9 +189,11 @@ local Effect = {
     --duration = 0,
     target_type = 0,
     immune_bit = 0, -- 判定类型：0 判定全部生效。1 无视闪避 浮空 下潜 
+    follow_hit = false, -- 是否是击中后触发的效果（true的时候无需判定直接生效）
     dynamic_type = 0, -- 动态伤害的类型
 }
 Effect.__index = Effect
+
 function Effect.new_damage(type, value, accuracy, target_type)
     local effect = setmetatable({}, Effect)
     effect.type = type
@@ -199,10 +201,12 @@ function Effect.new_damage(type, value, accuracy, target_type)
     effect.accuracy = accuracy or 100
     effect.value = value
     effect.target_type = target_type or TargetType.ENEMY
+    effect.immune_bit = 0
+    effect.follow_hit = false
     return effect
 end
 
-function Effect.new(type, effect_type, accuracy, value, target_type, ignore_bit)
+function Effect.new(type, effect_type, accuracy, value, target_type, ignore_bit, follow_hit)
     local effect = setmetatable({}, Effect)
     effect.type = type
     effect.effect_type = effect_type
@@ -210,6 +214,7 @@ function Effect.new(type, effect_type, accuracy, value, target_type, ignore_bit)
     effect.value = value
     effect.target_type = target_type 
     effect.ignore_bit = ignore_bit or 0
+    effect.follow_hit = follow_hit or false
     return effect
 end
 
@@ -276,12 +281,12 @@ function Aura.new(id, type, duration, value)
     return aura
 end
 
-function Aura.new_aura_by_id(aura_id, power, health)
+function Aura.new_aura_by_id(aura_id, power, from_index)
     if aura_id == AuraID.ICE_TOMB then
         local aura = Aura.new(aura_id, AuraType.END_EFFECT, 3, 0)
         aura.keep_front = true
         local ef1 = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, 30 + 1.5 * power, TargetType.ALLY)
-        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.HIT_AURA, 100, AuraID.STUN, TargetType.ALLY) 
+        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.STUN, TargetType.ALLY, 0, true) 
         aura.effects = {ef1, ef2}
         return aura
     elseif aura_id == AuraID.UNDEAD then
@@ -303,7 +308,6 @@ function Aura.new_aura_by_id(aura_id, power, health)
         local aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
         aura.keep_front = true
         local ef = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ENEMY)
-        ef.certain_type = 1
         aura.effects = {ef}
         return aura
     elseif aura_id == AuraID.CURSE_OF_DOOM then
@@ -311,11 +315,10 @@ function Aura.new_aura_by_id(aura_id, power, health)
         aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 40+2*power, TargetType.ENEMY)}
         return aura
     elseif aura_id == AuraID.HAUNT then
-        local aura = Aura.new(aura_id, AuraType.POSSESSION, 9, 100)
-        local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ENEMY)
-        ef1.certain_type = 1
+        local aura = Aura.new(aura_id, AuraType.POSSESSION, 4, 100)
+        local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ENEMY, IGNORE_BIT_ALL)
         aura.effects = {ef1}
-        aura.value = health
+        aura.value = from_index
         return aura
     else
         return nil
@@ -345,11 +348,11 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
         ability.effect_list = {
             [1] = {Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54),
-                        Effect.new(TypeID.BEAST, EffectType.HIT_AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY, 0, true)},
             [2] = {Effect.new_damage(TypeID.BEAST, 90), Effect.new_damage(TypeID.BEAST, 90), Effect.new_damage(TypeID.BEAST, 90),
-                        Effect.new(TypeID.BEAST, EffectType.HIT_AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY, 0, true)},
             [3] = {Effect.new_damage(TypeID.BEAST, 126), Effect.new_damage(TypeID.BEAST, 126), Effect.new_damage(TypeID.BEAST, 126),
-                        Effect.new(TypeID.BEAST, EffectType.HIT_AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY)},
+                        Effect.new(TypeID.BEAST, EffectType.AURA,100, AuraID.SHATTER_DEFENSE,TargetType.ENEMY, 0, true)},
         }
     elseif id == AbilityID.FLURRY then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
@@ -374,7 +377,7 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.RUPTURE then
         ability = Ability.new(id, TypeID.ELEMENTAL, 4, 0)
         local ef1 = Effect.new_damage(TypeID.ELEMENTAL, 30+self.power*1.5, 95, TargetType.ENEMY)
-        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.HIT_AURA,100, AuraID.STUN,TargetType.ENEMY)
+        local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.AURA,25, AuraID.STUN,TargetType.ENEMY,0, true)
         ability.effect_list[1] = {ef1,ef2}    
     elseif id == AbilityID.ROCK_BARRAGE then
         ability = Ability.new(id, TypeID.ELEMENTAL, 2, 0)
@@ -390,6 +393,15 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.UNDEAD, 5, 0)
         local ef = Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.CURSE_OF_DOOM, TargetType.ENEMY)
         ability.effect_list[1] = {ef}
+    elseif id == AbilityID.HAUNT then
+        ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
+        ability.effect_list = {
+            [1] = {
+                Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),
+                Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true),
+            }
+        }
+
     end
     if ability ~= nil then
         self.abilitys[index] = ability
