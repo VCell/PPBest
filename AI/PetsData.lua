@@ -361,7 +361,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.DODGE then
         ability = Ability.new(id, TypeID.CRITTER, 4, 0)
-        local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY)
+        local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.BURROW then
         ability = Ability.new(id, TypeID.BEAST, 4, 2)

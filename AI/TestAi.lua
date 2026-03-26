@@ -78,6 +78,12 @@ local function create_test_pets(petlist)
             pet:install_ability_by_id(AI.AbilityID.RUPTURE, 2)    -- 石子猛击
             pet:install_ability_by_id(AI.AbilityID.ROCK_BARRAGE, 3)     -- 石子暴击
             table.insert(res, pet)
+        elseif pet_id == AI.PetID.UNBORN_VALKYR then
+            local pet = AI.Pet.new(AI.PetID.UNBORN_VALKYR, 1563, 293, 244, AI.TypeID.UNDEAD)
+            pet:install_ability_by_id(AI.AbilityID.SHADOW_SHOCK, 1) 
+            pet:install_ability_by_id(AI.AbilityID.CURSE_OF_DOOM, 2) 
+            pet:install_ability_by_id(AI.AbilityID.HAUNT, 3) 
+            table.insert(res, pet)
         end
     end
     return res
@@ -85,7 +91,7 @@ end
 
 local function init_game_state()
     local pets1 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.PEBBLE,AI.PetID.ARFUS})
-    local pets2 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.PEBBLE,AI.PetID.ARFUS})
+    local pets2 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.PEBBLE,AI.PetID.UNBORN_VALKYR})
     local game = AI.Game.new()
     assert (#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
@@ -102,7 +108,7 @@ local function init_game_state()
         game.State.team_states[player] = team_state
 
     end
-    setmetatable(game.State, {__index = AI.Game.State})
+    --setmetatable(game.State, {__index = AI.Game.State})
     game.State.round = 0
     game.State.change_round = 3
     return game
@@ -135,7 +141,7 @@ function TestAI:humanVsAi()
     local rule = game.Rule
     
     for round = 1, max_rounds do
-        print(string.format("\n=== 回合 %d ===", round))
+        print(string.format("\n=== 回合 %d （游戏回合：%d） ===", round, state.round))
         
         -- 检查游戏是否结束
         if rule.is_terminal(state) then
@@ -217,7 +223,9 @@ function TestAI:humanVsAi()
         print(string.format("AI选择：%s", ai_action_desc))
         
         -- 应用动作
+        state:open_log()
         state = rule:apply_joint_action(state, player_choice, ai_choice)
+        state:close_log()
         print("应用动作后状态：change_round:",state.change_round)
         
     end
@@ -250,12 +258,12 @@ function TestAI:manual_simulation()
         {AI.Action.new('use', 2), AI.Action.new('use', 3)},
         {AI.Action.new('use', 1), AI.Action.new('use', 3)},
         {AI.Action.new('use', 1), AI.Action.new('use', 3)},
-        {AI.Action.new('change', 2), AI.Action.new('change', 3)},
-        {AI.Action.new('use', 3), AI.Action.new('use', 2)},
-        {AI.Action.new('use', 2), AI.Action.new('use', 3)},
-        {AI.Action.new('use', 1), AI.Action.new('use', 1)},
-        {AI.Action.new('change', 3), AI.Action.new('change', 1)},
-        {AI.Action.new('use', 3), AI.Action.new('use', 2)}
+        {AI.Action.new('standby', 2), AI.Action.new('change', 3)},
+        -- {AI.Action.new('use', 3), AI.Action.new('use', 2)},
+        -- {AI.Action.new('use', 2), AI.Action.new('use', 3)},
+        -- {AI.Action.new('use', 1), AI.Action.new('use', 1)},
+        -- {AI.Action.new('change', 3), AI.Action.new('change', 1)},
+        -- {AI.Action.new('use', 3), AI.Action.new('use', 2)}
     }
     
     local p1_legal = false
@@ -264,7 +272,7 @@ function TestAI:manual_simulation()
         local p1_la = rule:get_legal_actions(state, 1)
         local p2_la = rule:get_legal_actions(state, 2)
         
-        print(string.format("\n=== 第 %d 回合 ===", round))
+        print(string.format("\n=== 第 %d 回合 （游戏回合：%d）===", round, state.round))
         print("玩家1可选行动:")
         for i, action in ipairs(p1_la) do
             local action_desc
@@ -329,7 +337,9 @@ function TestAI:manual_simulation()
         print(string.format("玩家2选择：%s", ai_action_desc))
         
         -- 应用动作
+        state:open_log()
         state = rule:apply_joint_action(state, action1, action2)
+        state:close_log()
         
         -- 显示结果
         rule.print_state(state)
@@ -359,9 +369,9 @@ function TestAI:runAllTests()
     print(self.name .. " v" .. self.version)
     print("==================================================")
     
-    self:simulation()
+    --self:simulation()
     --self:manual_simulation()
-    --self:humanVsAi()
+    self:humanVsAi()
     print("\n==================================================")
     print("所有测试完成！")
     print("==================================================")
