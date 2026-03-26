@@ -88,7 +88,7 @@ function SearchInterface:InitState(round)
                     local _, cooldown = C_PetBattles.GetAbilityState(player,pet_index, ab_index)
                     -- 设置技能冷却时间
                     pet_state.cooldown_at[ab_index] = round + cooldown - 1
-                    LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d, round: %d, cooldown_at: %d, cooldown: %d",pet_index, ab_index, cooldown, round, pet_state.cooldown_at[ab_index]))
+                    --LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d, round: %d, cooldown_at: %d, cooldown: %d",pet_index, ab_index, cooldown, round, pet_state.cooldown_at[ab_index]))
                 end
             end
         end
@@ -99,11 +99,8 @@ function SearchInterface:InitState(round)
 
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
     if weather_id then
-        local weather = AI.Aura.new_aura_by_id(weather_id, 280)
-        weather.duration = duration
-        if weather then
-            self.game.State.weather = weather
-        end
+        self.game.State.weather_id = weather_id
+        self.game.State.weather_duration = duration
         LogFrame:AddLog(string.format("天气: %s, 持续回合数: %d", weather.name, weather.duration))
     end
     self.game.State.change_round = 0
@@ -121,9 +118,8 @@ function SearchInterface:SetChangePetState(round)
                 change_round = player + change_round
             end
         end
-        if not change_round then
-            self.game.State.change_round = round
-        end
+        assert(change_round > 0, "没有宠物死亡")
+        self.game.State.change_round = change_round
     end
 end
 

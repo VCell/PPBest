@@ -13,7 +13,7 @@ function LogFrame:Create()
     end
     -- 创建主框架
     local logFrame = CreateFrame("Frame", "PPBestLogFrame", UIParent, "UIPanelDialogTemplate")
-    logFrame:SetSize(400, 300)
+    logFrame:SetSize(400, 600)
     logFrame:SetPoint("LEFT")
     logFrame:SetMovable(true)
     logFrame:EnableMouse(true)
@@ -52,7 +52,7 @@ function LogFrame:Create()
     local fontName, fontSize, fontFlags = logText:GetFont()
     logText:SetFont(fontName, 10, fontFlags) --设置字号
     logText:SetWidth(360)
-    logText:SetHeight(300) -- 初始高度，会根据内容自动扩展
+    logText:SetHeight(1500) -- 初始高度，会根据内容自动扩展
 
     -- 清空日志按钮
     local clearButton = CreateFrame("Button", nil, logFrame, "UIPanelButtonTemplate")
