@@ -71,7 +71,7 @@ function SearchInterface:InitState(round)
             local aura_count = C_PetBattles.GetNumAuras(player, pet_index)
             for aura_index = 1, aura_count do
                 local aura_id, _, duration = C_PetBattles.GetAuraInfo(player, pet_index, aura_index)
-                LogFrame:AddLog(string.format("宠物%d aura:%d duration:%d",pet_index, aura_id, duration))
+                --LogFrame:AddLog(string.format("宠物%d aura:%d duration:%d",pet_index, aura_id, duration))
                 local aura = AI.Aura.new_aura_by_id(aura_id, 280)
                 if aura then
                     aura.duration = duration
@@ -100,8 +100,8 @@ function SearchInterface:InitState(round)
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
     if weather_id then
         self.game.State.weather_id = weather_id
-        self.game.State.weather_duration = duration
-        LogFrame:AddLog(string.format("天气: %s, 持续回合数: %d", weather.name, weather.duration))
+        self.game.State.weather_expire = round + duration - 1
+        LogFrame:AddLog(string.format("天气: %d, 结束回合: %d", weather_id, self.game.State.weather_expire))
     end
     self.game.State.change_round = 0
 end
