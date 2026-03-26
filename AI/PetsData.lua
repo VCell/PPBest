@@ -360,7 +360,7 @@ function Pet:install_ability_by_id(id, index)
         ef.dynamic_type = EffectDynamicType.FLURRY
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.DODGE then
-        ability = Ability.new(id, TypeID.CRITTER, 4, 0)
+        ability = Ability.new(id, TypeID.HUMANOID, 4, 0)
         local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.BURROW then
