@@ -3,17 +3,32 @@ local AI = PPBest.AI
 local LogFrame = PPBest.LogFrame
 local SearchInterface = {
     game = nil,
+    enemy_ability_hints = {}, -- 存储敌方技能使用记录 {pet_index = {ability_id = count}}
 }
 
+-- 根据宠物ID设置可能的技能组合（用于敌方宠物）
 local function set_possible_abilitys(pet)
     if pet.id == AI.PetID.SPRING_RABBIT or pet.id == AI.PetID.MOUNTAIN_COTTONTAIL or
              pet.id == AI.PetID.TOLAI_HARE_PUP or pet.id == AI.PetID.TOLAI_HARE  then 
         pet:install_ability_by_id(AI.AbilityID.FLURRY, 1)  -- 乱舞
         pet:install_ability_by_id(AI.AbilityID.DODGE, 2)   -- 闪避
         pet:install_ability_by_id(AI.AbilityID.BURROW, 3)  -- 钻地
+    elseif pet.id == AI.PetID.PEBBLE then
+        pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1)   -- 投石
+        pet:install_ability_by_id(AI.AbilityID.RUPTURE, 2)    -- 割裂
+        pet:install_ability_by_id(AI.AbilityID.ROCK_BARRAGE, 3)     -- 岩石弹幕
+    elseif pet.id == AI.PetID.ARFUS then
+        pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1)   -- 啃骨头
+        pet:install_ability_by_id(AI.AbilityID.ICE_TOMB, 2)    -- 寒冰之墓
+        pet:install_ability_by_id(AI.AbilityID.ARFUS_6, 3)     -- 宠物游行
+    elseif pet.id == AI.PetID.UNBORN_VALKYR then
+        pet:install_ability_by_id(AI.AbilityID.SHADOW_SHOCK, 1) 
+        pet:install_ability_by_id(AI.AbilityID.CURSE_OF_DOOM, 2) 
+        pet:install_ability_by_id(AI.AbilityID.HAUNT, 3) 
     end
 end
 
+-- 获取队伍信息
 local function get_team(player) 
     local team = {}
     local count = C_PetBattles.GetNumPets(player)
@@ -49,7 +64,8 @@ local function get_team(player)
     return team
 end
 
-function SearchInterface:InitRule()
+-- 初始化游戏规则（只在开局调用一次）
+function SearchInterface:InitGame()
     if not C_PetBattles.IsInBattle() then
         return false
     end
@@ -58,54 +74,159 @@ function SearchInterface:InitRule()
         get_team(LE_BATTLE_PET_ALLY),
         get_team(LE_BATTLE_PET_ENEMY)
     }
-end
-
-function SearchInterface:InitState(round)
-    self.game.State.round = round
+   self.game.State.round = 0
     for player = 1, 2 do
         local team_state = AI.TeamState.new()
         for pet_index = 1,3 do
             local health = C_PetBattles.GetHealth(player, pet_index)
             local pet_state = AI.PetState.new(health)
             table.insert(team_state.pets, pet_state)
-            local aura_count = C_PetBattles.GetNumAuras(player, pet_index)
-            for aura_index = 1, aura_count do
-                local aura_id, _, duration = C_PetBattles.GetAuraInfo(player, pet_index, aura_index)
-                --LogFrame:AddLog(string.format("宠物%d aura:%d duration:%d",pet_index, aura_id, duration))
-                local aura = AI.Aura.new_aura_by_id(aura_id, 280)
-                if aura then
-                    aura.duration = duration
-                    if aura.keep_front then
-                        team_state.active_auras[aura_id] = aura
-                    else
-                        pet_state.auras[aura_id] = aura
+        end
+        team_state.active_index = C_PetBattles.GetActivePet(player) --？
+        self.game.State.team_states[player] = team_state
+    end
+    LogFrame:AddLog("SearchInterface: 游戏队伍初始化完成")
+    return true
+end
+
+-- 更新血量信息（每回合调用）
+function SearchInterface:UpdateHealth()
+    for player = 1, 2 do
+        for pet_index = 1, 3 do
+            local health = C_PetBattles.GetHealth(player, pet_index)
+            if self.game.State.team_states[player] and 
+               self.game.State.team_states[player].pets[pet_index] then
+                self.game.State.team_states[player].pets[pet_index].current_health = health
+            end
+        end
+    end
+end
+
+-- 更新活跃宠物索引
+function SearchInterface:UpdateActivePet()
+    for player = 1, 2 do
+        local active_index = C_PetBattles.GetActivePet(player)
+        if self.game.State.team_states[player] then
+            self.game.State.team_states[player].active_index = active_index
+        end
+    end
+end
+
+-- 更新技能冷却（仅己方）
+function SearchInterface:UpdateCooldowns(round)
+    for pet_index = 1, 3 do
+        for ab_index = 1, 3 do
+            local _, cooldown = C_PetBattles.GetAbilityState(LE_BATTLE_PET_ALLY, pet_index, ab_index)
+            if self.game.State.team_states[1].pets[pet_index] then
+                self.game.State.team_states[1].pets[pet_index].cooldown_at[ab_index] = round + cooldown - 1
+            end
+        end
+    end
+end
+
+function SearchInterface:CleanExpiredAuras()
+    --调用的时机是回合开始，因此只移除aura.expire<round的光环,保留aura.expire=round的光环
+    for player = 1, 2 do
+        local team_state = self.game.State.team_states[player]
+        if team_state then
+            for aura_id, aura in pairs(team_state.active_auras) do
+                if aura.expire < self.game.State.round then
+                    team_state.active_auras[aura_id] = nil
+                    LogFrame:AddLog(string.format("移除队伍光环: player=%d, aura_id=%d", player, aura_id))
+                end
+            end
+            for pet_index = 1, 3 do
+                for aura_id, aura in pairs(team_state.pets[pet_index].auras) do
+                    if aura.expire < self.game.State.round then
+                        team_state.pets[pet_index].auras[aura_id] = nil
+                        LogFrame:AddLog(string.format("移除宠物光环: player=%d, pet=%d, aura_id=%d", player, pet_index, aura_id))
                     end
                 end
             end
-            --获取技能cd情况
-            if player == LE_BATTLE_PET_ALLY then
-                for ab_index = 1,3 do
-                    local _, cooldown = C_PetBattles.GetAbilityState(player,pet_index, ab_index)
-                    -- 设置技能冷却时间
-                    pet_state.cooldown_at[ab_index] = round + cooldown - 1
-                    --LogFrame:AddLog(string.format("宠物%d技能%d冷却: %d, round: %d, cooldown_at: %d, cooldown: %d",pet_index, ab_index, cooldown, round, pet_state.cooldown_at[ab_index]))
-                end
+        end
+    end
+end
+
+function SearchInterface:UpdateState(round)
+    self.game.State.round = round
+    self:UpdateHealth()
+    self:UpdateActivePet()
+    self:UpdateCooldowns()
+    --self:UpdateWeather(round)--？
+    self:CleanExpiredAuras()
+end
+
+-- 添加光环
+function SearchInterface:AddAura(player, pet_index, aura_id, duration, is_active_aura)
+    local team_state = self.game.State.team_states[player]
+    if not team_state then return end
+    
+    local aura = AI.Aura.new_aura_by_id(aura_id, 280)
+    if aura then
+        aura.duration = duration
+        aura.expire = self.game.State.round + duration - 1
+        
+        if is_active_aura or aura.keep_front then
+            team_state.active_auras[aura_id] = aura
+            LogFrame:AddLog(string.format("添加队伍光环: player=%d, aura_id=%d, duration=%d", player, aura_id, duration))
+        else
+            if team_state.pets[pet_index] then
+                team_state.pets[pet_index].auras[aura_id] = aura
+                LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d, duration=%d", player, pet_index, aura_id, duration))
             end
         end
-        -- 设置当前活跃宠物
-        team_state.active_index = C_PetBattles.GetActivePet(player)
-        self.game.State.team_states[player] = team_state
     end
+end
 
+-- 更新天气
+function SearchInterface:UpdateWeather(round)
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
     if weather_id then
         self.game.State.weather_id = weather_id
         self.game.State.weather_expire = round + duration - 1
-        LogFrame:AddLog(string.format("天气: %d, 结束回合: %d", weather_id, self.game.State.weather_expire))
+        LogFrame:AddLog(string.format("更新天气: %d, 结束回合: %d", weather_id, self.game.State.weather_expire))
+    else
+        self.game.State.weather_id = nil
+        self.game.State.weather_expire = nil
     end
-    self.game.State.change_round = 0
 end
 
+
+-- 处理战斗日志消息
+-- 格式示例: "|T136122:14|t|cff4e96f7|HbattlePetAbil:218:1806:276:227|h[厄运诅咒]|h|r对敌方的 |T646059:14|t超能浣熊 造成了|T136122:14|t|cff4e96f7|HbattlePetAbil:217:1806:276:227|h[厄运诅咒]|h|r效果."
+function SearchInterface:ProcessCombatLog(msg)
+    if not self.game or not self.initialized then
+        return
+    end
+    
+    -- 提取技能信息
+    -- 格式: |HbattlePetAbil:ability_id:health:power:speed|h[skill_name]|h|r
+    local ab_info = {}
+    for icon, ability_id, health, power, speed, skill_name in msg:gmatch("|T(%d+):14|t|cff4e96f7|HbattlePetAbil:(%d+):(%d+):(%d+):(%d+)|h%[([^%]]+)%]|h|r") do
+        ability_id = tonumber(ability_id)
+        health = tonumber(health)
+        power = tonumber(power)
+        speed = tonumber(speed)
+        table.insert(ab_info, {
+            ability_id = ability_id,
+            health = health,
+            power = power,
+            speed = speed,
+            skill_name = skill_name,
+        })
+    end
+    assert(#ab_info < 3)
+    if string.find(msg, "效果") then
+        assert(#ab_info == 2)
+        local aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].speed)
+        if string.find(msg, "对敌方的") then
+            self:AddAura(1, 0, ab_info[1].ability_id, ab_info[1].speed, true)
+        end
+    end
+end
+
+
+-- 设置换人状态
 function SearchInterface:SetChangePetState(round)
     if round == 0 then 
         --开局先选人
@@ -118,16 +239,25 @@ function SearchInterface:SetChangePetState(round)
                 change_round = player + change_round
             end
         end
-        assert(change_round > 0, "没有宠物死亡")
-        self.game.State.change_round = change_round
+        if change_round > 0 then
+            self.game.State.change_round = change_round
+        end
     end
 end
 
+-- 决定行动
 function SearchInterface:DecideActions(round)
     if not self.game then
         print("未初始化游戏规则")
         return
     end
+    
+    -- 更新状态
+    self.game.State.round = round
+    self:UpdateHealth()
+    self:UpdateActivePet()
+    self:UpdateCooldowns(round)
+    
     local root = AI.DUCT_MCTS.Searcher.run_search(self.game.State, self.game.Rule, {
                 iterations = 500,
                 exploration_c = 1.414,

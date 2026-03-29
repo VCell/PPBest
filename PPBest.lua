@@ -239,6 +239,8 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "CHAT_MSG_PET_BATTLE_COMBAT_LOG" then
         local msg = ...
         LogFrame:AddLog(msg)
+        -- 处理战斗日志，更新光环和推断敌方技能
+        SearchInterface:ProcessCombatLog(msg)
     end
 end)
 

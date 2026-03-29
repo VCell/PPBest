@@ -74,9 +74,9 @@ local function create_test_pets(petlist)
             table.insert(res, pet)
         elseif pet_id == AI.PetID.PEBBLE then
             local pet = AI.Pet.new(AI.PetID.ARFUS, 1969, 260, 211, AI.TypeID.ELEMENTAL)
-            pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1)   -- 石子护盾
-            pet:install_ability_by_id(AI.AbilityID.RUPTURE, 2)    -- 石子猛击
-            pet:install_ability_by_id(AI.AbilityID.ROCK_BARRAGE, 3)     -- 石子暴击
+            pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1)   -- 投石
+            pet:install_ability_by_id(AI.AbilityID.RUPTURE, 2)    -- 割裂
+            pet:install_ability_by_id(AI.AbilityID.ROCK_BARRAGE, 3)     --岩石弹幕
             table.insert(res, pet)
         elseif pet_id == AI.PetID.UNBORN_VALKYR then
             local pet = AI.Pet.new(AI.PetID.UNBORN_VALKYR, 1563, 293, 244, AI.TypeID.UNDEAD)

@@ -317,32 +317,29 @@ function GetSchemeAI()
     return {
         --todo 需要确认事件次序。确认回合结束时buff和cd的时间
         schemeName = "AIScheme",
-        action = nil,
         action_round = -1,
-        InitPets = function(self)
-            -- 开局调用
-            AII:InitRule()
+        InitGame = function(self)
+            AII:InitGame()
         end,
         Select = function(self, round)
             if round == self.action_round then
                 return 
             end
-            AII:InitState(round)
+            -- 使用增量更新机制
+            AII:UpdateState(round)
             AII:SetChangePetState(round)
             local action = AII:DecideActions(round)
             assert(action and action.type == "change", "error action")
             performAction(action)
-            self.action = action
             self.action_round = round
         end,
         Battle = function(self, round)
             if round == self.action_round then
                 return 
             end
-            AII:InitState(round)
+            AII:UpdateState(round)
             local action = AII:DecideActions(round)
             performAction(action)
-            self.action = action
             self.action_round = round
         end
     }
@@ -456,8 +453,8 @@ function Strategy:Init(targetMode)
     if not C_PetBattles.IsPlayerNPC(LE_BATTLE_PET_ENEMY) then
         self.recording = true
     end
-    if type(self.scheme.InitPets) == "function" then
-        self.scheme:InitPets()
+    if type(self.scheme.InitGame) == "function" then
+        self.scheme:InitGame()
     end
     BattleUtils:Debug("Using scheme: " .. self.scheme.schemeName)
 end
