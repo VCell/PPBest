@@ -6,6 +6,7 @@ local LogFrame = PPBest.LogFrame
 local OptionPanel = PPBest.OptionPanel
 local BattleUtils = PPBest.BattleUtils
 local Strategy = PPBest.Strategy
+local AII = PPBest.SearchInterface
 
 local PPBestFrame = CreateFrame("Frame")
 PPBestFrame:RegisterEvent("ADDON_LOADED")
@@ -240,7 +241,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         local msg = ...
         LogFrame:AddLog(msg)
         -- 处理战斗日志，更新光环和推断敌方技能
-        SearchInterface:ProcessCombatLog(msg)
+        AII:ProcessCombatLog(msg)
     end
 end)
 
