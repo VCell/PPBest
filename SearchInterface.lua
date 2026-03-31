@@ -151,7 +151,7 @@ function SearchInterface:UpdateState(round)
     self.game.State.round = round
     self:UpdateHealth()
     self:UpdateActivePet()
-    self:UpdateCooldowns()
+    self:UpdateCooldowns(round)
     --self:UpdateWeather(round)--？
     self:CleanExpiredAuras()
 end
