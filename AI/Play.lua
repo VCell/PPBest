@@ -99,13 +99,13 @@ function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
     local team_state = state.team_states[team_index]
     local ps = team_state.pets[pet_index]
     for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.FLYING and not Bit.band(ignore_bit, AI.IgnoreBit.FLYING) then
+        if aura.type == AI.AuraType.FLYING and Bit.band(ignore_bit, AI.IgnoreBit.FLYING) == 0 then
             return true
         end
-        if aura.type == AI.AuraType.BURROW and not Bit.band(ignore_bit, AI.IgnoreBit.BURROW) then
+        if aura.type == AI.AuraType.BURROW and Bit.band(ignore_bit, AI.IgnoreBit.BURROW) == 0 then
             return true
         end
-        if aura.type == AI.AuraType.BLOCK and not Bit.band(ignore_bit, AI.IgnoreBit.BLOCK) then
+        if aura.type == AI.AuraType.BLOCK and Bit.band(ignore_bit, AI.IgnoreBit.BLOCK) == 0 then
             --todo 计算格挡次数
             return true
         end
@@ -296,16 +296,8 @@ function GameStateTemplate:pet_dead(player)
     self:print_log(string.format("玩家%d, 宠物%d 死亡", player, active))
 end
 
-function GameStateTemplate:install_aura(teams, from_player, target_player, pet_index, aura_id)
-    local aura
-    if from_player == nil then
-        aura = AI.Aura.new_aura_by_id(aura_id)
-    else
-        local from_pet_index = self.team_states[from_player].active_index
-        local power = teams[from_player][from_pet_index].power
-        aura = AI.Aura.new_aura_by_id(aura_id, power, from_pet_index)
-    end
-    aura.expire = aura.duration + self.round - 1
+function GameStateTemplate:install_aura(teams, target_player, pet_index, aura)
+    aura.expire = aura.duration + self.round
     local ts = self.team_states[target_player]
     if aura.keep_front then
         ts.active_auras[aura.id] = aura
@@ -327,40 +319,54 @@ function GameStateTemplate:post_step(teams)
 
     for player = 1,2 do
         local team_state = self.team_states[player]
+        local to_remove = {}
         for i, aura in pairs(team_state.active_auras) do
             if aura.expire <= self.round then
-                team_state.active_auras[i] = nil
-                if aura.type == AI.AuraType.END_EFFECT then
-                    self:process_effects(teams, player, aura.effects)
-                end
+                table.insert(to_remove, i)
             end
         end
+        for _, i in ipairs(to_remove) do
+            local aura = team_state.active_auras[i]
+            team_state.active_auras[i] = nil
+            if aura.type == AI.AuraType.END_EFFECT then
+                self:process_effects(teams, player, aura.effects)
+            end
+        end 
+
         for pet_index,pet in ipairs(team_state.pets) do
+            local to_remove = {}
             for i, aura in pairs(pet.auras) do
                 if aura.expire <= self.round then
                     --处理buff到期时的特殊效果
-                    pet.auras[i] = nil
-                    self:print_log(string.format("光环到期 玩家%d, 宠物%d, 光环%d", player, pet_index, aura.id))
-                    if aura.type == AI.AuraType.UNDEAD then
-                        pet.current_health = 0
-                        if pet_index == team_state.active_index then
-                            self:pet_dead(player)
-                        end
-                    elseif aura.type == AI.AuraType.END_EFFECT then
-                        self:process_effects(teams, player, aura.effects)
-                    elseif aura.type == AI.AuraType.POSSESSION then
-                        local pet_state = self.team_states[3-player].pets[aura.value]
-                        assert(pet_state and pet_state.current_health <=0 and pet_state.tmp_health ~= nil, 
-                                string.format("玩家%d, 宠物%d 血量应为0", player, aura.value))
-                        pet_state.current_health = pet_state.tmp_health
-                    end
-                    
+                    table.insert(to_remove, i)
                 else 
                     --处理dot类扣血
                     if aura.type == AI.AuraType.POSSESSION  or 
                             aura.type == AI.AuraType.DOT then
                         assert(aura.effects[1].effect_type == AI.EffectType.DAMAGE)
                         self:apply_effect(teams, aura.effects[1], nil, player, pet_index,0)
+                    end
+                end
+            end
+            if pet.auras then
+                for _, i in ipairs(to_remove) do
+                    local aura = pet.auras[i]
+                    if aura then
+                        pet.auras[i] = nil
+                        self:print_log(string.format("光环到期 玩家%d, 宠物%d, 光环%d", player, pet_index, aura.id))
+                        if aura.type == AI.AuraType.UNDEAD then
+                            pet.current_health = 0
+                            if pet_index == team_state.active_index then
+                                self:pet_dead(player)
+                            end
+                        elseif aura.type == AI.AuraType.END_EFFECT then
+                            self:process_effects(teams, player, aura.effects)
+                        elseif aura.type == AI.AuraType.POSSESSION then
+                            local pet_state = self.team_states[3-player].pets[aura.value]
+                            assert(pet_state and pet_state.current_health <=0 and pet_state.tmp_health ~= nil, 
+                                    string.format("玩家%d, 宠物%d 血量应为0", player, aura.value))
+                            pet_state.current_health = pet_state.tmp_health
+                        end
                     end
                 end
             end
@@ -433,7 +439,7 @@ function GameStateTemplate:process_effects(teams, player, effects)
                 end
             elseif effect.dynamic_type == AI.EffectDynamicType.BURROW then
                 --钻地状态在攻击后结束 
-                self.team_states[player]:remove_aura(AI.AuraID.UNDERGROUND, ally_pet_index)
+                self.team_states[player]:remove_aura(AI.AuraID.BURROW, ally_pet_index)
             end
             
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then
@@ -508,13 +514,17 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
             return hit_count
         end
         pet_state.current_health = pet_state.current_health - real_damage
+        self:print_log(string.format("玩家%d, 宠物%d 受到%d点伤害", target_player, target_index, real_damage))
         --print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, pet_state.current_health))
     elseif effect.effect_type == AI.EffectType.HEAL then
 
     elseif effect.effect_type == AI.EffectType.PERCENTAGE_HEAL then
         
     elseif effect.effect_type == AI.EffectType.AURA then
-        self:install_aura(teams, from_player, target_player, target_index, effect.value)
+        local from_index = self.team_states[from_player].active_index
+        local power = teams[from_player][from_index].power
+        local aura = AI.Aura.new_aura_by_id(effect.value, power, from_index)
+        self:install_aura(teams, target_player, target_index, aura)
 
     elseif effect.effect_type == AI.EffectType.WEATHER then
 
@@ -543,7 +553,8 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
             if not pet_state.tmp_health then
                 --亡灵死后进入不死状态
                 pet_state.current_health = 1
-                self:install_aura(teams, nil, target_player, target_index, AI.AuraID.UNDEAD)
+                local aura = AI.Aura.new_aura_by_id(AI.AuraID.UNDEAD)
+                self:install_aura(teams, target_player, target_index, aura)
                 --(string.format("player %d pet %d revived by Undying", target_player, target_index))
             end
         else 
@@ -768,6 +779,10 @@ function GameRuleTemplate.print_state(state)
             end
             
         end
+        local team_aura_str = auras_to_string(team_state.active_auras)
+        if #team_aura_str >0 then
+            print("      队伍光环: ", team_aura_str)
+        end 
     end
     
     -- 显示评估值

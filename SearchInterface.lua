@@ -156,28 +156,6 @@ function SearchInterface:UpdateState(round)
     self:CleanExpiredAuras()
 end
 
--- 添加光环
-function SearchInterface:AddAura(player, pet_index, aura_id, duration, is_active_aura)
-    local team_state = self.game.State.team_states[player]
-    if not team_state then return end
-    
-    local aura = AI.Aura.new_aura_by_id(aura_id, 280)
-    if aura then
-        aura.duration = duration
-        aura.expire = self.game.State.round + duration - 1
-        
-        if is_active_aura or aura.keep_front then
-            team_state.active_auras[aura_id] = aura
-            LogFrame:AddLog(string.format("添加队伍光环: player=%d, aura_id=%d, duration=%d", player, aura_id, duration))
-        else
-            if team_state.pets[pet_index] then
-                team_state.pets[pet_index].auras[aura_id] = aura
-                LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d, duration=%d", player, pet_index, aura_id, duration))
-            end
-        end
-    end
-end
-
 -- 更新天气
 function SearchInterface:UpdateWeather(round)
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
@@ -218,10 +196,19 @@ function SearchInterface:ProcessCombatLog(msg)
     assert(#ab_info < 3)
     if string.find(msg, "效果") then
         assert(#ab_info == 2)
-        local aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].speed)
+        local from_index = 0
+        local target_team = 0
+        --from_index参数目前只对附身类技能有用，因此只考虑敌方激活宠物的index
         if string.find(msg, "对敌方的") then
-            self:AddAura(1, 0, ab_info[1].ability_id, ab_info[1].speed, true)
+            from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+            target_team = LE_BATTLE_PET_ENEMY
+        elseif string.find(msg, "对你的") then
+            from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+            target_team = LE_BATTLE_PET_ALLY
         end
+        assert(target_team > 0)
+        local aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power, from_index)
+        self.game.State:install_aura(self.game.Rule.teams, target_team, from_index, aura)
     end
 end
 

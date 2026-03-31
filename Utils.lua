@@ -28,6 +28,9 @@ local Bit = {}
 function Bit.band(x, y)
     local result = 0
     local bitval = 1
+    if x == nil or y == nil then
+        return 0
+    end
     while x > 0 and y > 0 do
         if x % 2 == 1 and y % 2 == 1 then
             result = result + bitval

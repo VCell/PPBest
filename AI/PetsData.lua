@@ -31,7 +31,7 @@ local AuraID = {
     CURSE_OF_DOOM = 217, --厄运诅咒
     UNDEAD = 242, --亡灵
     DODGE = 311, --闪避
-    UNDERGROUND = 340, --钻地
+    BURROW = 340, --钻地
     STUN = 927, --眩晕
     SHATTER_DEFENSE = 542, --破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
@@ -243,7 +243,7 @@ end
 local Aura = {
     id = 0,
     type = 0,
-    duration = 0, --持续回合数，认为触发回合是第1回合。例如duration=2，代表触发回合之后还会持续1回合
+    duration = 0, --持续回合数，0：当前回合有效；1：下一回合结束时结束; 以此类推
     value = 0,
     expire = 0,
     keep_front = false,
@@ -265,7 +265,7 @@ local AuraType = {
     SPEED = 11,
     MAX_HEALTH = 12,
     FLYING = 13,
-    UNDERGROUND = 14,
+    BURROW = 14,
     UNDEAD = 15,
     POSSESSION = 16, --附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
     END_EFFECT = 17, --结束时生效 effects可以有多个，都在结束时生效
@@ -283,40 +283,40 @@ end
 
 function Aura.new_aura_by_id(aura_id, power, from_index)
     if aura_id == AuraID.ICE_TOMB then
-        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 3, 0)
+        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 2, 0)
         aura.keep_front = true
         local ef1 = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, 30 + 1.5 * power, TargetType.ALLY)
         local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.STUN, TargetType.ALLY, 0, true) 
         aura.effects = {ef1, ef2}
         return aura
     elseif aura_id == AuraID.UNDEAD then
-        local aura = Aura.new(aura_id, AuraType.UNDEAD, 2, 0)
+        local aura = Aura.new(aura_id, AuraType.UNDEAD, 1, 0)
         return aura
     elseif aura_id == AuraID.SHATTER_DEFENSE then
-        local aura = Aura.new(aura_id, AuraType.DAMAGE_TAKEN, 3, 100)
+        local aura = Aura.new(aura_id, AuraType.DAMAGE_TAKEN, 2, 100)
         return aura
     elseif aura_id == AuraID.DODGE then
-        local aura = Aura.new(aura_id, AuraType.DODGE, 2, 0)
+        local aura = Aura.new(aura_id, AuraType.DODGE, 1, 0)
         return aura
-    elseif aura_id == AuraID.UNDERGROUND then
-        local aura = Aura.new(aura_id, AuraType.UNDERGROUND, 2, 0)
+    elseif aura_id == AuraID.BURROW then
+        local aura = Aura.new(aura_id, AuraType.BURROW, 1, 0)
         return aura
     elseif aura_id == AuraID.STUN then
-        local aura = Aura.new(aura_id, AuraType.STUN, 2, 0)
+        local aura = Aura.new(aura_id, AuraType.STUN, 1, 0)
         return aura
     elseif aura_id == AuraID.ROCK_BARRAGE then
         local aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
         aura.keep_front = true
-        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ENEMY)
+        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20+power) * 0.3, TargetType.ALLY)
         aura.effects = {ef}
         return aura
     elseif aura_id == AuraID.CURSE_OF_DOOM then
         local aura = Aura.new(aura_id, AuraType.END_EFFECT, 4, 100)
-        aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 40+2*power, TargetType.ENEMY)}
+        aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 40+2*power, TargetType.ALLY)}
         return aura
     elseif aura_id == AuraID.HAUNT then
         local aura = Aura.new(aura_id, AuraType.POSSESSION, 4, 100)
-        local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ENEMY, IGNORE_BIT_ALL)
+        local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ALLY, IGNORE_BIT_ALL)
         aura.effects = {ef1}
         aura.value = from_index
         return aura
@@ -365,7 +365,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.BURROW then
         ability = Ability.new(id, TypeID.BEAST, 4, 2)
-        local ef1 = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.UNDERGROUND, TargetType.ALLY)
+        local ef1 = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.BURROW, TargetType.ALLY)
         local ef2 = Effect.new_damage(TypeID.BEAST, 2*self.power - 25, 80)
         ef2.dynamic_type = EffectDynamicType.BURROW
         ability.effect_list[1] = {ef1}
