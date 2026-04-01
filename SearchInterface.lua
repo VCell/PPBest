@@ -203,11 +203,11 @@ function SearchInterface:ProcessCombatLog(msg)
         local target_team = 0
         local target_index = 0
         --from_index参数目前只对附身类技能有用，因此只考虑敌方激活宠物的index
-        if string.find(msg, "对敌方的") then
+        if string.find(msg, "对敌方的") or string.find(msg, "对敌方队伍") then
             from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             target_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
             target_team = LE_BATTLE_PET_ENEMY
-        elseif string.find(msg, "对你的") then
+        elseif string.find(msg, "对你的") or string.find(msg, "对我方队伍")  then
             from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
             target_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             target_team = LE_BATTLE_PET_ALLY
