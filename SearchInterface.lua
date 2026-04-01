@@ -44,13 +44,16 @@ local function get_team(player)
         if player == LE_BATTLE_PET_ALLY then
             for ab_index = 1,3 do
                 local ab_id, _, _, cooldown, _, turns, ab_type = C_PetBattles.GetAbilityInfo(player, i, ab_index)
-                local ability = pet:install_ability_by_id(ab_id, i)
+
+                local ability = pet:install_ability_by_id(ab_id, ab_index)
                 if ability then
                     assert(ability.cooldown == cooldown, string.format("技能%d冷却不匹配: %d vs %d", ab_id, ability.cooldown, cooldown))
                     assert(ability.duration == turns or (ability.duration == 0 and turns == 1), 
                             string.format("技能%d持续回合数不匹配: %d vs %d", ab_id, ability.turns, turns))
                     assert(ability.type == ab_type, string.format("技能%d类型不匹配: %d vs %d", ab_id, ability.type, ab_type))
-
+LogFrame:AddLog(string.format("已知技能：玩家%d 宠物%d 技能%d id:%d", player,i,ab_index, ab_id))
+                else 
+                    LogFrame:AddLog(string.format("未知技能：玩家%d 宠物%d 技能%d id:%d", player,i,ab_index, ab_id))
                 end
             end
         else
@@ -117,8 +120,8 @@ function SearchInterface:UpdateCooldowns(round)
     for pet_index = 1, 3 do
         for ab_index = 1, 3 do
             local _, cooldown = C_PetBattles.GetAbilityState(LE_BATTLE_PET_ALLY, pet_index, ab_index)
-            if self.game.State.team_states[1].pets[pet_index] then
-                self.game.State.team_states[1].pets[pet_index].cooldown_at[ab_index] = round + cooldown - 1
+            if self.game.State.team_states[LE_BATTLE_PET_ALLY].pets[pet_index] then
+                self.game.State.team_states[LE_BATTLE_PET_ALLY].pets[pet_index].cooldown_at[ab_index] = round + cooldown - 1
             end
         end
     end
@@ -149,6 +152,7 @@ end
 
 function SearchInterface:UpdateState(round)
     self.game.State.round = round
+    self.game.State.change_round = 0
     self:UpdateHealth()
     self:UpdateActivePet()
     self:UpdateCooldowns(round)
@@ -173,7 +177,7 @@ end
 -- 处理战斗日志消息
 -- 格式示例: "|T136122:14|t|cff4e96f7|HbattlePetAbil:218:1806:276:227|h[厄运诅咒]|h|r对敌方的 |T646059:14|t超能浣熊 造成了|T136122:14|t|cff4e96f7|HbattlePetAbil:217:1806:276:227|h[厄运诅咒]|h|r效果."
 function SearchInterface:ProcessCombatLog(msg)
-    if not self.game or not self.initialized then
+    if not self.game then
         return
     end
     
@@ -198,17 +202,25 @@ function SearchInterface:ProcessCombatLog(msg)
         assert(#ab_info == 2)
         local from_index = 0
         local target_team = 0
+        local target_index = 0
         --from_index参数目前只对附身类技能有用，因此只考虑敌方激活宠物的index
         if string.find(msg, "对敌方的") then
             from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+            target_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
             target_team = LE_BATTLE_PET_ENEMY
         elseif string.find(msg, "对你的") then
             from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+            target_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             target_team = LE_BATTLE_PET_ALLY
         end
         assert(target_team > 0)
         local aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power, from_index)
-        self.game.State:install_aura(self.game.Rule.teams, target_team, from_index, aura)
+        if aura then 
+            self.game.State:install_aura(self.game.Rule.teams, target_team, target_index, aura)
+            LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
+        else 
+            LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
+        end
     end
 end
 
@@ -238,22 +250,17 @@ function SearchInterface:DecideActions(round)
         print("未初始化游戏规则")
         return
     end
-    
-    -- 更新状态
-    self.game.State.round = round
-    self:UpdateHealth()
-    self:UpdateActivePet()
-    self:UpdateCooldowns(round)
-    
+
     local root = AI.DUCT_MCTS.Searcher.run_search(self.game.State, self.game.Rule, {
-                iterations = 500,
+                iterations = 1000,
                 exploration_c = 1.414,
             })
-    local acction, info = AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)
+    local action, info = AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)
+
     for _, line in ipairs(info) do
         LogFrame:AddLog(string.format("DUCT_MCTS %d  %s", round, line))
     end
-    return acction
+    return action
 end
 
 PPBest.SearchInterface = SearchInterface

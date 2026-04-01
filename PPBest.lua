@@ -172,7 +172,7 @@ local function parseAutoMsgInfo(msg)
     end
     return res
 end
-
+local round = 0
 -- 事件处理
 PPBestFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
@@ -211,10 +211,10 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
         LogFrame:AddLog("EVENT: PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE")
-    elseif event == "PET_BATTLE_PET_ROUND_RESULTS" then
-        local round = ...
-        LogFrame:AddLog(string.format("EVENT: PET_BATTLE_PET_ROUND_RESULTS, round: [%d]", round))
         Strategy:OnRoundComplete(round)
+    elseif event == "PET_BATTLE_PET_ROUND_RESULTS" then
+        round = ...
+        LogFrame:AddLog(string.format("EVENT: PET_BATTLE_PET_ROUND_RESULTS, round: [%d]", round))
     elseif event == "PET_BATTLE_FINAL_ROUND" then
         Strategy:OnFinalRound(...)
     elseif event == "CHAT_MSG_WHISPER" then
