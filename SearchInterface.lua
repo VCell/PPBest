@@ -51,7 +51,6 @@ local function get_team(player)
                     assert(ability.duration == turns or (ability.duration == 0 and turns == 1), 
                             string.format("技能%d持续回合数不匹配: %d vs %d", ab_id, ability.turns, turns))
                     assert(ability.type == ab_type, string.format("技能%d类型不匹配: %d vs %d", ab_id, ability.type, ab_type))
-LogFrame:AddLog(string.format("已知技能：玩家%d 宠物%d 技能%d id:%d", player,i,ab_index, ab_id))
                 else 
                     LogFrame:AddLog(string.format("未知技能：玩家%d 宠物%d 技能%d id:%d", player,i,ab_index, ab_id))
                 end
@@ -184,7 +183,7 @@ function SearchInterface:ProcessCombatLog(msg)
     -- 提取技能信息
     -- 格式: |HbattlePetAbil:ability_id:health:power:speed|h[skill_name]|h|r
     local ab_info = {}
-    for icon, ability_id, health, power, speed, skill_name in msg:gmatch("|T(%d+):14|t|cff4e96f7|HbattlePetAbil:(%d+):(%d+):(%d+):(%d+)|h%[([^%]]+)%]|h|r") do
+    for ability_id, health, power, speed in msg:gmatch("|HbattlePetAbil:(%d+):(%d+):(%d+):(%d+)|h") do
         ability_id = tonumber(ability_id)
         health = tonumber(health)
         power = tonumber(power)
@@ -198,7 +197,7 @@ function SearchInterface:ProcessCombatLog(msg)
         })
     end
     assert(#ab_info < 3)
-    if string.find(msg, "效果") then
+    if string.find(msg, "施放了") then
         assert(#ab_info == 2)
         local from_index = 0
         local target_team = 0
@@ -214,7 +213,12 @@ function SearchInterface:ProcessCombatLog(msg)
             target_team = LE_BATTLE_PET_ALLY
         end
         assert(target_team > 0)
-        local aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power, from_index)
+        local aura
+        if #ab_info == 1 then 
+            aura = AI.Aura.new_aura_by_id(ab_info[1].ability_id, ab_info[1].power, from_index)
+        else 
+            aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power, from_index)
+        end
         if aura then 
             self.game.State:install_aura(self.game.Rule.teams, target_team, target_index, aura)
             LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))

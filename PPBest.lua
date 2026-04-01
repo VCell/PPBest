@@ -193,6 +193,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
             print("|cFF00FF00PPBest 已加载|r")
         end
     elseif event == "PET_BATTLE_OPENING_START" then
+        PPBestLastLog = {}
         LogFrame:Create()
         LogFrame:AddLog("EVENT: PET_BATTLE_OPENING_START")
         isInPetBattle = true
@@ -239,6 +240,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         -- SendChatMessage("ccc", "WHISPER", nil, sender)
     elseif event == "CHAT_MSG_PET_BATTLE_COMBAT_LOG" then
         local msg = ...
+        table.insert(PPBestLastLog, msg)
         LogFrame:AddLog(msg)
         -- 处理战斗日志，更新光环和推断敌方技能
         AII:ProcessCombatLog(msg)
