@@ -179,7 +179,7 @@ function SearchInterface:ProcessCombatLog(msg)
     if not self.game then
         return
     end
-    
+    local state = self.game.State
     -- 提取技能信息
     -- 格式: |HbattlePetAbil:ability_id:health:power:speed|h[skill_name]|h|r
     local ab_info = {}
@@ -193,7 +193,6 @@ function SearchInterface:ProcessCombatLog(msg)
             health = health,
             power = power,
             speed = speed,
-            skill_name = skill_name,
         })
     end
     assert(#ab_info < 3)
@@ -220,8 +219,17 @@ function SearchInterface:ProcessCombatLog(msg)
             aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power, from_index)
         end
         if aura then 
-            self.game.State:install_aura(self.game.Rule.teams, target_team, target_index, aura)
+            state:install_aura(self.game.Rule.teams, target_team, target_index, aura)
             LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
+            if aura.id == AI.AuraID.HAUNT then
+                --添加鬼影缠身时处理假死状态
+                local pet = state.team_states[3-target_team].pets[from_index]
+                if AI.AuraProcessor.is_undead(state, 3-target_team, from_index) then
+                    pet.tmp_health = 0
+                else 
+                    pet.tmp_health = pet.current_health
+                end
+            end
         else 
             LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
         end
