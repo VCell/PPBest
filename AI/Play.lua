@@ -833,3 +833,4 @@ AI.Game = Game
 AI.Action = Action
 AI.PetState = PetState
 AI.TeamState = TeamState
+AI.AuraProcessor = AuraProcessor
