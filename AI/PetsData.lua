@@ -4,6 +4,7 @@ local Bit = PPBest.Bit
 local AbilityID = {
     NONE = 0, --用于技能不明时的默认技能
     BURROW = 159, --兔子 钻地
+    ION_CANNON = 209, --离子炮 
     SHADOW_SLASH = 210, --暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, --厄运诅咒 
     DODGE = 312, --兔子 闪避
@@ -15,9 +16,11 @@ local AbilityID = {
     STONE_RUSH = 621, --巨石奔袭 配波
     ICE_TOMB = 624,  --阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 628, --岩石弹幕 配波
+    MINEFIELD = 634, --雷区
     QUAKE = 644, --地震
     BONE_BITE = 648,    --噬骨 100命中率亡灵普攻
     HAUNT = 652, --鬼影缠身 
+    MISSILE = 777, -- 导弹 90命中机械普攻
     STONE_SHOT = 801, --投石 配波
     RUPTURE = 814, --割裂 配波
     ARFUS_2 = 2530, --阿尔福斯 致命梦境
@@ -30,12 +33,14 @@ local AbilityID = {
 local AuraID = {
     CURSE_OF_DOOM = 217, --厄运诅咒
     UNDEAD = 242, --亡灵
+    MECHANICAL = 244, --机械,表明该机械已经触发过意外防护
     DODGE = 311, --闪避
     BURROW = 340, --钻地
     STUN = 927, --眩晕
     SHATTER_DEFENSE = 542, --破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
+    MINEFIELD = 635, -- 雷区
     HAUNT = 653, -- 鬼影缠身
 }
 
@@ -60,6 +65,7 @@ local PetID = {
     PERSONAL_WORLD_DESTROYER = 261,  --便携式世界毁灭者
     PEBBLE = 265, --配波
     FOSSILIZED_HATCHLING = 266, --化石幼兽
+    DARKMOON_TONK = 338, --暗月坦克
     DARKMOON_ZEPPELIN = 339, --暗月飞艇
     MOUNTAIN_COTTONTAIL = 391, -- 高山短尾兔
     SCOURGED_WHELPLING = 538, -- 痛苦的雏龙
@@ -259,7 +265,7 @@ local AuraType = {
     ACCURACY = 5, --命中
     DODGE = 6, --闪避
     STUN = 7,
-    MINE_FIELD = 8, --换人时触发伤害
+    MINEFIELD = 8, --换人时触发伤害
     BLOCK = 9, --按伤害次数格挡
     DEFEND = 10, --按数值减伤
     SPEED = 11,
@@ -269,6 +275,7 @@ local AuraType = {
     UNDEAD = 15,
     POSSESSION = 16, --附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
     END_EFFECT = 17, --结束时生效 effects可以有多个，都在结束时生效
+    OTHER = 18, --其他不需要类型逻辑的效果，生效时根据id生效
 }
 
 function Aura.new(id, type, duration, value)
@@ -319,6 +326,14 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, 0.5*power+10, TargetType.ALLY, IGNORE_BIT_ALL)
         aura.effects = {ef1}
         aura.value = from_index
+        return aura
+    elseif aura_id == AuraID.MINEFIELD then
+        local aura = Aura.new(aura_id, AuraType.MINEFIELD, 9, 0)
+        local ef = Effect.new(TypeID.MECHANICAL, EffectType.DAMAGE, 100, 40+power*2, TargetType.ALLY)
+        aura.effects = {ef}
+        return aura
+    elseif aura_id == AuraID.MECHANICAL then
+        local aura = Aura.new(aura_id, AuraType.OTHER, 99, 0)
         return aura
     else
         return nil
@@ -401,7 +416,18 @@ function Pet:install_ability_by_id(id, index)
                 Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true),
             }
         }
-
+    elseif id == AbilityID.MISSILE then
+        ability = Ability.new(id, TypeID.MECHANICAL, 0, 0)
+        local ef = Effect.new_damage(TypeID.MECHANICAL, (20+self.power) * 1.2, 90, TargetType.ENEMY)
+        ability.effect_list[1] = {ef}
+    elseif id == AbilityID.MINEFIELD then
+        ability = Ability.new(id, TypeID.MECHANICAL, 0, 0)
+        local ef = Effect.new(TypeID.MECHANICAL, EffectType.AURA, 100, AuraID.MINEFIELD, TargetType.ENEMY)
+        ability.effect_list[1] = {ef}
+    elseif id == AbilityID.ION_CANNON then
+        ability = Ability.new(id, TypeID.MECHANICAL, 5, 3)
+        local ef = Effect.new_damage(TypeID.MECHANICAL, 50+self.power*2.5, 100, TargetType.ENEMY)
+        ability.effect_list = {{ef}, {}, {}}
     end
     if ability ~= nil then
         self.abilitys[index] = ability

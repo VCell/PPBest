@@ -125,6 +125,17 @@ function AuraProcessor.is_undead(state, team_index, pet_index)
     
 end
 
+function AuraProcessor.has_aura_by_id(state, team_index, pet_index, aura_id)
+    local team_state = state.team_states[team_index]
+    local ps = team_state.pets[pet_index]
+    for i, aura in pairs(ps.auras) do
+        if aura.id == aura_id then
+            return true
+        end
+    end
+    return false
+end
+
 function AuraProcessor.get_dodge_modifier(state, team_index, pet_index)
     local rate = 0
     local team_state = state.team_states[team_index]
@@ -538,24 +549,38 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
     
     --处理死亡流程
     if pet_state.current_health <= 0 then 
+        local pet = teams[target_player][target_index]
         --处理亡灵
-
-        if AuraProcessor.is_undead(self, target_player, target_index) then
-            --已经是不死状态
-            pet_state.current_health = 1
-            if pet_state.tmp_health and pet_state.tmp_health > 0 then
-                --不死轮假死就是真死
-                pet_state.current_health = 0
-                pet_state.tmp_health = 0
+        if pet.type == AI.TypeID.UNDEAD then
+            if AuraProcessor.is_undead(self, target_player, target_index) then
+                --已经是不死状态
+                pet_state.current_health = 1
+                if pet_state.tmp_health and pet_state.tmp_health > 0 then
+                    --不死轮假死就是真死
+                    pet_state.current_health = 0
+                    pet_state.tmp_health = 0
+                    self:pet_dead(target_player)
+                end
+            elseif pet_state.tmp_health then
+                --假死
                 self:pet_dead(target_player)
-            end
-        elseif teams[target_player][target_index].type == AI.TypeID.UNDEAD and not pet_state.tmp_health then
-            if not pet_state.tmp_health then
+            else 
                 --亡灵死后进入不死状态
                 pet_state.current_health = 1
                 local aura = AI.Aura.new_aura_by_id(AI.AuraID.UNDEAD)
                 self:install_aura(teams, target_player, target_index, aura)
                 --(string.format("player %d pet %d revived by Undying", target_player, target_index))
+            end
+        elseif pet.type == AI.TypeID.MECHANICAL then
+            if AuraProcessor.has_aura_by_id(self, target_player, target_index, AI.AuraID.MECHANICAL) then
+                --修复过
+                self:pet_dead(target_player)
+            else 
+                --机械修复流程
+                pet_state.current_health = 0.2*pet.health
+                local aura = AI.Aura.new_aura_by_id(AI.AuraID.MECHANICAL)
+                self:install_aura(teams, target_player, target_index, aura)
+                self:print_log(string.format("玩家%d, 宠物%d 触发机械修复", target_player, target_index))
             end
         else 
             self:pet_dead(target_player)
