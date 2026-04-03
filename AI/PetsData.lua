@@ -422,7 +422,7 @@ function Pet:install_ability_by_id(id, index)
         local ef = Effect.new_damage(TypeID.MECHANICAL, (20+self.power) * 1.2, 90, TargetType.ENEMY)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.MINEFIELD then
-        ability = Ability.new(id, TypeID.MECHANICAL, 0, 0)
+        ability = Ability.new(id, TypeID.MECHANICAL, 5, 0)
         local ef = Effect.new(TypeID.MECHANICAL, EffectType.AURA, 999, AuraID.MINEFIELD, TargetType.ENEMY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ION_CANNON then
