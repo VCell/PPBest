@@ -58,9 +58,8 @@ local function get_team(player)
         else
             set_possible_abilitys(pet)
         end
-        if pet.abilitys[1] == nil then
-            pet:install_default_ability()
-        end
+        pet:install_default_ability()
+        
         table.insert(team, pet)
     end
     return team

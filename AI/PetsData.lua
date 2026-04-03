@@ -2,7 +2,7 @@ local _,PPBest = ...
 local AI = PPBest.AI
 local Bit = PPBest.Bit
 local AbilityID = {
-    NONE = 0, --用于技能不明时的默认技能
+    NONE = 1, --用于技能不明时的默认技能
     BURROW = 159, --兔子 钻地
     ION_CANNON = 209, --离子炮 
     SHADOW_SLASH = 210, --暗影鞭笞 90命中率亡灵普攻
@@ -437,10 +437,12 @@ function Pet:install_ability_by_id(id, index)
 end
 
 function Pet:install_default_ability()
-    if self.abilitys[1] == nil then
-        local ab = Ability.new(AbilityID.NONE, self.type, 0, 0)
-        ab.effect_list[1] = {Effect.new_damage(self.type, 20+self.power)}
-        self.abilitys[1] = ab
+    for ab_index = 1, 3 do
+        if self.abilitys[ab_index] == nil then
+            local ab = Ability.new(AbilityID.NONE, self.type, 0, 0)
+            ab.effect_list[1] = {Effect.new_damage(self.type, 20+self.power)}
+            self.abilitys[ab_index] = ab
+        end
     end
 end
 
