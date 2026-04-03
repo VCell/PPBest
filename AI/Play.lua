@@ -324,8 +324,8 @@ function GameStateTemplate:pet_dead(player)
     local aura = AuraProcessor.get_aura_by_type(self, player, active, AI.AuraType.POSSESSION)
     if aura then
         local pet_state = self.team_states[3-player].pets[aura.value]
-        assert(pet_state and pet_state.current_health <=0 and pet_state.tmp_health ~= nil, 
-                string.format("玩家%d, 宠物%d 血量应为0", player, aura.value))
+        --assert(pet_state and pet_state.current_health <=0 and pet_state.tmp_health ~= nil, 
+        --        string.format("玩家%d, 宠物%d 血量应为0", 3-player, aura.value))
         pet_state.current_health = pet_state.tmp_health
     end
     self.team_states[player].pets[active].auras = {}
