@@ -201,7 +201,7 @@ function TestAI:humanVsAi()
         -- 使用MCTS为AI选择动作
         print("\nAI思考中...")
         local root_node = AI.DUCT_MCTS.Searcher.run_search(state, rule, {
-            iterations = 500,
+            iterations = 1000,
             exploration_c = 1.414
         })
         local ai_choice = AI.DUCT_MCTS.Searcher.select_best_action(root_node, 2)
@@ -375,9 +375,9 @@ function TestAI:runAllTests()
     print(self.name .. " v" .. self.version)
     print("==================================================")
     
-    --self:simulation()
+    self:simulation()
     --self:manual_simulation()
-    self:humanVsAi()
+    --self:humanVsAi()
     print("\n==================================================")
     print("所有测试完成！")
     print("==================================================")

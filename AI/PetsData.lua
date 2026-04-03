@@ -329,6 +329,7 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         return aura
     elseif aura_id == AuraID.MINEFIELD then
         local aura = Aura.new(aura_id, AuraType.MINEFIELD, 9, 0)
+        aura.keep_front = true
         local ef = Effect.new(TypeID.MECHANICAL, EffectType.DAMAGE, 100, 40+power*2, TargetType.ALLY)
         aura.effects = {ef}
         return aura
@@ -357,7 +358,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ICE_TOMB then
         ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
-        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.ICE_TOMB, TargetType.ENEMY, IGNORE_BIT_ALL)
+        local ef = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 999, AuraID.ICE_TOMB, TargetType.ENEMY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ARFUS_6 then
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
@@ -401,7 +402,7 @@ function Pet:install_ability_by_id(id, index)
                      Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
                      Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
                      Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
-                     Effect.new(TypeID.ELEMENTAL, EffectType.AURA,100, AuraID.ROCK_BARRAGE,TargetType.ENEMY, IGNORE_BIT_ALL),
+                     Effect.new(TypeID.ELEMENTAL, EffectType.AURA,999, AuraID.ROCK_BARRAGE,TargetType.ENEMY, IGNORE_BIT_ALL),
                     },
         }
     elseif id == AbilityID.CURSE_OF_DOOM then
@@ -422,7 +423,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.MINEFIELD then
         ability = Ability.new(id, TypeID.MECHANICAL, 0, 0)
-        local ef = Effect.new(TypeID.MECHANICAL, EffectType.AURA, 100, AuraID.MINEFIELD, TargetType.ENEMY)
+        local ef = Effect.new(TypeID.MECHANICAL, EffectType.AURA, 999, AuraID.MINEFIELD, TargetType.ENEMY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ION_CANNON then
         ability = Ability.new(id, TypeID.MECHANICAL, 5, 3)

@@ -247,18 +247,6 @@ function TeamState.new()
     team_state.ability_index = 0
     return team_state
 end
-function TeamState:change_pet(new_index)
-    self.active_index = new_index
-    --检查是否有雷区
-    for i, aura in pairs(self.active_auras) do
-        if aura.type == AI.AuraType.MINE_FIELD then
-
-            -- 移除雷区光环
-            self.active_auras[i] = nil
-        end
-    end
-    
-end
 
 function TeamState:check_type_talent()
     -- 检查并应用种族天赋
@@ -285,8 +273,26 @@ local GameStateTemplate = {}
 
 function GameStateTemplate:print_log(...)
     if self.is_logging then
-        print("PlayLog ------",...)
+        print("PlayLog ------ ",...)
     end
+end
+
+
+function GameStateTemplate:change_pet(teams, player, new_index)
+    local team_state = self.team_states[player]
+    team_state.active_index = new_index
+    --检查是否有雷区
+    local to_remove = {}
+    for i, aura in pairs(team_state.active_auras) do
+        if aura.type == AI.AuraType.MINEFIELD then
+            self:apply_effect(teams, aura.effects[1], nil, player, new_index, 0)
+            table.insert(to_remove, i)
+        end
+    end
+    for _, i in ipairs(to_remove) do
+        team_state.active_auras[i] = nil
+    end
+    
 end
 
 function GameStateTemplate:pre_step()
@@ -593,7 +599,7 @@ function GameStateTemplate:process_player_action(teams, player, action, opponent
     --print("process_player_action ", action.type)
     local team_state = self.team_states[player]
     if action.type == 'change' then
-        team_state:change_pet(action.value)
+        self:change_pet(teams, player, action.value)
     elseif action.type == 'use' then
         local ability = teams[player][team_state.active_index]:get_ability(action.value)
         -- 使用技能逻辑
@@ -711,10 +717,10 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
     if state.change_round > 0 then
         --换人回合不触发其他逻辑
         if action1.type == 'change' then
-            state.team_states[1]:change_pet(action1.value)
+            state:change_pet(self.teams, 1, action1.value)
         end
         if action2.type == 'change' then
-            state.team_states[2]:change_pet(action2.value)
+            state:change_pet(self.teams,2, action2.value)
         end
         state.change_round = 0
         state.round = state.round + 1
