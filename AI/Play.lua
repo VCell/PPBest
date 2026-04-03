@@ -125,15 +125,26 @@ function AuraProcessor.is_undead(state, team_index, pet_index)
     
 end
 
-function AuraProcessor.has_aura_by_id(state, team_index, pet_index, aura_id)
+function AuraProcessor.get_aura_by_id(state, team_index, pet_index, aura_id)
     local team_state = state.team_states[team_index]
     local ps = team_state.pets[pet_index]
     for i, aura in pairs(ps.auras) do
         if aura.id == aura_id then
-            return true
+            return aura
         end
     end
-    return false
+    return nil
+end
+
+function AuraProcessor.get_aura_by_type(state, team_index, pet_index, aura_type)
+    local team_state = state.team_states[team_index]
+    local ps = team_state.pets[pet_index]
+    for i, aura in pairs(ps.auras) do
+        if aura.type == aura_type then
+            return aura
+        end
+    end
+    return nil
 end
 
 function AuraProcessor.get_dodge_modifier(state, team_index, pet_index)
@@ -309,6 +320,14 @@ function GameStateTemplate:pet_dead(player)
     self.team_states[player].ability_index = 0
     self.team_states[player].interrupted = true
     local active = self.team_states[player].active_index
+    --处理附身效果
+    local aura = AuraProcessor.get_aura_by_type(self, player, active, AI.AuraType.POSSESSION)
+    if aura then
+        local pet_state = self.team_states[3-player].pets[aura.value]
+        assert(pet_state and pet_state.current_health <=0 and pet_state.tmp_health ~= nil, 
+                string.format("玩家%d, 宠物%d 血量应为0", player, aura.value))
+        pet_state.current_health = pet_state.tmp_health
+    end
     self.team_states[player].pets[active].auras = {}
     self:print_log(string.format("玩家%d, 宠物%d 死亡", player, active))
 end
@@ -578,7 +597,7 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
                 --(string.format("player %d pet %d revived by Undying", target_player, target_index))
             end
         elseif pet.type == AI.TypeID.MECHANICAL then
-            if AuraProcessor.has_aura_by_id(self, target_player, target_index, AI.AuraID.MECHANICAL) then
+            if AuraProcessor.get_aura_by_id(self, target_player, target_index, AI.AuraID.MECHANICAL) ~= nil then
                 --修复过
                 self:pet_dead(target_player)
             else 

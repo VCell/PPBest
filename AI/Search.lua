@@ -48,7 +48,7 @@ local Rules = {
 -- ==================== 配置 ====================
 DUCT_MCTS.Config = {
     exploration_constant = 1.414,  -- 默认探索系数 √2
-    max_simulation_depth = 50,    -- 模拟最大深度
+    max_simulation_depth = 40,    -- 模拟最大深度
     enable_debug_log = false       -- 调试日志开关
 }
 
@@ -183,62 +183,68 @@ DUCT_MCTS.Node = {
 -- ==================== UCB计算函数 ====================
 local function calculate_uct_value(node, player, action, exploration_c)
     local stats = node:get_stats(player, action)
-    
-    -- 从未访问过的动作，给予最高优先级
+
+    -- 未访问优先探索
     if stats.visits == 0 then
         return math.huge
     end
-    
-    -- 利用项：平均奖励
+
     local exploitation = stats.average_reward
-    
-    -- 探索项
-    local total_visits = node:get_total_visits_for_player(player)
+
+    -- 使用节点总访问次数（标准UCT）
+    local total_visits = node.total_visits
     if total_visits <= 0 then
         return exploitation
     end
-    
-    local exploration = exploration_c * math.sqrt(math.log(total_visits) / stats.visits)
-    
+
+    local exploration =
+        exploration_c * math.sqrt(math.log(total_visits) / stats.visits)
+
     return exploitation + exploration
 end
-
 -- ==================== DUCT选择策略 ====================
 local function select_joint_action_duct(node, exploration_c)
     local game_rules = node._game_rules
     local actions1 = game_rules:get_legal_actions(node.state, 1)
     local actions2 = game_rules:get_legal_actions(node.state, 2)
-    
+
     local best_action1, best_action2
     local best_ucb1, best_ucb2 = -math.huge, -math.huge
-    
-    -- 玩家1独立选择
+
+    -- 玩家1
     for _, a1 in ipairs(actions1) do
         local ucb = calculate_uct_value(node, 1, a1, exploration_c)
+
+        -- 加小噪声避免振荡
+        ucb = ucb + math.random() * 1e-6
+
         if ucb > best_ucb1 then
             best_ucb1 = ucb
             best_action1 = a1
         end
     end
-    
-    -- 玩家2独立选择
+
+    -- 玩家2
     for _, a2 in ipairs(actions2) do
         local ucb = calculate_uct_value(node, 2, a2, exploration_c)
+
+        ucb = ucb + math.random() * 1e-6
+
         if ucb > best_ucb2 then
             best_ucb2 = ucb
             best_action2 = a2
         end
     end
-    
-    -- 回退机制：如果没有有效动作，随机选择
-    if not best_action1 and #actions1 > 0 then
+
+    -- fallback
+    if not best_action1 then
         best_action1 = actions1[math.random(#actions1)]
     end
-    
-    if not best_action2 and #actions2 > 0 then
+
+    if not best_action2 then
         best_action2 = actions2[math.random(#actions2)]
     end
-    
+
     return best_action1, best_action2
 end
 
@@ -262,7 +268,7 @@ local function smart_simulation_policy(state, game_rules)
     local current_state = state
     local depth = 0
     
-    while not game_rules.is_terminal(current_state) and depth < 20 do
+    while not game_rules.is_terminal(current_state) and depth < DUCT_MCTS.Config.max_simulation_depth do
         local actions1 = game_rules:get_legal_actions(current_state, 1)
         local actions2 = game_rules:get_legal_actions(current_state, 2)
         
@@ -361,31 +367,30 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     local utility2 = constant_sum - utility  -- 玩家2的奖励
     
     -- === 回溯阶段 ===
+ -- === 回溯阶段 ===
+
+    -- 叶节点也计入访问
+    node.total_visits = node.total_visits + 1
+
     for i = #path, 1, -1 do
         local step = path[i]
         local current_node = step.node
         local action1, action2 = step.action1, step.action2
-        
-        -- 更新节点总访问次数
+
+        -- 更新节点访问次数
         current_node.total_visits = current_node.total_visits + 1
-        
-        -- 更新玩家1统计
+
+        -- 玩家1
         local stats1 = current_node:get_stats(1, action1)
         stats1.total_reward = stats1.total_reward + utility
         stats1.visits = stats1.visits + 1
         stats1.average_reward = stats1.total_reward / stats1.visits
-        --print("stats1.average_reward",stats1.total_reward, stats1.visits, stats1.average_reward)
-        
-        -- 更新玩家2统计
+
+        -- 玩家2
         local stats2 = current_node:get_stats(2, action2)
         stats2.total_reward = stats2.total_reward + utility2
         stats2.visits = stats2.visits + 1
         stats2.average_reward = stats2.total_reward / stats2.visits
-    end
-    
-    -- 更新当前节点（如果不在路径中）
-    if #path == 0 or path[#path].child ~= node then
-        node.total_visits = node.total_visits + 1
     end
     
     if DUCT_MCTS.Config.enable_debug_log then
@@ -441,25 +446,34 @@ DUCT_MCTS.Searcher = {
     select_best_action = function(node, player)
         local game_rules = node._game_rules
         local actions = game_rules:get_legal_actions(node.state, player)
-        
+
         local best_action = nil
-        local best_avg_reward = -math.huge
-        
+        local best_visits = -1
+
         local reward_info = {}
         for _, action in ipairs(actions) do
             local stats = node:get_stats(player, action)
-            --print("for _, action in ipairs(actions) do", stats.visits ,stats.average_reward)
-            if stats.visits > 0 and stats.average_reward > best_avg_reward then
-                best_avg_reward = stats.average_reward
+
+            if stats.visits > best_visits then
+                best_visits = stats.visits
                 best_action = action
             end
-            table.insert(reward_info, string.format("[%s: avg=%.3f v=%d]", tostring(action), stats.average_reward, stats.visits))
+
+            table.insert(
+                reward_info,
+                string.format(
+                    "[%s: avg=%.3f v=%d]",
+                    tostring(action),
+                    stats.average_reward,
+                    stats.visits
+                )
+            )
         end
-        
-        -- 回退：随机选择
+
         if not best_action and #actions > 0 then
             best_action = actions[math.random(#actions)]
         end
+
         print("action rewards: "..table.concat(reward_info, ""))
         return best_action, reward_info
     end,

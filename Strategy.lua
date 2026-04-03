@@ -318,11 +318,12 @@ function GetSchemeAI()
         --todo 需要确认事件次序。确认回合结束时buff和cd的时间
         schemeName = "AIScheme",
         action_round = -1,
+        change_round = -1,
         InitGame = function(self)
             AII:InitGame()
         end,
         Select = function(self, round)
-            if round == self.action_round then
+            if round == self.change_round then
                 return 
             end
             -- 使用增量更新机制
@@ -331,7 +332,7 @@ function GetSchemeAI()
             local action = AII:DecideActions(round)
             assert(action and action.type == "change", "error action")
             performAction(action)
-            self.action_round = round
+            self.change_round = round
         end,
         Battle = function(self, round)
             if round == self.action_round then
