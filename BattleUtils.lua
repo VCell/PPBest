@@ -65,6 +65,21 @@ function BattleUtils:checkTeamByMode(mode)
     
 end
 
+function BattleUtils:ExportPetAbilityMap()
+    local res = {}
+    local numPets, numOwned = C_PetJournal.GetNumPets()
+    if numPets<numOwned then
+        print("清空宠物手册的筛选栏再试")
+        return false
+    end
+    for i = 1, numPets do
+        local _,speciesID = C_PetJournal.GetPetInfoByIndex(i)
+        local abList = C_PetJournal.GetPetAbilityList(speciesID)
+        res[speciesID] = abList
+    end
+    return res
+end
+
 function BattleUtils:BuildTeamByLevel(targetLevels)
     --先排序
     table.sort(targetLevels, function(a,b) return a>b end)
