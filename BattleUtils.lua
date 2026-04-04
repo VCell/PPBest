@@ -75,7 +75,7 @@ function BattleUtils:ExportPetAbilityMap()
     for i = 1, numPets do
         local _,speciesID = C_PetJournal.GetPetInfoByIndex(i)
         local abList = C_PetJournal.GetPetAbilityList(speciesID)
-        res[speciesID] = abList
+        res[tostring(speciesID)] = abList
     end
     return res
 end
