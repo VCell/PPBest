@@ -17,14 +17,20 @@ local function set_possible_abilitys(pet)
         pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1)   -- 投石
         pet:install_ability_by_id(AI.AbilityID.RUPTURE, 2)    -- 割裂
         pet:install_ability_by_id(AI.AbilityID.ROCK_BARRAGE, 3)     -- 岩石弹幕
-    elseif pet.id == AI.PetID.ARFUS then
-        pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1)   -- 啃骨头
-        pet:install_ability_by_id(AI.AbilityID.ICE_TOMB, 2)    -- 寒冰之墓
-        pet:install_ability_by_id(AI.AbilityID.ARFUS_6, 3)     -- 宠物游行
     elseif pet.id == AI.PetID.UNBORN_VALKYR then
         pet:install_ability_by_id(AI.AbilityID.SHADOW_SHOCK, 1) 
         pet:install_ability_by_id(AI.AbilityID.CURSE_OF_DOOM, 2) 
         pet:install_ability_by_id(AI.AbilityID.HAUNT, 3) 
+    else 
+        local abilitys = PPBest.GetAbilitysByPetID(pet.id)
+        if abilitys then
+            for ab_index = 1,3 do
+                pet:install_ability_by_id(abilitys[ab_index], abilitys[ab_index])
+                if not pet:get_ability(abilitys[ab_index]) then
+                    pet:install_ability_by_id(abilitys[ab_index], abilitys[ab_index + 3])
+                end
+            end
+        end
     end
 end
 
@@ -61,6 +67,9 @@ local function get_team(player)
         pet:install_default_ability()
         
         table.insert(team, pet)
+        LogFrame:AddLog(string.format("玩家%d 宠物%d 技能1:%d 技能2:%d 技能3:%d", player, i,
+                pet:get_ability(1), pet:get_ability(2), pet:get_ability(3)))
+        
     end
     return team
 end

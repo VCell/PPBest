@@ -570,4 +570,12 @@ local PetAbilitysMap = {
     ["4998"] = {493, 778, 163, 113, 1754, 179},
 }
 
-PPBest.PetAbilitysMap = PetAbilitysMap
+local function GetAbilitysByPetID(petID)
+    local res = PetAbilitysMap[tostring(petID)]
+    if res and #res == 6 then
+        return res
+    end
+    return nil
+end
+
+PPBest.GetAbilitysByPetID = GetAbilitysByPetID

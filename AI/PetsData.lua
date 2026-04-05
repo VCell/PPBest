@@ -75,7 +75,7 @@ local PetID = {
     ANUBISATH_IDOL = 1155, -- 阿奴比萨斯
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     UNBORN_VALKYR = 1238, --幼年瓦格里
-    ARFUS = 1561, --阿尔福斯
+    ARFUS = 4329, --阿尔福斯
     SCAVENGING_PINCHER = 4532, -- 劫掠者小钳
 }
 
