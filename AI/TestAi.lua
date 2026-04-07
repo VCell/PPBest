@@ -258,27 +258,29 @@ function TestAI:manual_simulation()
     -- 显示初始状态
     rule.print_state(state)
     
-    -- 设定好的动作序列
-    local action_list = {
-        {AI.Action.new('change', 1), AI.Action.new('change', 3)},
-        {AI.Action.new('use', 2), AI.Action.new('use', 3)},
-        {AI.Action.new('use', 1), AI.Action.new('use', 3)},
-        {AI.Action.new('use', 1), AI.Action.new('use', 3)},
-        {AI.Action.new('standby', 2), AI.Action.new('change', 3)},
-        -- {AI.Action.new('use', 3), AI.Action.new('use', 2)},
-        -- {AI.Action.new('use', 2), AI.Action.new('use', 3)},
-        -- {AI.Action.new('use', 1), AI.Action.new('use', 1)},
-        -- {AI.Action.new('change', 3), AI.Action.new('change', 1)},
-        -- {AI.Action.new('use', 3), AI.Action.new('use', 2)}
-    }
+    local max_rounds = 50
     
-    local p1_legal = false
-    local p2_legal = false
-    for round = 1, #action_list do
+    for round = 1, max_rounds do
+        -- 检查游戏是否结束
+        if rule.is_terminal(state) then
+            local winner = rule.get_winner(state)
+            if winner == 1 then
+                print("🎉 游戏结束！玩家1获胜了！")
+            elseif winner == 2 then
+                print("😢 游戏结束！玩家2获胜了！")
+            else
+                print("🤝 游戏结束！平局！")
+            end
+            break
+        end
+        
+        -- 获取双方的合法动作
         local p1_la = rule:get_legal_actions(state, 1)
         local p2_la = rule:get_legal_actions(state, 2)
         
         print(string.format("\n=== 第 %d 回合 （游戏回合：%d）===", round, state.round))
+        
+        -- 获取玩家1的选择
         print("玩家1可选行动:")
         for i, action in ipairs(p1_la) do
             local action_desc
@@ -291,13 +293,24 @@ function TestAI:manual_simulation()
             else
                 action_desc = "未知动作"
             end
-            if tostring(action) == tostring(action_list[round][1]) then
-                p1_legal = true
-            end
             print(string.format("  %d. %s", i, action_desc))
         end
         
-        print("玩家2可选行动:")
+        local action1
+        while true do
+            print("请输入玩家1的选择：")
+            local input = io.read()
+            local choice = tonumber(input)
+            if choice and choice >= 1 and choice <= #p1_la then
+                action1 = p1_la[choice]
+                break
+            else
+                print("输入无效，请重新输入！")
+            end
+        end
+        
+        -- 获取玩家2的选择
+        print("\n玩家2可选行动:")
         for i, action in ipairs(p2_la) do
             local action_desc
             if action.type == 'use' then
@@ -309,16 +322,21 @@ function TestAI:manual_simulation()
             else
                 action_desc = "未知动作"
             end
-            if tostring(action) == tostring(action_list[round][2]) then
-                p2_legal = true
-            end
             print(string.format("  %d. %s", i, action_desc))
         end
-        assert(p1_legal and p2_legal, string.format("回合 %d 玩家1或玩家2可选行动中没有预设的动作", round))
         
-        -- 获取预设的动作
-        local action1 = action_list[round][1]
-        local action2 = action_list[round][2]
+        local action2
+        while true do
+            print("请输入玩家2的选择：")
+            local input = io.read()
+            local choice = tonumber(input)
+            if choice and choice >= 1 and choice <= #p2_la then
+                action2 = p2_la[choice]
+                break
+            else
+                print("输入无效，请重新输入！")
+            end
+        end
         
         -- 显示双方选择
         local player_action_desc
@@ -339,7 +357,7 @@ function TestAI:manual_simulation()
             ai_action_desc = "待命"
         end
         
-        print(string.format("玩家1选择：%s", player_action_desc))
+        print(string.format("\n玩家1选择：%s", player_action_desc))
         print(string.format("玩家2选择：%s", ai_action_desc))
         
         -- 应用动作
@@ -349,19 +367,10 @@ function TestAI:manual_simulation()
         
         -- 显示结果
         rule.print_state(state)
-        
-        -- 检查是否终局
-        if rule.is_terminal(state) then
-            local winner = rule.get_winner(state)
-            if winner == 1 then
-                print("🎉 游戏结束！玩家1获胜了！")
-            elseif winner == 2 then
-                print("😢 游戏结束！玩家2获胜了！")
-            else
-                print("🤝 游戏结束！平局！")
-            end
-            break
-        end
+    end
+    
+    if not rule.is_terminal(state) then
+        print("\n达到最大回合数，游戏结束！")
     end
     
     print("\n==================================================")
@@ -371,15 +380,34 @@ end
 
 -- 运行所有测试
 function TestAI:runAllTests()
-    print("==================================================")
-    print(self.name .. " v" .. self.version)
+    -- 解析命令行参数
+    local mode = arg[1] or "manual"
+    
+    local mode_map = {
+        simulation = self.simulation,         -- AI vs AI
+        play = self.humanVsAi,      -- 手动 vs AI
+        manual = self.manual_simulation,   -- 手动 vs 手动
+    }
+    
+    if not mode_map[mode] then
+        print("用法: lua TestAi.lua <模式>")
+        print("可用模式:")
+        print("  simulation      - AI vs AI 模式")
+        print("  play   - 手动 vs AI 模式")
+        print("  manual  - 手动 vs 手动 模式")
+        print("\n默认模式: manual")
+        mode = "manual"
+        return
+    end
+    
+    print("\n"..os.date("%Y-%m-%d %H:%M:%S").."\n运行模式: " .. mode)
     print("==================================================")
     
-    self:simulation()
-    --self:manual_simulation()
-    --self:humanVsAi()
+    -- 运行对应模式
+    mode_map[mode](self)
+    
     print("\n==================================================")
-    print("所有测试完成！")
+    print("测试完成！")
     print("==================================================")
 end
 TestAI:runAllTests()

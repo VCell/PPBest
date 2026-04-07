@@ -246,6 +246,7 @@ local TeamState = {
     ability_round = 0, --多轮技能的当前轮次
     ability_index = 0, -- 多轮技能的技能id
     active_index = 0, -- 当前出战宠物的索引
+    is_faster = nil, -- 本轮是否先手，用来做动态判定
     interrupted = false, -- 当前回合是否被打断
 }
 TeamState.__index = TeamState
@@ -414,6 +415,7 @@ function GameStateTemplate:post_step(teams)
     end
 end
 
+
 function GameStateTemplate:get_action_order(teams, action1, action2)
     --有换人先换人，都换人次序无所谓
     if action1.type == 'change' then
@@ -423,7 +425,8 @@ function GameStateTemplate:get_action_order(teams, action1, action2)
     end
 
     local team1, team2 = self.team_states[1], self.team_states[2]
- 
+    team1.is_faster = nil
+    team2.is_faster = nil
     --处理aura
     local speed1 = AuraProcessor.get_active_speed_modifier(self, 1) * teams[1][team1.active_index].speed /100.0
     local speed2 = AuraProcessor.get_active_speed_modifier(self, 2) * teams[2][team2.active_index].speed /100.0
@@ -441,9 +444,17 @@ function GameStateTemplate:get_action_order(teams, action1, action2)
         end
     end
     if speed1 > speed2 then
+        team1.is_faster = true
         return 1, 2
-    else
+    elseif speed1 < speed2 then
+        team2.is_faster = true
         return 2, 1
+    else
+        if math.random(1, 2) == 1 then
+            return 1, 2
+        else
+            return 2, 1
+        end
     end
 end
 
@@ -466,10 +477,7 @@ function GameStateTemplate:process_effects(teams, player, effects)
                     hit_count = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index, hit_count)
                 end
                 --对手速度慢则额外攻击一次
-                if AuraProcessor.get_active_speed_modifier(self, player) * 
-                    teams[player][ally_pet_index].speed >
-                   AuraProcessor.get_active_speed_modifier(self, opponent) * 
-                    teams[opponent][self.team_states[opponent].active_index].speed then
+                if self.team_states[player].is_faster then
                     --print(string.format("player %d pet %d flurry triggered extra attack due to speed", opponent, self.team_states[opponent].active_index))
                     hit_count = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index, hit_count)
                 end
