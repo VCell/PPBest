@@ -168,6 +168,7 @@ local EffectType = {
 local EffectDynamicType = {
     FLURRY = 1, -- 攻击1-2次，如果比对方快则额外攻击一次
     BURROW = 2, -- 钻地 触发时需要取消id=340的aura
+    ALPHA_STRIKE = 3, --如果我方先手，则伤害提升2/3
 }
 local TargetType = {
     ALLY = 1, --我方单体
@@ -198,6 +199,10 @@ local Effect = {
     follow_hit = false, -- 是否是击中后触发的效果（true的时候无需判定直接生效）
     dynamic_type = 0, -- 动态伤害的类型
 }
+function Effect:SetDynamicType(dynamic_type)
+    self.dynamic_type = dynamic_type
+    return self
+end
 Effect.__index = Effect
 
 function Effect.new_damage(type, value, accuracy, target_type)
@@ -372,9 +377,7 @@ function Pet:install_ability_by_id(id, index)
         }
     elseif id == AbilityID.FLURRY then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
-        local ef = Effect.new_damage(TypeID.CRITTER, 10+self.power/2.0)
-        ef.dynamic_type = EffectDynamicType.FLURRY
-        ability.effect_list[1] = {ef}
+        ability.effect_list[1] = {Effect.new_damage(TypeID.CRITTER, 10+self.power/2.0):SetDynamicType(EffectDynamicType.FLURRY)}
     elseif id == AbilityID.DODGE then
         ability = Ability.new(id, TypeID.HUMANOID, 4, 0)
         local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY, IGNORE_BIT_ALL)
@@ -382,7 +385,7 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.BURROW then
         ability = Ability.new(id, TypeID.BEAST, 4, 2)
         local ef1 = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.BURROW, TargetType.ALLY)
-        local ef2 = Effect.new_damage(TypeID.BEAST, 2*self.power - 25, 80)
+        local ef2 = Effect.new_damage(TypeID.BEAST, 1.75*(self.power + 20), 80)
         ef2.dynamic_type = EffectDynamicType.BURROW
         ability.effect_list[1] = {ef1}
         ability.effect_list[2] = {ef2}
@@ -398,10 +401,10 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.ROCK_BARRAGE then
         ability = Ability.new(id, TypeID.ELEMENTAL, 2, 0)
         ability.effect_list = {
-            [1] = {Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
-                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
-                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
-                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50, TargetType.ENEMY),
+            [1] = {Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50),
+                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50),
+                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50),
+                     Effect.new_damage(TypeID.ELEMENTAL, (20+self.power) * 0.4, 50),
                      Effect.new(TypeID.ELEMENTAL, EffectType.AURA,999, AuraID.ROCK_BARRAGE,TargetType.ENEMY, IGNORE_BIT_ALL),
                     },
         }
@@ -419,7 +422,7 @@ function Pet:install_ability_by_id(id, index)
         }
     elseif id == AbilityID.MISSILE then
         ability = Ability.new(id, TypeID.MECHANICAL, 0, 0)
-        local ef = Effect.new_damage(TypeID.MECHANICAL, (20+self.power) * 1.2, 90, TargetType.ENEMY)
+        local ef = Effect.new_damage(TypeID.MECHANICAL, (20+self.power) * 1.2, 90)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.MINEFIELD then
         ability = Ability.new(id, TypeID.MECHANICAL, 5, 0)
@@ -427,10 +430,16 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ION_CANNON then
         ability = Ability.new(id, TypeID.MECHANICAL, 5, 3)
-        local ef = Effect.new_damage(TypeID.MECHANICAL, 50+self.power*2.5, 100, TargetType.ENEMY)
+        local ef = Effect.new_damage(TypeID.MECHANICAL, 50+self.power*2.5, 100)
         ability.effect_list = {{ef}, {}, {}}
+    elseif id == AbilityID.ALPHA_STRIKE then
+        ability = Ability.new(id, TypeID.FLYING, 0, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.FLYING, (20+self.power) * 0.75, 95),
+            Effect.new(TypeID.FLYING, EffectType.DAMAGE, 100, (20+self.power)*0.5, TargetType.ENEMY, 0, true):SetDynamicType(EffectDynamicType.ALPHA_STRIKE),
+        }
     end
-    if ability ~= nil then
+    if ability then 
         self.abilitys[index] = ability
         return ability
     end
