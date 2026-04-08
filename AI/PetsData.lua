@@ -1,16 +1,20 @@
 local _,PPBest = ...
 local AI = PPBest.AI
 local Bit = PPBest.Bit
+
 local AbilityID = {
     NONE = 1, --用于技能不明时的默认技能
     BURROW = 159, --兔子 钻地
     ION_CANNON = 209, --离子炮 
     SHADOW_SLASH = 210, --暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, --厄运诅咒 
+    CALL_DARKNESS = 256, --召唤黑暗
     DODGE = 312, --兔子 闪避
     FLURRY = 360, --兔子 乱舞
     SHADOW_SHOCK = 422, --暗影震击 85命中率亡灵普攻
     SAND_STORM = 453, --沙暴
+    ALPHA_STRIKE = 504, --突然袭击
+    NOCTURNAL_STRIKE = 517, --夜袭
     ARCANE_SRORM = 589, --奥术风暴
     MOON_FIRE = 595, --月火术
     STONE_RUSH = 621, --巨石奔袭 配波
@@ -32,30 +36,30 @@ local AbilityID = {
 
 local AuraID = {
     CURSE_OF_DOOM = 217, --厄运诅咒
+    FLYING = 239, --飞行 血量高于50%时速度提升50%
     UNDEAD = 242, --亡灵
     MECHANICAL = 244, --机械,表明该机械已经触发过意外防护
     DODGE = 311, --闪避
     BURROW = 340, --钻地
+    BLIND = 496, --半盲
     STUN = 927, --眩晕
     SHATTER_DEFENSE = 542, --破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
     MINEFIELD = 635, -- 雷区
     HAUNT = 653, -- 鬼影缠身
-}
-
-local WeatherID = {
-    BURNT_EARTH = 171, --焦土 前排每轮受到龙类伤害61，被点燃
-    ARCANE_SRORM = 590, --奥术风暴 免疫控制
-    MOONLIGHT = 596, --月光 治疗+25%，魔法伤害+10%
-    DARKNESS = 257, --黑暗 治疗-50%，命中-10%，被致盲
-    SANDSTORM = 454, --沙暴 命中-10%，所有伤害降低74 
-    BLIZZARD = 0, --暴风雪
-    MUD = 0, --泥泞
-    RAIN = 0, --降雨
-    SUNLIGHT = 403, --晴天 最大生命+50%，治疗+25%
-    LIGHTNING_STORM = 0, --闪电风暴
-    WINDY = 0, --大风
+    -- 天气类
+    WEATHER_BURNT_EARTH = 171, --焦土 前排每轮受到龙类伤害61，被点燃
+    WEATHER_ARCANE_SRORM = 590, --奥术风暴 免疫控制
+    WEATHER_MOONLIGHT = 596, --月光 治疗+25%，魔法伤害+10%
+    WEATHER_DARKNESS = 257, --黑暗 治疗-50%，命中-10%，被致盲
+    WEATHER_SANDSTORM = 454, --沙暴 命中-10%，所有伤害降低74 
+    WEATHER_BLIZZARD = 0, --暴风雪
+    WEATHER_MUD = 0, --泥泞
+    WEATHER_RAIN = 0, --降雨
+    WEATHER_SUNLIGHT = 403, --晴天 最大生命+50%，治疗+25%
+    WEATHER_LIGHTNING_STORM = 0, --闪电风暴
+    WEATHER_WINDY = 0, --大风
 }
 
 local PetID = {
@@ -72,6 +76,7 @@ local PetID = {
     FEL_FLAME = 519, -- 邪焰
     TOLAI_HARE = 729, -- 多莱野兔
     TOLAI_HARE_PUP = 730, -- 多莱兔仔
+    CROW = 1068, --乌鸦
     ANUBISATH_IDOL = 1155, -- 阿奴比萨斯
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     UNBORN_VALKYR = 1238, --幼年瓦格里
@@ -169,6 +174,7 @@ local EffectDynamicType = {
     FLURRY = 1, -- 攻击1-2次，如果比对方快则额外攻击一次
     BURROW = 2, -- 钻地 触发时需要取消id=340的aura
     ALPHA_STRIKE = 3, --如果我方先手，则伤害提升2/3
+    NOCTURNAL_STRIKE = 4, --如果目标被致盲，命中提升至100
 }
 local TargetType = {
     ALLY = 1, --我方单体
@@ -229,6 +235,28 @@ function Effect.new(type, effect_type, accuracy, value, target_type, ignore_bit,
     return effect
 end
 
+local AuraType = {
+    DOT = 1, -- effects预期有一个，每轮执行
+    HOT = 2,
+    DAMAGE_TAKEN = 3, --百分比影响受到的伤害
+    DAMAGE_DEALT = 4, --百分比影响造成的伤害
+    ACCURACY = 5, --命中
+    DODGE = 6, --闪避
+    STUN = 7,
+    MINEFIELD = 8, --换人时触发伤害
+    BLOCK = 9, --按伤害次数格挡
+    DEFEND = 10, --按数值减伤
+    SPEED = 11, --百分比修正速度
+    MAX_HEALTH = 12,
+    FLYING = 13,
+    BURROW = 14,
+    UNDEAD = 15,
+    POSSESSION = 16, --附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
+    END_EFFECT = 17, --结束时生效 effects可以有多个，都在结束时生效
+    WEATHER = 18, -- 天气类效果
+    OTHER = 19, --其他不需要类型逻辑的效果，生效时根据id生效
+}
+
 local Ability = {
     id = 0,
     type = 0,
@@ -260,28 +288,16 @@ local Aura = {
     keep_front = false,
     effects = nil,
 }
+
+function Aura:is_weather(weather_id, round)
+    if self and self.type == AuraType.WEATHER and self.id == weather_id and self.expire >= round then
+        return true
+    end
+    return false
+end
+
 Aura.__index = Aura
 
-local AuraType = {
-    DOT = 1, -- effects预期有一个，每轮执行
-    HOT = 2,
-    DAMAGE_TAKEN = 3, --百分比影响受到的伤害
-    DAMAGE_DEALT = 4, --百分比影响造成的伤害
-    ACCURACY = 5, --命中
-    DODGE = 6, --闪避
-    STUN = 7,
-    MINEFIELD = 8, --换人时触发伤害
-    BLOCK = 9, --按伤害次数格挡
-    DEFEND = 10, --按数值减伤
-    SPEED = 11,
-    MAX_HEALTH = 12,
-    FLYING = 13,
-    BURROW = 14,
-    UNDEAD = 15,
-    POSSESSION = 16, --附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
-    END_EFFECT = 17, --结束时生效 effects可以有多个，都在结束时生效
-    OTHER = 18, --其他不需要类型逻辑的效果，生效时根据id生效
-}
 
 function Aura.new(id, type, duration, value)
     local aura = setmetatable({}, Aura)
@@ -341,6 +357,10 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
     elseif aura_id == AuraID.MECHANICAL then
         local aura = Aura.new(aura_id, AuraType.OTHER, 99, 0)
         return aura
+    elseif aura_id == AuraID.WEATHER_DARKNESS then
+        return Aura.new(aura_id, AuraType.WEATHER, 5, 0)
+    elseif aura_id == AuraID.FLYING then
+        return Aura.new(aura_id, AuraType.SPEED, 0, 50)
     else
         return nil
     end
@@ -438,6 +458,17 @@ function Pet:install_ability_by_id(id, index)
             Effect.new_damage(TypeID.FLYING, (20+self.power) * 0.75, 95),
             Effect.new(TypeID.FLYING, EffectType.DAMAGE, 100, (20+self.power)*0.5, TargetType.ENEMY, 0, true):SetDynamicType(EffectDynamicType.ALPHA_STRIKE),
         }
+    elseif id == AbilityID.CALL_DARKNESS then
+        ability = Ability.new(id, TypeID.HUMANOID, 5, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.HUMANOID, 1.5 * (self.power+20)),
+            Effect.new(TypeID.HUMANOID, EffectType.WEATHER, 100, AuraID.WEATHER_DARKNESS, TargetType.ENEMY),
+        }
+    elseif id == AbilityID.NOCTURNAL_STRIKE then
+        ability = Ability.new(id, TypeID.FLYING, 3, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.FLYING, (20+self.power) * 2, 50):SetDynamicType(EffectDynamicType.NOCTURNAL_STRIKE),
+        }
     end
     if ability then 
         self.abilitys[index] = ability
@@ -473,7 +504,6 @@ end
 
 AI.Pet = Pet
 AI.PetID = PetID
-AI.WeatherID = WeatherID
 AI.Ability = Ability
 AI.Aura = Aura
 AI.AuraID = AuraID

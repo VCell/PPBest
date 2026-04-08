@@ -171,6 +171,7 @@ end
 function SearchInterface:UpdateWeather(round)
     local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
     if weather_id then
+        local aura = AI.Aura.new_aura_by_id(weather_id)
         self.game.State.weather_id = weather_id
         self.game.State.weather_expire = round + duration - 1
         LogFrame:AddLog(string.format("更新天气: %d, 结束回合: %d", weather_id, self.game.State.weather_expire))

@@ -70,6 +70,22 @@ function AuraProcessor.is_stunned(state, team_index, pet_index)
     
 end
 
+function AuraProcessor.is_blind(state, team_index, pet_index)
+    local team_state = state.team_states[team_index]
+    local ps = team_state.pets[pet_index]
+    for i, aura in pairs(ps.auras) do
+        if aura.id == AI.AuraID.BLIND then
+            return true
+        end
+    end
+    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_DARKNESS, state.round) then
+        return true
+    end
+    return false
+end
+
+
+
 function AuraProcessor.get_active_accuracy_modifier(state, team_index)
     if team_index == nil then
         --没有来源时，预期是buff触发，返回100%
@@ -88,7 +104,8 @@ function AuraProcessor.get_active_accuracy_modifier(state, team_index)
             rate = rate + aura.value
         end
     end
-    if state.weather_id == AI.WeatherID.DARKNESS or state.weather_id == AI.WeatherID.SANDSTORM then
+    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_DARKNESS, state.round) or 
+            AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_SANDSTORM, state.round) then
         rate = rate - 10
     end
     return rate
@@ -190,8 +207,8 @@ function AuraProcessor.get_defand(state, team_index, pet_index)
             defend = defend + aura.value
         end
     end
-    if state.weather_id == AI.WeatherID.SANDSTORM then
-        defend = defend + 74
+    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_SANDSTORM, state.round) then
+        defend = defend + state.weather.value
     end
     return defend
 end
@@ -260,12 +277,6 @@ function TeamState.new()
     return team_state
 end
 
-function TeamState:check_type_talent()
-    -- 检查并应用种族天赋
-    -- 飞行在血量高于50%时速度提升50%
-    return
-end
-
 function TeamState:check_loss()
     for i, petState in ipairs(self.pets) do
         if petState.current_health > 0 then
@@ -308,11 +319,17 @@ function GameStateTemplate:change_pet(teams, player, new_index)
     
 end
 
-function GameStateTemplate:pre_step()
+function GameStateTemplate:pre_step(teams)
     -- 每回合开始前的处理逻辑
     for player = 1,2 do
         self.team_states[player].interrupted = false
-        self.team_states[player]:check_type_talent()
+        local index = self.team_states[player].active_index
+        if teams[player][index].type == AI.TypeID.FLYING then
+            if self.team_states[player].pets[index].current_health > teams[player][index].health * 0.5 then
+                local aura = AI.Aura.new_aura_by_id(AI.AuraID.FLYING)
+                self:install_aura(teams, player, index, aura)
+            end
+        end
     end
 end
 
@@ -344,13 +361,20 @@ function GameStateTemplate:install_aura(teams, target_player, pet_index, aura)
             if teams[target_player][pet_index].type == AI.TypeID.CRITTER then
                 return false
             end
-            if self.weather_id == AI.WeatherID.ARCANE_SRORM then
+            --奥术风暴免控
+            if AI.Aura.is_weather(self.weather, AI.AuraID.WEATHER_ARCANE_SRORM, self.round) then
                 return false
             end
         end
         ts.pets[pet_index].auras[aura.id] = aura
     end
+end
 
+function GameStateTemplate:install_weather(weather)
+    if weather then
+        self.weather = weather
+        self.weather.expire = weather.duration + self.round
+    end
 end
 
 function GameStateTemplate:post_step(teams)
@@ -482,6 +506,13 @@ function GameStateTemplate:process_effects(teams, player, effects)
                 if self.team_states[player].is_faster then
                     hit_count = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index, hit_count)
                 end
+            elseif effect.dynamic_type == AI.EffectDynamicType.NOCTURNAL_STRIKE then
+                --night strike在目标被致盲时触发
+                if AuraProcessor.is_blind(self, opponent, self.team_states[opponent].active_index) then
+                    effect.accuracy = 100
+                end
+                hit_count = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index, hit_count)
+
             end
             
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then
@@ -569,7 +600,10 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
         self:install_aura(teams, target_player, target_index, aura)
 
     elseif effect.effect_type == AI.EffectType.WEATHER then
-
+        local from_index = self.team_states[from_player].active_index
+        local power = teams[from_player][from_index].power
+        local weather = AI.Aura.new_aura_by_id(effect.value, power, from_index)
+        self:install_weather(weather)
     elseif effect.effect_type == AI.EffectType.FEIGN_DEATH then
         self:print_log(string.format("玩家%d, 宠物%d 假死", target_player, target_index))
         pet_state.tmp_health = pet_state.current_health
@@ -759,7 +793,7 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
         state:change_pet(self.teams,2, action2.value)
     end
     -- 预处理
-    state:pre_step()
+    state:pre_step(self.teams)
 
     local action = {action1, action2}
     local first_player, second_player = state:get_action_order(self.teams, action1, action2)
@@ -821,10 +855,11 @@ local function auras_to_string(auras)
     return res
 end
 function GameRuleTemplate.print_state(state)
-    print("\n当前状态:")
-    print(string.format("回合: %d, 天气: %d (剩余%d回合)", 
-          state.round, state.weather_id, state.weather_expire))
-    
+    print(string.format("\n当前第%d回合:", state.round))
+    if state.weather then
+        print(string.format("天气: %d (持续到回合%d)", state.weather.id, state.weather.expire))
+    end
+        
     for player = 1, 2 do
         local team_state = state.team_states[player]
         print(string.format("\n玩家%d:", player))
@@ -866,8 +901,7 @@ function Game.new()
                 [2] = {},
             },
             round = 1,
-            weather_id = 0,
-            weather_expire = 0,
+            weather = nil,
             change_round = 0,  --在一方死亡是临时添加的换宠回合。0 非换宠回合 1 我方选择宠物 2 敌方选择宠物 3 双方选择宠物
         },
         Rule = {
