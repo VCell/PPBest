@@ -26,9 +26,9 @@ local function set_possible_abilitys(pet)
         local abilitys = BattleUtils:GetAbilitysByPetID(pet.id)
         if abilitys then
             for ab_index = 1,3 do
-                pet:install_ability_by_id(ab_index, abilitys[ab_index])
+                pet:install_ability_by_id(abilitys[ab_index], ab_index)
                 if not pet:get_ability(ab_index) then
-                    pet:install_ability_by_id(ab_index, abilitys[ab_index + 3])
+                    pet:install_ability_by_id(abilitys[ab_index + 3], ab_index)
                 end
             end
         end
@@ -47,6 +47,7 @@ local function get_team(player)
         local speed = C_PetBattles.GetSpeed(player, i)
         local type = C_PetBattles.GetPetType(player, i)
         local pet = AI.Pet.new(id, health, power, speed, type)
+
         --pvp中己方可以获取ability，敌方没有
         if player == LE_BATTLE_PET_ALLY then
             for ab_index = 1,3 do
