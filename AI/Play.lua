@@ -4,30 +4,9 @@
 local _,PPBest = ...
 local AI = PPBest.AI
 local Bit = PPBest.Bit
+local Utils = PPBest.Utils
 
--- 辅助函数：深拷贝表
-local function DeepCopy(object)
-    local lookup_table = {} -- 用于记录已复制的表，防止循环引用
-    
-    local function _copy(obj)
-        if type(obj) ~= "table" then
-            return obj -- 非表类型直接返回
-        elseif lookup_table[obj] then
-            return lookup_table[obj] -- 如果已复制过，直接返回副本
-        end
-        
-        local new_table = {}
-        lookup_table[obj] = new_table -- 记录已复制的表
-        
-        for k, v in pairs(obj) do
-            new_table[_copy(k)] = _copy(v) -- 递归复制键和值
-        end
-        
-        return setmetatable(new_table, getmetatable(obj)) -- 复制元表
-    end
-    
-    return _copy(object)
-end
+
 
 local function update_change_round(old, player)
     if old == 0 or old == 3-player then 
@@ -509,6 +488,7 @@ function GameStateTemplate:process_effects(teams, player, effects)
             elseif effect.dynamic_type == AI.EffectDynamicType.NOCTURNAL_STRIKE then
                 --night strike在目标被致盲时触发
                 if AuraProcessor.is_blind(self, opponent, self.team_states[opponent].active_index) then
+                    effect = Utils.deepcopy(effect)
                     effect.accuracy = 100
                 end
                 hit_count = self.apply_effect(self,teams, effect,player, opponent, self.team_states[opponent].active_index, hit_count)
@@ -772,7 +752,7 @@ function GameRuleTemplate:get_legal_actions(state, player)
 end
 
 function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
-    local state = DeepCopy(old_state)
+    local state = Utils.deepcopy(old_state)
     setmetatable(state, {__index = GameStateTemplate})
     if state.change_round > 0 then
         --换人回合不触发其他逻辑

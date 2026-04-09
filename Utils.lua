@@ -97,3 +97,31 @@ function Bit.bnot(x)
 end
 
 PPBest.Bit = Bit
+
+local Utils = {}
+
+-- 辅助函数：深拷贝表
+function Utils.deepcopy(object)
+    local lookup_table = {} -- 用于记录已复制的表，防止循环引用
+    
+    local function _copy(obj)
+        if type(obj) ~= "table" then
+            return obj -- 非表类型直接返回
+        elseif lookup_table[obj] then
+            return lookup_table[obj] -- 如果已复制过，直接返回副本
+        end
+        
+        local new_table = {}
+        lookup_table[obj] = new_table -- 记录已复制的表
+        
+        for k, v in pairs(obj) do
+            new_table[_copy(k)] = _copy(v) -- 递归复制键和值
+        end
+        
+        return setmetatable(new_table, getmetatable(obj)) -- 复制元表
+    end
+    
+    return _copy(object)
+end
+
+PPBest.Utils = Utils

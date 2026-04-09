@@ -102,8 +102,8 @@ local function create_test_pets(petlist)
 end
 
 local function init_game_state()
-    local pets1 = create_test_pets({AI.PetID.CROW, AI.PetID.PEBBLE,AI.PetID.ARFUS})
-    local pets2 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.DARKMOON_TONK,AI.PetID.UNBORN_VALKYR })
+    local pets1 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.PEBBLE,AI.PetID.ARFUS})
+    local pets2 = create_test_pets({AI.PetID.CROW, AI.PetID.DARKMOON_TONK,AI.PetID.UNBORN_VALKYR })
     local game = AI.Game.new()
     assert (#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
@@ -387,6 +387,7 @@ end
 -- 运行所有测试
 function TestAI:runAllTests()
     -- 解析命令行参数
+    math.randomseed(os.time()) 
     local mode = arg[1] or "manual"
     
     local mode_map = {
