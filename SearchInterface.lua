@@ -164,23 +164,8 @@ function SearchInterface:UpdateState(round)
     self:UpdateHealth()
     self:UpdateActivePet()
     self:UpdateCooldowns(round)
-    --self:UpdateWeather(round)--？
     self:CleanExpiredAuras()
 end
-
--- 更新天气
-function SearchInterface:UpdateWeather(round)
-    local weather_id, _, duration = C_PetBattles.GetAuraInfo(LE_BATTLE_PET_WEATHER, 0, 1)
-    if weather_id then
-        self.game.State.weather_id = weather_id
-        self.game.State.weather_expire = round + duration - 1
-        LogFrame:AddLog(string.format("更新天气: %d, 结束回合: %d", weather_id, self.game.State.weather_expire))
-    else
-        self.game.State.weather_id = nil
-        self.game.State.weather_expire = nil
-    end
-end
-
 
 -- 处理战斗日志消息
 -- 格式示例: "|T136122:14|t|cff4e96f7|HbattlePetAbil:218:1806:276:227|h[厄运诅咒]|h|r对敌方的 |T646059:14|t超能浣熊 造成了|T136122:14|t|cff4e96f7|HbattlePetAbil:217:1806:276:227|h[厄运诅咒]|h|r效果."
@@ -241,6 +226,15 @@ function SearchInterface:ProcessCombatLog(msg)
             end
         else 
             LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
+        end
+    elseif  string.find(msg, "将天气转变为") then
+        assert(#ab_info == 2)
+        local weather = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power)
+        if weather then
+            state:install_weather(weather)
+            LogFrame:AddLog(string.format("安装天气: %d", weather.id))
+        else 
+            LogFrame:AddLog(string.format("未知天气: %d", ab_info[2].ability_id))
         end
     end
 end
