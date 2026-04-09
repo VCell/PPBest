@@ -26,9 +26,9 @@ local function set_possible_abilitys(pet)
         local abilitys = BattleUtils:GetAbilitysByPetID(pet.id)
         if abilitys then
             for ab_index = 1,3 do
-                pet:install_ability_by_id(abilitys[ab_index], abilitys[ab_index])
-                if not pet:get_ability(abilitys[ab_index]) then
-                    pet:install_ability_by_id(abilitys[ab_index], abilitys[ab_index + 3])
+                pet:install_ability_by_id(ab_index, abilitys[ab_index])
+                if not pet:get_ability(ab_index) then
+                    pet:install_ability_by_id(ab_index, abilitys[ab_index + 3])
                 end
             end
         end
