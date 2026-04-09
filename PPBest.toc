@@ -1,18 +1,19 @@
 ## Interface: 110200
 ## Title: PPBest
 ## Notes: 魔兽世界宠物对战自动插件 - 简单的自动对战功能
-## Version: 1.0.1
+## Version: 1.0.2
 ## Author: 狮心-戒虑牧
 ## SavedVariables: PPBestConfig, PPBestHistory, PPBestLastLog
 
 Utils.lua
+PetAbilitys.lua
 AI\AI.lua
 AI\PetsData.lua
 AI\Search.lua
 AI\Play.lua
 LogFrame.lua
-SearchInterface.lua
 BattleUtils.lua
+SearchInterface.lua
 Strategy.lua
 OptionPanel.lua
 PPBest.lua

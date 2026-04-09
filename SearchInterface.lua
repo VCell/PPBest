@@ -1,6 +1,7 @@
 local _, PPBest = ...
 local AI = PPBest.AI
 local LogFrame = PPBest.LogFrame
+local BattleUtils = PPBest.BattleUtils
 local SearchInterface = {
     game = nil,
     enemy_ability_hints = {}, -- 存储敌方技能使用记录 {pet_index = {ability_id = count}}
@@ -22,7 +23,7 @@ local function set_possible_abilitys(pet)
         pet:install_ability_by_id(AI.AbilityID.CURSE_OF_DOOM, 2) 
         pet:install_ability_by_id(AI.AbilityID.HAUNT, 3) 
     else 
-        local abilitys = PPBest.GetAbilitysByPetID(pet.id)
+        local abilitys = BattleUtils:GetAbilitysByPetID(pet.id)
         if abilitys then
             for ab_index = 1,3 do
                 pet:install_ability_by_id(abilitys[ab_index], abilitys[ab_index])
@@ -68,7 +69,7 @@ local function get_team(player)
         
         table.insert(team, pet)
         LogFrame:AddLog(string.format("玩家%d 宠物%d 技能1:%d 技能2:%d 技能3:%d", player, i,
-                pet:get_ability(1), pet:get_ability(2), pet:get_ability(3)))
+                pet:get_ability(1).id, pet:get_ability(2).id, pet:get_ability(3).id))
         
     end
     return team

@@ -25,6 +25,15 @@ local BattleUtils = {
     debug = false,
 }
 
+
+function BattleUtils:GetAbilitysByPetID(petID)
+    local res = PPBest.PetAbilitysMap[tostring(petID)]
+    if res and #res == 6 then
+        return res
+    end
+    return nil
+end
+
 function BattleUtils:checkTeamByMode(mode)
     if mode == Const.MODE_WANT_PET_LEVEL then
         -- 宠物升级模式检查第三位是否满级
