@@ -106,10 +106,7 @@ function SearchInterface:UpdateHealth()
     for player = 1, 2 do
         for pet_index = 1, 3 do
             local health = C_PetBattles.GetHealth(player, pet_index)
-            if self.game.State.team_states[player] and 
-                    self.game.State.team_states[player].pets[pet_index] then
-                self.game.State.team_states[player].pets[pet_index].current_health = health
-            end
+            self.game.State.team_states[player].pets[pet_index].current_health = health
         end
     end
 end
