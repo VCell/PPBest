@@ -266,6 +266,23 @@ local Ability = {
     effect_list = {}, --二维数组 第一层是回合数，第二层是该回合的效果
 
 }
+
+--返回技能受属性克制的影响程度，0-1
+function Ability.get_effectiveness_rate(ability_id)
+    local rate_map = {
+        [AbilityID.ICE_TOMB] = 0.9,
+        [AbilityID.NOCTURNAL_STRIKE] = 0.9,
+        [AbilityID.BURROW] = 0.9,
+        [AbilityID.ARFUS_6] = 0.8,
+        [AbilityID.DODGE] = 0,
+        [AbilityID.MINEFIELD] = 0,
+    }
+    if rate_map[ability_id] then
+        return rate_map[ability_id]
+    end
+    return 1
+end
+
 Ability.__index = Ability
 
 function Ability.new(id, type, cooldown, duration)

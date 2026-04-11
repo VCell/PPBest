@@ -225,7 +225,8 @@ end
 local PetState = {
     current_health = 0,
     auras = {},
-    cooldown_at = {} --冷却回合数组。cooldown_at[i]=x表示第i个技能在x+1回合中才可以用
+    cooldown_at = {}, --冷却回合数组。cooldown_at[i]=x表示第i个技能在x+1回合中才可以用
+    is_dead = false, -- 是否死亡 目前主要用于机械
 }
 PetState.__index = PetState
 function PetState.new(health)
@@ -233,6 +234,7 @@ function PetState.new(health)
     pet_state.current_health = health
     pet_state.auras = {}
     pet_state.cooldown_at = {0, 0, 0}
+    pet_state.is_dead = false
     return pet_state
 end
 
@@ -327,6 +329,7 @@ function GameStateTemplate:pet_dead(player)
         pet_state.current_health = pet_state.tmp_health
     end
     self.team_states[player].pets[active].auras = {}
+    self.team_states[player].pets[active].is_dead = true
     self:print_log(string.format("玩家%d, 宠物%d 死亡", player, active))
 end
 
@@ -616,7 +619,7 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
                 self:install_aura(teams, target_player, target_index, aura)
                 --(string.format("player %d pet %d revived by Undying", target_player, target_index))
             end
-        elseif pet.type == AI.TypeID.MECHANICAL then
+        elseif pet.type == AI.TypeID.MECHANICAL and not pet_state.is_dead then
             if AuraProcessor.get_aura_by_id(self, target_player, target_index, AI.AuraID.MECHANICAL) ~= nil then
                 --修复过
                 self:pet_dead(target_player)
@@ -674,6 +677,17 @@ function GameStateTemplate:close_log()
     self.is_logging = false
 end
 
+local function evaluate_ability_effectiveness(ability, opponent)
+    local effectiveness = AI.TypeID.GetEffectiveness(ability.type, opponent.type)
+    return 1 + (effectiveness - 1) * AI.Ability.get_effectiveness_rate(ability.id)
+end
+
+local function evaluate_pet_effectiveness(pet, opponent)
+    return 0.5*evaluate_ability_effectiveness(pet:get_ability(1), opponent) + 
+            0.25*evaluate_ability_effectiveness(pet:get_ability(2), opponent) +
+            0.25*evaluate_ability_effectiveness(pet:get_ability(3), opponent)
+end
+
 local GameRuleTemplate = {}
 function GameRuleTemplate:evaluate_action(state, player, action)
     -- 评估玩家在给定状态下的动作
@@ -686,22 +700,26 @@ function GameRuleTemplate:evaluate_action(state, player, action)
         
         -- 考虑克制关系
         local opponent = self.teams[3-player][state.team_states[3-player].active_index]
-        local effectiveness = AI.TypeID.GetEffectiveness(ability.type, opponent.type)
+        local effectiveness = evaluate_ability_effectiveness(ability, opponent)
         score = score + effectiveness * 10
         
         -- 考虑技能冷却
         if ability.cooldown > 0 then
-            score = score + ability.cooldown  -- 高冷却技能通常更强
+            score = score + ability.cooldown * 2  -- 高冷却技能通常更强
         end
         
     elseif action.type == 'change' then
         -- 换宠评估
-        local new_pet = self.teams[player][action.value]
-        local opponent = self.teams[3-player][state.team_states[3-player].active_index]
+        local my_pet = self.teams[player][action.value]
+        local op_index = state.team_states[3-player].active_index
+        local op_pet = self.teams[3-player][op_index]
         
         -- 克制关系
-        local effectiveness = AI.TypeID.GetEffectiveness(new_pet.type, opponent.type)
-        score = score + effectiveness * 15
+        local effectiveness = evaluate_pet_effectiveness(my_pet, op_pet) / evaluate_pet_effectiveness(op_pet, my_pet)
+        local my_health_percent = state.team_states[player].pets[action.value].current_health / my_pet.health
+        local op_health_percent = state.team_states[3-player].pets[op_index].current_health / op_pet.health
+        
+        score = score + effectiveness * my_health_percent * op_health_percent * 10
         
     elseif action.type == 'standby' then
         score = -10  -- 待命通常不是好选择
