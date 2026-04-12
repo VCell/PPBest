@@ -38,7 +38,13 @@ local function dofile(path)
 end
 
 -- 加载模块
-local dofile_list = {"Utils.lua", "AI/PetsData.lua", "AI/Search.lua", "AI/Play.lua"}
+local dofile_list = {
+    "Utils.lua", 
+    "AI/PetsData.lua", 
+    "AI/Aura.lua",
+    "AI/Search.lua", 
+    "AI/Play.lua",
+}
 for _, path in ipairs(dofile_list) do
     dofile(path)
 end
@@ -96,14 +102,20 @@ local function create_test_pets(petlist)
             pet:install_ability_by_id(AI.AbilityID.IMMOLATION, 2)
             pet:install_ability_by_id(AI.AbilityID.NETHER_GATE, 3)
             table.insert(res, pet)
+        elseif pet_id == AI.PetID.EMPERPR_CRAB then
+            local pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1400, 357, 210, AI.TypeID.AQUATIC)
+            pet:install_ability_by_id(AI.AbilityID.SURGE, 1)
+            pet:install_ability_by_id(AI.AbilityID.HEALING_WAVE, 2)
+            pet:install_ability_by_id(AI.AbilityID.SHELL_SHIELD, 3)
+            table.insert(res, pet)
         end
     end
     return res
 end
 
 local function init_game_state()
-    local pets1 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.FIENDISH_LMP, AI.PetID.ARFUS})
-    local pets2 = create_test_pets({AI.PetID.CROW, AI.PetID.DARKMOON_TONK, AI.PetID.UNBORN_VALKYR})
+    local pets2 = create_test_pets({AI.PetID.CROW, AI.PetID.DARKMOON_TONK, AI.PetID.FIENDISH_LMP})
+    local pets1 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.EMPERPR_CRAB, AI.PetID.UNBORN_VALKYR})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1

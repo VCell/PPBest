@@ -262,10 +262,10 @@ local AuraType = {
     BURROW = 14,
     UNDEAD = 15,
     HEAL = 16, -- 治疗量百分比修正
-    POSSESSION = 17, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
-    END_EFFECT = 18, -- 结束时生效 effects可以有多个，都在结束时生效
-    WEATHER = 19, -- 天气类效果
-    OTHER = 20 -- 其他不需要类型逻辑的效果，生效时根据id生效
+    POSSESSION = 18, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
+    END_EFFECT = 19, -- 结束时生效 effects可以有多个，都在结束时生效
+    WEATHER = 20, -- 天气类效果
+    OTHER = 21 -- 其他不需要类型逻辑的效果，生效时根据id生效
 }
 
 local Ability = {

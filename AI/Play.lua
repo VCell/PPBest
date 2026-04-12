@@ -2,7 +2,7 @@
 -- local PD = require "PetsData"
 local _, PPBest = ...
 local AI = PPBest.AI
-local Bit = PPBest.Bit
+local AuraProcessor = AI.AuraProcessor
 local Utils = PPBest.Utils
 
 local function update_change_round(old, player)
@@ -11,211 +11,6 @@ local function update_change_round(old, player)
     else
         return old
     end
-end
-
-local AuraProcessor = {}
-
-function AuraProcessor.get_active_speed_modifier(state, team_index)
-    local rate = 100.0
-    local team_state = state.team_states[team_index]
-    for i, aura in pairs(team_state.active_auras) do
-        if aura.type == AI.AuraType.SPEED then
-            rate = rate + aura.value
-        end
-    end
-
-    local ps = team_state.pets[team_state.active_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.SPEED then
-            rate = rate + aura.value
-        end
-    end
-    return rate
-
-end
-
-function AuraProcessor.is_stunned(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.STUN then
-            return true
-        end
-    end
-    return false
-
-end
-
-function AuraProcessor.is_blind(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.id == AI.AuraID.BLIND then
-            return true
-        end
-    end
-    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_DARKNESS, state.round) then
-        return true
-    end
-    return false
-end
-
-function AuraProcessor.get_active_accuracy_modifier(state, team_index)
-    if team_index == nil then
-        -- 没有来源时，预期是buff触发，返回100%
-        return 100
-    end
-    local rate = 0
-    local team_state = state.team_states[team_index]
-    for i, aura in pairs(team_state.active_auras) do
-        if aura.type == AI.AuraType.ACCURACY then
-            rate = rate + aura.value
-        end
-    end
-    local ps = team_state.pets[team_state.active_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.ACCURACY then
-            rate = rate + aura.value
-        end
-    end
-    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_DARKNESS, state.round) or
-        AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_SANDSTORM, state.round) then
-        rate = rate - 10
-    end
-    return rate
-
-end
-
-function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.FLYING and Bit.band(ignore_bit, AI.IgnoreBit.FLYING) == 0 then
-            return true
-        end
-        if aura.type == AI.AuraType.BURROW and Bit.band(ignore_bit, AI.IgnoreBit.BURROW) == 0 then
-            return true
-        end
-        if aura.type == AI.AuraType.BLOCK and Bit.band(ignore_bit, AI.IgnoreBit.BLOCK) == 0 then
-            -- todo 计算格挡次数
-            return true
-        end
-    end
-    return false
-end
-
-function AuraProcessor.is_undead(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.id == AI.AuraID.UNDEAD then
-            return true
-        end
-    end
-    return false
-
-end
-
-function AuraProcessor.get_aura_by_id(state, team_index, pet_index, aura_id)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.id == aura_id then
-            return aura
-        end
-    end
-    return nil
-end
-
-function AuraProcessor.get_aura_by_type(state, team_index, pet_index, aura_type)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == aura_type then
-            return aura
-        end
-    end
-    return nil
-end
-
-function AuraProcessor.get_dodge_modifier(state, team_index, pet_index)
-    local rate = 0
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.DODGE then
-            rate = rate + 100
-        end
-    end
-    return rate
-end
-
-function AuraProcessor.get_heal_modifier(state, team_index, pet_index)
-    local rate = 0
-    local team_state = state.team_states[team_index]
-    for i, aura in pairs(team_state.active_auras) do
-        if aura.type == AI.AuraType.HEALING then
-            rate = rate + aura.value
-        end
-    end
-    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_SUNLIGHT, state.round) then
-        rate = rate + 25
-    elseif AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_DARKNESS, state.round) then
-        rate = rate - 50
-    end
-    return rate
-end
-
-function AuraProcessor.get_active_modifier_by_type(state, team_index, aura_type)
-    if team_index == nil then
-        -- 没有来源时，预期是buff触发，返回0%
-        return 0
-    end
-    local rate = 0
-    local team_state = state.team_states[team_index]
-    for i, aura in pairs(team_state.active_auras) do
-        if aura.type == aura_type then
-            rate = rate + aura.value
-        end
-    end
-    local ps = team_state.pets[team_state.active_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == aura_type then
-            rate = rate + aura.value
-        end
-    end
-    return rate
-
-end
-
-function AuraProcessor.get_defand(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    local defend = 0
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.DEFEND then
-            defend = defend + aura.value
-        end
-    end
-    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_SANDSTORM, state.round) then
-        defend = defend + state.weather.value
-    end
-    return defend
-end
-
-function AuraProcessor.process_block(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.BLOCK then
-            aura.value = aura.value - 1
-            if aura.value <= 0 then
-                ps.auras[i] = nil
-            end
-            return true
-        end
-    end
-    return false
 end
 
 local Action = {
@@ -590,8 +385,16 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
         self:print_log(string.format("玩家%d, 宠物%d 受到%d点伤害", target_player, target_index, real_damage))
         -- print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, pet_state.current_health))
     elseif effect.effect_type == AI.EffectType.HEAL then
-        local max_health = 0
+        local max_health = teams[target_player][target_index].health * 
+                (100 + AuraProcessor.get_max_health_modifier(self, target_player, target_index)) / 100
         local heal = effect.value * (100 + AuraProcessor.get_heal_modifier(self, target_player, target_index)) / 100
+        if pet_state.current_health + heal > max_health then
+            pet_state.current_health = max_health
+        else
+            pet_state.current_health = pet_state.current_health + heal
+        end
+        self:print_log(string.format("玩家%d, 宠物%d 治疗%d点", target_player, target_index, heal))
+        -- print(string.format("player %d pet %d healed %d, health now %d", target_player, target_index, heal, pet_state.current_health))
     elseif effect.effect_type == AI.EffectType.PERCENTAGE_HEAL then
 
     elseif effect.effect_type == AI.EffectType.AURA then

@@ -9,6 +9,7 @@ Utils.lua
 PetAbilitys.lua
 AI\AI.lua
 AI\PetsData.lua
+AI\Aura.lua
 AI\Search.lua
 AI\Play.lua
 LogFrame.lua
