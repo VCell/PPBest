@@ -49,7 +49,7 @@ local Rules = {
 DUCT_MCTS.Config = {
     exploration_constant = 1.414,  -- 默认探索系数 √2
     max_simulation_depth = 40,    -- 模拟最大深度
-    hybrid_random_factor = 0.2,
+    hybrid_random_factor = 0.4,
     enable_debug_log = false       -- 调试日志开关
 }
 
