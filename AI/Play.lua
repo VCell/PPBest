@@ -150,6 +150,22 @@ function AuraProcessor.get_dodge_modifier(state, team_index, pet_index)
     return rate
 end
 
+function AuraProcessor.get_heal_modifier(state, team_index, pet_index)
+    local rate = 0
+    local team_state = state.team_states[team_index]
+    for i, aura in pairs(team_state.active_auras) do
+        if aura.type == AI.AuraType.HEALING then
+            rate = rate + aura.value
+        end
+    end
+    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_SUNLIGHT, state.round) then
+        rate = rate + 25
+    elseif AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_DARKNESS, state.round) then
+        rate = rate - 50
+    end
+    return rate
+end
+
 function AuraProcessor.get_active_modifier_by_type(state, team_index, aura_type)
     if team_index == nil then
         -- 没有来源时，预期是buff触发，返回0%
@@ -574,7 +590,8 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
         self:print_log(string.format("玩家%d, 宠物%d 受到%d点伤害", target_player, target_index, real_damage))
         -- print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, pet_state.current_health))
     elseif effect.effect_type == AI.EffectType.HEAL then
-
+        local max_health = 0
+        local heal = effect.value * (100 + AuraProcessor.get_heal_modifier(self, target_player, target_index)) / 100
     elseif effect.effect_type == AI.EffectType.PERCENTAGE_HEAL then
 
     elseif effect.effect_type == AI.EffectType.AURA then

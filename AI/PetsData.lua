@@ -5,11 +5,13 @@ local Bit = PPBest.Bit
 local AbilityID = {
     NONE = 1, -- 用于技能不明时的默认技能
     BURN = 113, -- 燃烧 90命中元素普攻
+    HEALING_WAVE = 123, -- 治疗波
     BURROW = 159, -- 兔子 钻地
     ION_CANNON = 209, -- 离子炮 
     SHADOW_SLASH = 210, -- 暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, -- 厄运诅咒 
     CALL_DARKNESS = 256, -- 召唤黑暗
+    SHELL_SHIELD = 310, -- 甲壳盾
     DODGE = 312, -- 闪避
     FLURRY = 360, -- 乱舞
     IMMOLATION = 409, -- 献祭
@@ -17,6 +19,7 @@ local AbilityID = {
     SAND_STORM = 453, -- 沙暴
     NETHER_GATE = 466, -- 虚空之门
     ALPHA_STRIKE = 504, -- 突然袭击
+    SURGE = 509, -- 汹涌
     NOCTURNAL_STRIKE = 517, -- 夜袭
     ARCANE_SRORM = 589, -- 奥术风暴
     MOON_FIRE = 595, -- 月火术
@@ -42,6 +45,7 @@ local AuraID = {
     FLYING = 239, -- 飞行 血量高于50%时速度提升50%
     UNDEAD = 242, -- 亡灵
     MECHANICAL = 244, -- 机械,表明该机械已经触发过意外防护
+    SHELL_SHIELD = 309, -- 甲壳盾
     DODGE = 311, -- 闪避
     BURROW = 340, -- 钻地
     IMMOLATION = 408, -- 献祭
@@ -80,6 +84,7 @@ local PetID = {
     FEL_FLAME = 519, -- 邪焰
     TOLAI_HARE = 729, -- 多莱野兔
     TOLAI_HARE_PUP = 730, -- 多莱兔仔
+    EMPERPR_CRAB = 746, -- 君王蟹
     CROW = 1068, -- 乌鸦
     ANUBISATH_IDOL = 1155, -- 阿奴比萨斯
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
@@ -256,10 +261,11 @@ local AuraType = {
     FLYING = 13,
     BURROW = 14,
     UNDEAD = 15,
-    POSSESSION = 16, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
-    END_EFFECT = 17, -- 结束时生效 effects可以有多个，都在结束时生效
-    WEATHER = 18, -- 天气类效果
-    OTHER = 19 -- 其他不需要类型逻辑的效果，生效时根据id生效
+    HEAL = 16, -- 治疗量百分比修正
+    POSSESSION = 17, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
+    END_EFFECT = 18, -- 结束时生效 effects可以有多个，都在结束时生效
+    WEATHER = 19, -- 天气类效果
+    OTHER = 20 -- 其他不需要类型逻辑的效果，生效时根据id生效
 }
 
 local Ability = {
@@ -386,10 +392,11 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         local aura = Aura.new(aura_id, AuraType.DOT, 9, 0)
         aura.effects = {Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20 + power) * 0.25, TargetType.ENEMY)}
         return aura
-    else
-        return nil
+    elseif aura_id == AuraID.SHELL_SHIELD then
+        local aura = Aura.new(aura_id, AuraType.DEFEND, 5, (20 + power) * 0.25)
+        return aura
     end
-
+    return nil
 end
 
 function Pet:install_ability_by_id(id, index)
@@ -505,6 +512,18 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {Effect.new_damage(TypeID.MAGIC, 20 + self.power, 90),
                                   Effect.new(TypeID.MAGIC, EffectType.FORCE_CHANGE, 100, 0, TargetType.ENEMY,
             IGNORE_BIT_ALL, true)}
+    elseif id == AbilityID.SURGE then
+        ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.AQUATIC, (20 + self.power) * 0.75, 100)}
+        ability.aways_first = true
+    elseif id == AbilityID.HEALING_WAVE then
+        ability = Ability.new(id, TypeID.AQUATIC, 3, 0)
+        ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.HEAL, 100, (20 + self.power) * 1.5,
+            TargetType.ALLY, IGNORE_BIT_ALL)}
+    elseif id == AbilityID.SHELL_SHIELD then
+        ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
+        ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.AURA, 100, AuraID.SHELL_SHIELD, TargetType.ALLY,
+            IGNORE_BIT_ALL)}
     end
     if ability then
         self.abilitys[index] = ability
