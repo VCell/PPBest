@@ -528,12 +528,14 @@ local function fix_aura_score(ability, state, player)
     local index = state.team_states[player].active_index
     if ability.id == AI.AbilityID.IMMOLATION then
         if AuraProcessor.get_aura_by_id(state, player, index, AI.AuraID.IMMOLATION) == nil then
-            return 10
+            return 15
         end
     elseif ability.id == AI.AbilityID.SHELL_SHIELD then
         if AuraProcessor.get_aura_by_id(state, player, index, AI.AuraID.SHELL_SHIELD) == nil then
-            return 10
+            return 15
         end
+    elseif ability.id == AI.AbilityID.HAUNT then
+        return 10
     end
     return 0
 end

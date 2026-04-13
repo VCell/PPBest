@@ -521,8 +521,8 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.HEAL, 100, (20 + self.power) * 1.5,
             TargetType.ALLY, IGNORE_BIT_ALL)}
     elseif id == AbilityID.SHELL_SHIELD then
-        ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.AURA, 100, AuraID.SHELL_SHIELD, TargetType.ALLY,
+        ability = Ability.new(id, TypeID.BEAST, 0, 0)
+        ability.effect_list[1] = {Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SHELL_SHIELD, TargetType.ALLY,
             IGNORE_BIT_ALL)}
     end
     if ability then
