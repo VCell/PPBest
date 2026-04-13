@@ -13,6 +13,7 @@ local AbilityID = {
     CALL_DARKNESS = 256, -- 召唤黑暗
     SHELL_SHIELD = 310, -- 甲壳盾
     DODGE = 312, -- 闪避
+    DECOY = 334, -- 诱饵
     FLURRY = 360, -- 乱舞
     IMMOLATION = 409, -- 献祭
     SHADOW_SHOCK = 422, -- 暗影震击 85命中率亡灵普攻
@@ -34,7 +35,7 @@ local AbilityID = {
     STONE_SHOT = 801, -- 投石 配波
     RUPTURE = 814, -- 割裂 配波
     ARFUS_2 = 2530, -- 阿尔福斯 致命梦境
-    ARFUS_3 = 2531, -- 阿尔福斯 狂飙
+    SPRINT = 2531, -- 阿尔福斯 狂飙
     ARFUS_4 = 2532, -- 阿尔福斯 横扫
     ARFUS_6 = 2533 -- 阿尔福斯 宠物游行
 
@@ -47,6 +48,7 @@ local AuraID = {
     MECHANICAL = 244, -- 机械,表明该机械已经触发过意外防护
     SHELL_SHIELD = 309, -- 甲壳盾
     DODGE = 311, -- 闪避
+    DECOY = 333, -- 诱饵
     BURROW = 340, -- 钻地
     IMMOLATION = 408, -- 献祭
     BLIND = 496, -- 半盲
@@ -56,6 +58,7 @@ local AuraID = {
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
     MINEFIELD = 635, -- 雷区
     HAUNT = 653, -- 鬼影缠身
+    SPEED_UP = 831, -- 速度提升
     -- 天气类
     WEATHER_BURNT_EARTH = 171, -- 焦土 前排每轮受到龙类伤害61，被点燃
     WEATHER_ARCANE_SRORM = 590, -- 奥术风暴 免疫控制
@@ -370,7 +373,7 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, (20 + power) * 2, TargetType.ALLY)}
         return aura
     elseif aura_id == AuraID.HAUNT then
-        local aura = Aura.new(aura_id, AuraType.POSSESSION, 4, 100)
+        local aura = Aura.new(aura_id, AuraType.POSSESSION, 0, 100)
         local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, (20 + power) * 0.5, TargetType.ALLY,
             IGNORE_BIT_ALL)
         aura.effects = {ef1}
@@ -395,8 +398,11 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
     elseif aura_id == AuraID.SHELL_SHIELD then
         local aura = Aura.new(aura_id, AuraType.DEFEND, 5, (20 + power) * 0.25)
         return aura
+    elseif aura_id == AuraID.SPEED_UP then
+        -- 阿尔福斯 狂飙技能的加速，按照40%估计
+        local aura = Aura.new(aura_id, AuraType.SPEED, 2, 40)
+        return aura
     end
-    return nil
 end
 
 function Pet:install_ability_by_id(id, index)
@@ -474,6 +480,21 @@ function Pet:install_ability_by_id(id, index)
             [1] = {Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),
                    Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true)}
         }
+    elseif id == AbilityID.ARFUS_2 then
+        ability = Ability.new(id, TypeID.UNDEAD, 4, 0)
+        ability.effect_list = {
+            [1] = {Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),
+                   Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true)}
+        }
+    elseif id == AbilityID.SPRINT then
+        ability = Ability.new(id, TypeID.BEAST, 4, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
+                                  Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
+                                  Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
+                                  Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
+                                  Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
+                                  Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SPEED_UP, TargetType.ALLY, 0,
+            true)}
     elseif id == AbilityID.MISSILE then
         ability = Ability.new(id, TypeID.MECHANICAL, 0, 0)
         local ef = Effect.new_damage(TypeID.MECHANICAL, (20 + self.power) * 1.2, 90)

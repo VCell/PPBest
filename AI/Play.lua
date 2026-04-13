@@ -272,7 +272,12 @@ function GameStateTemplate:process_effects(teams, player, effects)
     -- 处理效果列表
     for i, effect in ipairs(effects) do
         if effect.target_type == AI.TargetType.ALLY then
-            hit_count = self.apply_effect(self, teams, effect, player, player, ally_pet_index, hit_count)
+            if not effect.dynamic_type or effect.dynamic_type == 0 then
+                hit_count = self.apply_effect(self, teams, effect, player, player, ally_pet_index, hit_count)
+            elseif effect.dynamic_type == AI.EffectDynamicType.SPRINT then
+                effect.value = 10 * hit_count
+                hit_count = self.apply_effect(self, teams, effect, player, player, ally_pet_index, hit_count)
+            end
         elseif effect.target_type == AI.TargetType.ENEMY then -- 调整HIT_AURA一类伴随效果的实现方式
             if not effect.dynamic_type or effect.dynamic_type == 0 then
                 hit_count = self.apply_effect(self, teams, effect, player, opponent,
@@ -307,7 +312,6 @@ function GameStateTemplate:process_effects(teams, player, effects)
                 end
                 hit_count = self.apply_effect(self, teams, effect, player, opponent,
                     self.team_states[opponent].active_index, hit_count)
-
             end
 
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then
@@ -406,7 +410,7 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
     elseif effect.effect_type == AI.EffectType.WEATHER then
         local from_index = self.team_states[from_player].active_index
         local power = teams[from_player][from_index].power
-        local weather = AI.Aura.new_aura_by_id(effect.value, power, from_index)
+        local weather = AI.Aura.new_aura_by_id(effect.value, power)
         self:install_weather(weather)
     elseif effect.effect_type == AI.EffectType.FEIGN_DEATH then
         self:print_log(string.format("玩家%d, 宠物%d 假死", target_player, target_index))

@@ -38,13 +38,7 @@ local function dofile(path)
 end
 
 -- 加载模块
-local dofile_list = {
-    "Utils.lua", 
-    "AI/PetsData.lua", 
-    "AI/Aura.lua",
-    "AI/Search.lua", 
-    "AI/Play.lua",
-}
+local dofile_list = {"Utils.lua", "AI/PetsData.lua", "AI/Aura.lua", "AI/Search.lua", "AI/Play.lua"}
 for _, path in ipairs(dofile_list) do
     dofile(path)
 end
@@ -69,8 +63,8 @@ local function create_test_pets(petlist)
             -- 阿尔福斯
             local pet = AI.Pet.new(AI.PetID.ARFUS, 1319, 341, 260, AI.TypeID.UNDEAD)
             pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1) -- 啃骨头
-            pet:install_ability_by_id(AI.AbilityID.ICE_TOMB, 2) -- 寒冰之墓
-            pet:install_ability_by_id(AI.AbilityID.ARFUS_6, 3) -- 宠物游行
+            pet:install_ability_by_id(AI.AbilityID.ARFUS_2, 2)
+            pet:install_ability_by_id(AI.AbilityID.SPRINT, 3)
             table.insert(res, pet)
         elseif pet_id == AI.PetID.PEBBLE then
             local pet = AI.Pet.new(AI.PetID.ARFUS, 1969, 260, 211, AI.TypeID.ELEMENTAL)
@@ -114,8 +108,8 @@ local function create_test_pets(petlist)
 end
 
 local function init_game_state()
-    local pets2 = create_test_pets({AI.PetID.CROW, AI.PetID.DARKMOON_TONK, AI.PetID.FIENDISH_LMP})
-    local pets1 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.EMPERPR_CRAB, AI.PetID.UNBORN_VALKYR})
+    local pets1 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.FIENDISH_LMP})
+    local pets2 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.EMPERPR_CRAB, AI.PetID.UNBORN_VALKYR})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
