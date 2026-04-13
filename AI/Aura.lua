@@ -93,25 +93,11 @@ function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
     return false
 end
 
-function AuraProcessor.is_undead(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.id == AI.AuraID.UNDEAD then
-            return true
-        end
-    end
-    return false
-
-end
-
 function AuraProcessor.get_aura_by_id(state, team_index, pet_index, aura_id)
     local team_state = state.team_states[team_index]
     local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.id == aura_id then
-            return aura
-        end
+    if ps.auras[aura_id] then
+        return ps.auras[aura_id]
     end
     return nil
 end

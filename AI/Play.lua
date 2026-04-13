@@ -385,8 +385,8 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
         self:print_log(string.format("玩家%d, 宠物%d 受到%d点伤害", target_player, target_index, real_damage))
         -- print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, pet_state.current_health))
     elseif effect.effect_type == AI.EffectType.HEAL then
-        local max_health = teams[target_player][target_index].health * 
-                (100 + AuraProcessor.get_max_health_modifier(self, target_player, target_index)) / 100
+        local max_health = teams[target_player][target_index].health *
+                               (100 + AuraProcessor.get_max_health_modifier(self, target_player, target_index)) / 100
         local heal = effect.value * (100 + AuraProcessor.get_heal_modifier(self, target_player, target_index)) / 100
         if pet_state.current_health + heal > max_health then
             pet_state.current_health = max_health
@@ -435,7 +435,7 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
         local pet = teams[target_player][target_index]
         -- 处理亡灵
         if pet.type == AI.TypeID.UNDEAD then
-            if AuraProcessor.is_undead(self, target_player, target_index) then
+            if AuraProcessor.get_aura_by_id(self, target_player, target_index, AI.AuraID.UNDEAD) ~= nil then
                 -- 已经是不死状态
                 pet_state.current_health = 1
                 if pet_state.tmp_health and pet_state.tmp_health > 0 then
@@ -524,6 +524,20 @@ local function evaluate_pet_effectiveness(pet, opponent)
                evaluate_ability_effectiveness(pet:get_ability(3), opponent)
 end
 
+local function fix_aura_score(ability, state, player)
+    local index = state.team_states[player].active_index
+    if ability.id == AI.AbilityID.IMMOLATION then
+        if AuraProcessor.get_aura_by_id(state, player, index, AI.AuraID.IMMOLATION) == nil then
+            return 10
+        end
+    elseif ability.id == AI.AbilityID.SHELL_SHIELD then
+        if AuraProcessor.get_aura_by_id(state, player, index, AI.AuraID.SHELL_SHIELD) == nil then
+            return 10
+        end
+    end
+    return 0
+end
+
 local GameRuleTemplate = {}
 function GameRuleTemplate:evaluate_action(state, player, action)
     -- 评估玩家在给定状态下的动作
@@ -543,7 +557,7 @@ function GameRuleTemplate:evaluate_action(state, player, action)
         if ability.cooldown > 0 then
             score = score + ability.cooldown * 2 -- 高冷却技能通常更强
         end
-
+        score = score + fix_aura_score(ability, state, player)
     elseif action.type == 'change' then
         -- 换宠评估
         local my_pet = self.teams[player][action.value]
