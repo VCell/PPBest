@@ -22,6 +22,10 @@ local function set_possible_abilitys(pet)
         pet:install_ability_by_id(AI.AbilityID.SHADOW_SHOCK, 1) 
         pet:install_ability_by_id(AI.AbilityID.CURSE_OF_DOOM, 2) 
         pet:install_ability_by_id(AI.AbilityID.HAUNT, 3) 
+    elseif pet.id == AI.PetID.ARFUS then 
+        pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1) 
+        pet:install_ability_by_id(AI.AbilityID.ARFUS_2, 2) 
+        pet:install_ability_by_id(AI.AbilityID.SPRINT, 3) 
     else 
         local abilitys = BattleUtils:GetAbilitysByPetID(pet.id)
         if abilitys then
