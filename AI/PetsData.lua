@@ -373,7 +373,7 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, (20 + power) * 2, TargetType.ALLY)}
         return aura
     elseif aura_id == AuraID.HAUNT then
-        local aura = Aura.new(aura_id, AuraType.POSSESSION, 0, 100)
+        local aura = Aura.new(aura_id, AuraType.POSSESSION, 4, 100)
         local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, (20 + power) * 0.5, TargetType.ALLY,
             IGNORE_BIT_ALL)
         aura.effects = {ef1}
