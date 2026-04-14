@@ -97,7 +97,7 @@ local function create_test_pets(petlist)
             pet:install_ability_by_id(AI.AbilityID.NETHER_GATE, 3)
             table.insert(res, pet)
         elseif pet_id == AI.PetID.EMPERPR_CRAB then
-            local pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1400, 357, 210, AI.TypeID.AQUATIC)
+            local pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1486, 357, 210, AI.TypeID.AQUATIC)
             pet:install_ability_by_id(AI.AbilityID.SURGE, 1)
             pet:install_ability_by_id(AI.AbilityID.HEALING_WAVE, 2)
             pet:install_ability_by_id(AI.AbilityID.SHELL_SHIELD, 3)
@@ -109,7 +109,7 @@ end
 
 local function init_game_state()
     local pets1 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.FIENDISH_LMP})
-    local pets2 = create_test_pets({AI.PetID.SPRING_RABBIT, AI.PetID.EMPERPR_CRAB, AI.PetID.UNBORN_VALKYR})
+    local pets2 = create_test_pets({AI.PetID.DARKMOON_TONK, AI.PetID.EMPERPR_CRAB, AI.PetID.UNBORN_VALKYR})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
@@ -211,7 +211,7 @@ function TestAI:humanVsAi()
         -- 使用MCTS为AI选择动作
         print("\nAI思考中...")
         local root_node = AI.DUCT_MCTS.Searcher.run_search(state, rule, {
-            iterations = 1000,
+            iterations = 2000,
             exploration_c = 1.414
         })
         local ai_choice = AI.DUCT_MCTS.Searcher.select_best_action(root_node, 2)
