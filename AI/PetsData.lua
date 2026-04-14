@@ -52,13 +52,14 @@ local AuraID = {
     BURROW = 340, -- 钻地
     IMMOLATION = 408, -- 献祭
     BLIND = 496, -- 半盲
-    STUN = 927, -- 眩晕
     SHATTER_DEFENSE = 542, -- 破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
     MINEFIELD = 635, -- 雷区
     HAUNT = 653, -- 鬼影缠身
+    POLYMORPH = 822, -- 变形
     SPEED_UP = 831, -- 速度提升
+    STUN = 927, -- 眩晕
     -- 天气类
     WEATHER_BURNT_EARTH = 171, -- 焦土 前排每轮受到龙类伤害61，被点燃
     WEATHER_ARCANE_SRORM = 590, -- 奥术风暴 免疫控制
@@ -359,7 +360,7 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
     elseif aura_id == AuraID.BURROW then
         local aura = Aura.new(aura_id, AuraType.BURROW, 1, 0)
         return aura
-    elseif aura_id == AuraID.STUN then
+    elseif aura_id == AuraID.STUN or aura_id == AuraID.POLYMORPH then
         local aura = Aura.new(aura_id, AuraType.STUN, 1, 0)
         return aura
     elseif aura_id == AuraID.ROCK_BARRAGE then

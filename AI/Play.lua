@@ -51,7 +51,8 @@ local TeamState = {
     ability_index = 0, -- 多轮技能的技能id
     active_index = 0, -- 当前出战宠物的索引
     is_faster = nil, -- 本轮是否先手，用来做动态判定
-    interrupted = false -- 当前回合是否被打断
+    interrupted = false, -- 当前回合是否被打断
+    changed_pet = false -- 用于保证不连续两回合切换宠物
 }
 TeamState.__index = TeamState
 function TeamState.new()
@@ -601,6 +602,7 @@ function GameRuleTemplate:get_legal_actions(state, player)
             -- 多轮技能只能继续使用当前技能
             table.insert(actions, Action.new('use', state.team_states[player].ability_index))
         else
+            local can_use = false
             if AuraProcessor.is_stunned(state, player, active_index) then
                 table.insert(actions, Action.new('standby', 0)) -- 被晕时可以待命
             else
@@ -608,12 +610,16 @@ function GameRuleTemplate:get_legal_actions(state, player)
                     if self.teams[player][active_index]:get_ability(i) and
                         state.team_states[player].pets[active_index].cooldown_at[i] < state.round then
                         table.insert(actions, Action.new('use', i)) -- 动作为使用技能的索引
+                        can_use = true
                     end
                 end
             end
-            for i, petState in ipairs(state.team_states[player].pets) do
-                if petState.current_health > 0 and i ~= state.team_states[player].active_index then
-                    table.insert(actions, Action.new('change', i)) -- 动作为选择宠物的索引
+            --无可用技能，或上轮没有换宠时，才能换宠
+            if not can_use or not state.team_states[player].changed_pet then
+                for i, petState in ipairs(state.team_states[player].pets) do
+                    if petState.current_health > 0 and i ~= state.team_states[player].active_index then
+                        table.insert(actions, Action.new('change', i)) -- 动作为选择宠物的索引
+                    end
                 end
             end
         end
@@ -630,6 +636,8 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
     setmetatable(state, {
         __index = GameStateTemplate
     })
+    state.team_states[1].changed_pet = false
+    state.team_states[2].changed_pet = false
     if state.change_round > 0 then
         -- 换人回合不触发其他逻辑
         if action1.type == 'change' then
@@ -644,9 +652,11 @@ function GameRuleTemplate:apply_joint_action(old_state, action1, action2)
     end
     if action1.type == 'change' then
         state:change_pet(self.teams, 1, action1.value)
+        state.team_states[1].changed_pet = true
     end
     if action2.type == 'change' then
         state:change_pet(self.teams, 2, action2.value)
+        state.team_states[2].changed_pet = true
     end
     -- 预处理
     state:pre_step(self.teams)
