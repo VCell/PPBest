@@ -269,7 +269,7 @@ function SearchInterface:DecideActions(round)
     end
 
     local root = AI.DUCT_MCTS.Searcher.run_search(self.game.State, self.game.Rule, {
-                iterations = 1500,
+                iterations = 2500,
                 exploration_c = 1.414,
             })
     local action, info = AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)

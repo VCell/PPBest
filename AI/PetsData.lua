@@ -10,6 +10,8 @@ local AbilityID = {
     ION_CANNON = 209, -- 离子炮 
     SHADOW_SLASH = 210, -- 暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, -- 厄运诅咒 
+    TONGUE_LASH = 228, -- 毒舌鞭笞
+    FROG_KISS = 233, -- 青蛙的吻
     CALL_DARKNESS = 256, -- 召唤黑暗
     SHELL_SHIELD = 310, -- 甲壳盾
     DODGE = 312, -- 闪避
@@ -75,6 +77,7 @@ local AuraID = {
 }
 
 local PetID = {
+    LIFELIKE_TOAD = 95, -- 逼真的蟾蜍
     MOJO = 165, -- 魔汁
     SPRING_RABBIT = 200, -- 春兔
     PANDAREN_MONK = 248, -- 熊猫人僧侣
@@ -437,7 +440,7 @@ function Pet:install_ability_by_id(id, index)
                    Effect.new_damage(TypeID.BEAST, 126),
                    Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SHATTER_DEFENSE, TargetType.ENEMY, 0, true)}
         }
-    elseif id == AbilityID.FLURRY then
+    elseif id == AbilityID.FLURRY or id == AbilityID.TONGUE_LASH then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
         ability.effect_list[1] = {Effect.new_damage(TypeID.CRITTER, (20 + self.power) * 0.5):set_dynamic_type(
             EffectDynamicType.FLURRY)}
@@ -452,6 +455,12 @@ function Pet:install_ability_by_id(id, index)
         ef2.dynamic_type = EffectDynamicType.BURROW
         ability.effect_list[1] = {ef1}
         ability.effect_list[2] = {ef2}
+    elseif id == AbilityID.FROG_KISS then
+        ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.AQUATIC, 20 + self.power),
+            Effect.new(TypeID.AQUATIC, EffectType.AURA, 25, AuraID.POLYMORPH, TargetType.ENEMY, 0, true)
+        }
     elseif id == AbilityID.STONE_SHOT then
         ability = Ability.new(id, TypeID.ELEMENTAL, 0, 0)
         local ef = Effect.new_damage(TypeID.ELEMENTAL, (20 + self.power) * 1.1, 95, TargetType.ENEMY)

@@ -216,9 +216,9 @@ local function select_joint_action_duct(node, exploration_c)
     for _, a1 in ipairs(actions1) do
         local ucb = calculate_uct_value(node, 1, a1, exploration_c)
 
-        -- if a1.type == "change" then
-        --     ucb = ucb - 0.03   -- switching penalty
-        -- end
+        if a1.type == "change" then
+            ucb = ucb - 0.01   -- switching penalty
+        end
         -- 加小噪声避免振荡
         ucb = ucb + math.random() * 1e-6
 

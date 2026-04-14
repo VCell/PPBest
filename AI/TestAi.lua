@@ -108,7 +108,7 @@ local function create_test_pets(petlist)
 end
 
 local function init_game_state()
-    local pets1 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.FIENDISH_LMP})
+    local pets1 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.CROW})
     local pets2 = create_test_pets({AI.PetID.DARKMOON_TONK, AI.PetID.EMPERPR_CRAB, AI.PetID.UNBORN_VALKYR})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
