@@ -332,7 +332,10 @@ function Aura:is_weather(weather_id, round)
 end
 
 Aura.__index = Aura
-
+Aura__tostring = function(self)
+    return string.format("Aura(id=%d, type=%d, duration=%d, value=%d, keep_front=%s)",
+        self.id, self.type, self.duration, self.value, self.keep_front)
+end
 function Aura.new(id, type, duration, value)
     local aura = setmetatable({}, Aura)
     aura.id = id
@@ -497,7 +500,7 @@ function Pet:install_ability_by_id(id, index)
                    Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true)}
         }
     elseif id == AbilityID.SPRINT then
-        ability = Ability.new(id, TypeID.BEAST, 4, 0)
+        ability = Ability.new(id, TypeID.BEAST, 3, 0)
         ability.effect_list[1] = {Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
                                   Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
                                   Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.25, 85),
