@@ -34,7 +34,7 @@ local Rules = {
         error("get_winner not implemented")
     end,
 
-    get_utility = function(state)
+    get_utility = function(state, depth)
         -- 返回玩家1的奖励值（玩家2的奖励为 constant_sum - utility）
         error("get_utility not implemented")
     end,
@@ -293,7 +293,7 @@ local function select_action_heuristic(game_rules, state, player, actions)
     return actions[#actions]
 end
 
-local function smart_simulation_policy(state, game_rules)
+local function smart_simulation_policy(state, game_rules, base_depth)
     local current_state = state
     local depth = 0
     
@@ -314,7 +314,7 @@ local function smart_simulation_policy(state, game_rules)
         depth = depth + 1
     end
     
-    return game_rules.get_utility(current_state)
+    return game_rules.get_utility(current_state, depth + base_depth)
 end
 
 -- ==================== 默认模拟策略 ====================
@@ -394,7 +394,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     if node.is_terminal then
         utility = game_rules.get_utility(node.state)
     else
-        utility = simulation_policy(node.state, game_rules)
+        utility = simulation_policy(node.state, game_rules, #path)
     end
     
     local constant_sum = game_rules.constant_sum or 1

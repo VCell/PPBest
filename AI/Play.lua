@@ -705,8 +705,18 @@ function GameRuleTemplate.get_winner(state)
     end
 end
 
-function GameRuleTemplate.get_utility(state)
+function GameRuleTemplate.get_utility(state, depth)
     -- 返回玩家1的奖励值（玩家2的奖励为 constant_sum - utility）
+    local winner = GameRuleTemplate.get_winner(state)
+
+    if winner == 1 then
+        return 1 - 0.01 * depth
+    elseif winner == 2 then
+        return 0 + 0.01 * depth
+    elseif winner == 3 then
+        return 0.5
+    end
+
     local p1_health = 0
     local p2_health = 0
 
@@ -723,8 +733,13 @@ function GameRuleTemplate.get_utility(state)
     if p1_health + p2_health == 0 then
         return 0.5
     end
-    return p1_health / (p1_health + p2_health)
+
+    local diff = p1_health - p2_health
+    local total = p1_health + p2_health
+
+    return 0.5 + 0.5 * math.tanh(diff / total)
 end
+
 local function auras_to_string(auras)
     local res = ""
     for i, aura in pairs(auras) do
