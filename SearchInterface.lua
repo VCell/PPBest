@@ -220,7 +220,7 @@ function SearchInterface:ProcessCombatLog(msg)
             if aura.id == AI.AuraID.HAUNT then
                 --添加鬼影缠身时处理假死状态
                 local pet = state.team_states[3-target_team].pets[from_index]
-                if AI.AuraProcessor.is_undead(state, 3-target_team, from_index) then
+                if AI.AuraProcessor.get_aura_by_id(state, 3-target_team, from_index, AI.AuraID.UNDEAD) ~= nil then
                     pet.tmp_health = 0
                 else 
                     pet.tmp_health = pet.current_health
