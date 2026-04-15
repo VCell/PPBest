@@ -194,9 +194,17 @@ function GameStateTemplate:post_step(teams)
                     table.insert(to_remove, i)
                 else
                     -- 处理dot类扣血
-                    if aura.type == AI.AuraType.POSSESSION or aura.type == AI.AuraType.DOT then
+                    if aura.type == AI.AuraType.DOT then
                         assert(aura.effects[1].effect_type == AI.EffectType.DAMAGE)
                         self:apply_effect(teams, aura.effects[1], nil, player, pet_index, 0)
+                    elseif aura.type == AI.AuraType.POSSESSION then
+                        -- 实战中有buff提前结束了的情况
+                        local pet_state = self.team_states[3 - player].pets[aura.value]
+                        if pet_state.current_health > 1 then
+                            table.insert(to_remove, i)
+                        else 
+                            self:apply_effect(teams, aura.effects[1], nil, player, pet_index, 0)
+                        end
                     end
                 end
             end
@@ -216,9 +224,9 @@ function GameStateTemplate:post_step(teams)
                             self:process_effects(teams, player, aura.effects)
                         elseif aura.type == AI.AuraType.POSSESSION then
                             local pet_state = self.team_states[3 - player].pets[aura.value]
-                            assert(pet_state and pet_state.current_health <= 0 and pet_state.tmp_health ~= nil,
-                                string.format("玩家%d, 宠物%d 血量应为0, 实际为%d", player, aura.value, pet_state.current_health))
-                            pet_state.current_health = pet_state.tmp_health
+                            if pet_state.current_health <= 0 then
+                                pet_state.current_health = pet_state.tmp_health
+                            end
                         end
                     end
                 end
