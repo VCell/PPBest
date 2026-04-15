@@ -217,7 +217,7 @@ function GameStateTemplate:post_step(teams)
                         elseif aura.type == AI.AuraType.POSSESSION then
                             local pet_state = self.team_states[3 - player].pets[aura.value]
                             assert(pet_state and pet_state.current_health <= 0 and pet_state.tmp_health ~= nil,
-                                string.format("玩家%d, 宠物%d 血量应为0", player, aura.value))
+                                string.format("玩家%d, 宠物%d 血量应为0, 实际为%d", player, aura.value, pet_state.current_health))
                             pet_state.current_health = pet_state.tmp_health
                         end
                     end
