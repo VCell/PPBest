@@ -395,6 +395,13 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
         if real_damage <= 0 then
             return hit_count
         end
+        -- 魔法宠一次最多受35%的伤害
+        if teams[target_player][target_index].type == AI.TypeID.MAGIC then
+            local max_damage = teams[target_player][target_index].health * 0.35
+            if real_damage > max_damage then
+                real_damage = max_damage
+            end
+        end
         pet_state.current_health = pet_state.current_health - real_damage
         self:print_log(string.format("玩家%d, 宠物%d 受到%d点伤害", target_player, target_index, real_damage))
         -- print(string.format("player %d pet %d took %d damage, health now %d", target_player, target_index, real_damage, pet_state.current_health))
