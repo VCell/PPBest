@@ -38,7 +38,7 @@ local function dofile(path)
 end
 
 -- 加载模块
-local dofile_list = {"Utils.lua", "AI/PetsData.lua", "AI/Aura.lua", "AI/Search.lua", "AI/Play.lua"}
+local dofile_list = {"Utils.lua", "AI/PetsData.lua", "AI/Aura.lua", "AI/Search.lua", "AI/Play.lua", "AI/explain.lua"}
 for _, path in ipairs(dofile_list) do
     dofile(path)
 end
@@ -97,7 +97,7 @@ local function create_test_pets(petlist)
             pet:install_ability_by_id(AI.AbilityID.NETHER_GATE, 3)
             table.insert(res, pet)
         elseif pet_id == AI.PetID.EMPERPR_CRAB then
-            local pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1486, 357, 210, AI.TypeID.AQUATIC)
+            local pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1481, 358, 211, AI.TypeID.AQUATIC)
             pet:install_ability_by_id(AI.AbilityID.SURGE, 1)
             pet:install_ability_by_id(AI.AbilityID.HEALING_WAVE, 2)
             pet:install_ability_by_id(AI.AbilityID.SHELL_SHIELD, 3)
@@ -118,7 +118,7 @@ local function init_game_state()
     for player = 1, 2 do
         local team_state = AI.TeamState.new()
         for i, pet in ipairs(game.Rule.teams[player]) do
-            print(pet.id)
+            AI.Explain.printPet(pet)
             local pet_state = AI.PetState.new(pet.health)
             table.insert(team_state.pets, pet_state)
         end
@@ -135,7 +135,7 @@ end
 function TestAI:simulation()
     local game = init_game_state()
     local result = AI.DUCT_MCTS.Searcher.simulate_game(game.State, game.Rule, {
-        iterations = 1000,
+        iterations = 2500,
         exploration_c = 1.414
     }, 50)
 end
@@ -173,26 +173,70 @@ function TestAI:humanVsAi()
         end
 
         -- 显示当前状态
-        rule.print_state(state)
+        AI.Explain.printState(state, rule.teams)
 
-        -- 获取玩家1的合法动作
+        -- 获取双方的合法动作
         local player_actions = rule:get_legal_actions(state, 1)
+        local ai_actions = rule:get_legal_actions(state, 2)
 
-        -- 显示玩家可选择的动作
-        print("\n你的可用动作：")
-        for i, action in ipairs(player_actions) do
-            local action_desc
-            if action.type == 'use' then
-                action_desc = string.format("技能 %d", action.value)
-            elseif action.type == 'change' then
-                action_desc = string.format("换宠到 %d", action.value)
-            elseif action.type == 'standby' then
-                action_desc = "待命"
-            else
-                action_desc = "未知动作"
-            end
-            print(string.format("%d. %s", i, action_desc))
+        -- 计算每个动作的评分
+        local function get_action_score(rule, state, player, action)
+            return rule:evaluate_action(state, player, action)
         end
+
+        -- 生成动作描述
+        local function get_action_description(rule, state, player, action)
+            if action.type == 'use' then
+                local pet = rule.teams[player][state.team_states[player].active_index]
+                local ability = pet:get_ability(action.value)
+                return string.format("技能 %d: %s", action.value, AI.Explain.getAbilityName(ability.id))
+            elseif action.type == 'change' then
+                local pet = rule.teams[player][action.value]
+                return string.format("换宠到 %d: %s", action.value, AI.Explain.getPetName(pet.id))
+            elseif action.type == 'standby' then
+                return "待命"
+            else
+                return "未知动作"
+            end
+        end
+
+        -- 显示双方可选动作（横向排列）
+        print("\n双方可选动作：")
+        print("┌─────────────────────────────────────────┬─────────────────────────────────────────┐")
+        print("│                玩家1 (你)               │                玩家2 (AI)               │")
+        print("├─────────────────────────────────────────┼─────────────────────────────────────────┤")
+        
+        -- 计算最大行数
+        local max_rows = math.max(#player_actions, #ai_actions)
+        for i = 1, max_rows do
+            local player_action = player_actions[i]
+            local ai_action = ai_actions[i]
+            
+            local player_desc = ""
+            local player_score = ""
+            if player_action then
+                player_desc = get_action_description(rule, state, 1, player_action)
+                player_score = string.format("%.2f", get_action_score(rule, state, 1, player_action))
+            end
+            
+            local ai_desc = ""
+            local ai_score = ""
+            if ai_action then
+                ai_desc = get_action_description(rule, state, 2, ai_action)
+                ai_score = string.format("%.2f", get_action_score(rule, state, 2, ai_action))
+            end
+            
+            -- 格式化输出
+            local player_str = string.format("%d. %s (%.2f)", i, player_desc, tonumber(player_score) or 0)
+            local ai_str = string.format("%d. %s (%.2f)", i, ai_desc, tonumber(ai_score) or 0)
+            
+            -- 确保对齐
+            player_str = string.sub(player_str, 1, 38)
+            ai_str = string.sub(ai_str, 1, 38)
+            
+            print(string.format("│ %-38s │ %-38s │", player_str, ai_str))
+        end
+        print("└─────────────────────────────────────────┴─────────────────────────────────────────┘")
 
         -- 获取玩家输入
         local player_choice
@@ -211,7 +255,7 @@ function TestAI:humanVsAi()
         -- 使用MCTS为AI选择动作
         print("\nAI思考中...")
         local root_node = AI.DUCT_MCTS.Searcher.run_search(state, rule, {
-            iterations = 2000,
+            iterations = 2500,
             exploration_c = 1.414
         })
         local ai_choice = AI.DUCT_MCTS.Searcher.select_best_action(root_node, 2)

@@ -50,7 +50,7 @@ DUCT_MCTS.Config = {
     exploration_constant = 1.414,  -- 默认探索系数 √2
     max_simulation_depth = 10,    -- 模拟最大深度
     hybrid_random_factor = 0.3,
-    enable_debug_log = false       -- 调试日志开关
+    enable_debug_log = false,       -- 调试日志开关
 }
 
 -- ==================== 树节点定义 ====================
@@ -345,9 +345,9 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     
     -- === 选择阶段 ===
     while not node.is_terminal do
-        if not node:is_fully_expanded() then
-            break
-        end
+        -- if not node:is_fully_expanded() then
+        --     break
+        -- end
         
         local action1, action2 = select_joint_action_duct(node, exploration_c)
         local child = node:get_child(action1, action2)

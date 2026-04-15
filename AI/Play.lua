@@ -570,6 +570,9 @@ function GameRuleTemplate:evaluate_action(state, player, action)
         -- 换宠评估
         local my_pet = self.teams[player][action.value]
         local op_index = state.team_states[3 - player].active_index
+        if op_index == 0 then
+            op_index = 1
+        end
         local op_pet = self.teams[3 - player][op_index]
 
         -- 克制关系
@@ -577,10 +580,10 @@ function GameRuleTemplate:evaluate_action(state, player, action)
         local my_health_percent = state.team_states[player].pets[action.value].current_health / my_pet.health
         local op_health_percent = state.team_states[3 - player].pets[op_index].current_health / op_pet.health
 
-        score = score + effectiveness * my_health_percent * op_health_percent * 10
+        score = score + 10 + (effectiveness - 1) * my_health_percent * op_health_percent * 10
 
     elseif action.type == 'standby' then
-        score = -10 -- 待命通常不是好选择
+        score = 10 
     end
     return score
 end
