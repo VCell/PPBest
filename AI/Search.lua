@@ -318,7 +318,7 @@ local function smart_simulation_policy(state, game_rules, base_depth)
 end
 
 -- ==================== 默认模拟策略 ====================
-local function default_simulation_policy(state, game_rules)
+local function default_simulation_policy(state, game_rules, depth)
     local current_state = state
     local depth = 0
     
@@ -334,7 +334,7 @@ local function default_simulation_policy(state, game_rules)
         depth = depth + 1
     end
     
-    return game_rules.get_utility(current_state)
+    return game_rules.get_utility(current_state, depth)
 end
 
 -- ==================== 单次MCTS模拟 ====================
@@ -392,7 +392,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     -- === 模拟阶段 ===
     local utility = 0
     if node.is_terminal then
-        utility = game_rules.get_utility(node.state)
+        utility = game_rules.get_utility(node.state, #path)
     else
         utility = simulation_policy(node.state, game_rules, #path)
     end

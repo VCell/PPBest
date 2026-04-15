@@ -111,7 +111,7 @@ function SearchInterface:UpdateHealth()
         for pet_index = 1, 3 do
             local health = C_PetBattles.GetHealth(player, pet_index)
             self.game.State.team_states[player].pets[pet_index].current_health = health
-            LogFrame:AddLog(string.format("玩家%d 宠物%d 血量更新为%d", player, pet_index, health))
+            --LogFrame:AddLog(string.format("玩家%d 宠物%d 血量更新为%d", player, pet_index, health))
         end
     end
 end
