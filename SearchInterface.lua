@@ -192,7 +192,7 @@ function SearchInterface:ProcessCombatLog(msg)
         })
     end
     assert(#ab_info < 3)
-    if string.find(msg, "施放了") then
+    if string.find(msg, "施放了") or string.find(msg, "效果") then
         assert(#ab_info == 2)
         local from_index = 0
         local target_team = 0
