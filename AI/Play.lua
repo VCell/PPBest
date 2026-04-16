@@ -730,14 +730,14 @@ function GameRuleTemplate.get_utility(state, depth)
     for i, petState in ipairs(state.team_states[1].pets) do
         if petState.current_health > 0 then
             p1_health = p1_health + petState.current_health
-        elseif petState.tmp_health > 0 then
+        elseif petState.tmp_health and petState.tmp_health > 0 then
             p1_health = p1_health + petState.tmp_health
         end
     end
     for i, petState in ipairs(state.team_states[2].pets) do
         if petState.current_health > 0 then
             p2_health = p2_health + petState.current_health
-        elseif petState.tmp_health > 0 then
+        elseif petState.tmp_health and petState.tmp_health > 0 then
             p2_health = p2_health + petState.tmp_health
         end
     end
