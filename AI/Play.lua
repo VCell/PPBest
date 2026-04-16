@@ -460,8 +460,8 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
                 -- 已经是不死状态
                 pet_state.current_health = 1
                 if pet_state.tmp_health and pet_state.tmp_health > 0 then
-                    -- 不死轮假死就是真死
-                    pet_state.current_health = 0
+                    -- 不死轮假死不复活，也不进死亡状态
+                    pet_state.current_health = 1
                     pet_state.tmp_health = 0
                     self:pet_dead(target_player)
                 end

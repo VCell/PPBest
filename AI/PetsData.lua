@@ -394,8 +394,6 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
     elseif aura_id == AuraID.MECHANICAL then
         local aura = Aura.new(aura_id, AuraType.OTHER, 99, 0)
         return aura
-    elseif aura_id == AuraID.WEATHER_DARKNESS then
-        return Aura.new(aura_id, AuraType.WEATHER, 5, 0)
     elseif aura_id == AuraID.FLYING then
         return Aura.new(aura_id, AuraType.SPEED, 0, 50)
     elseif aura_id == AuraID.IMMOLATION then
@@ -409,6 +407,10 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         -- 阿尔福斯 狂飙技能的加速，按照40%估计
         local aura = Aura.new(aura_id, AuraType.SPEED, 2, 40)
         return aura
+    elseif aura_id == AuraID.WEATHER_DARKNESS then
+        return Aura.new(aura_id, AuraType.WEATHER, 5, 0)
+    elseif aura_id == AuraID.WEATHER_SANDSTORM then
+        return Aura.new(aura_id, AuraType.WEATHER, 5, (20 + power) * 0.25)
     end
 end
 
