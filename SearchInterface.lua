@@ -161,6 +161,10 @@ function SearchInterface:CleanExpiredAuras()
     end
 end
 
+function SearchInterface:UpdateRound(round)
+    self.game.State.round = round
+end
+
 function SearchInterface:UpdateState(round)
     self.game.State.round = round
     self.game.State.change_round = 0
