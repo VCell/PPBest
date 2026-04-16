@@ -569,7 +569,7 @@ function Pet:install_default_ability()
     for ab_index = 1, 3 do
         if self.abilitys[ab_index] == nil then
             local ab = Ability.new(AbilityID.NONE, self.type, 0, 0)
-            ab.effect_list[1] = {Effect.new_damage(self.type, (20 + self.power) * 1.5)}
+            ab.effect_list[1] = {Effect.new_damage(self.type, (20 + self.power) * 1.1)}
             self.abilitys[ab_index] = ab
         end
     end

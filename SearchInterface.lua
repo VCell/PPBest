@@ -217,7 +217,7 @@ function SearchInterface:ProcessCombatLog(msg)
         end
         if aura then 
             state:install_aura(self.game.Rule.teams, target_team, target_index, aura)
-            LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
+            LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d，expire=%d", target_team, target_index, ab_info[2].ability_id, aura.expire))
             if aura.id == AI.AuraID.HAUNT then
                 --添加鬼影缠身时处理假死状态
                 local pet = state.team_states[3-target_team].pets[from_index]

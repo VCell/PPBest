@@ -730,19 +730,21 @@ function GameRuleTemplate.get_utility(state, depth)
     for i, petState in ipairs(state.team_states[1].pets) do
         if petState.current_health > 0 then
             p1_health = p1_health + petState.current_health
+        elseif petState.tmp_health > 0 then
+            p1_health = p1_health + petState.tmp_health
         end
     end
     for i, petState in ipairs(state.team_states[2].pets) do
         if petState.current_health > 0 then
             p2_health = p2_health + petState.current_health
+        elseif petState.tmp_health > 0 then
+            p2_health = p2_health + petState.tmp_health
         end
-    end
-    if p1_health + p2_health == 0 then
-        return 0.5
     end
 
     local diff = p1_health - p2_health
     local total = p1_health + p2_health
+    assert(total > 0)
 
     return 0.5 + 0.5 * math.tanh(diff / total)
 end
