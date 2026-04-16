@@ -541,7 +541,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {Effect.new_damage(TypeID.ELEMENTAL, (20 + self.power) * 1.2, 90)}
     elseif id == AbilityID.IMMOLATION then
         ability = Ability.new(id, TypeID.ELEMENTAL, 0, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 9, AuraID.IMMOLATION, TargetType.ALLY,
+        ability.effect_list[1] = {Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.IMMOLATION, TargetType.ALLY,
             IGNORE_BIT_ALL)}
     elseif id == AbilityID.NETHER_GATE then
         ability = Ability.new(id, TypeID.MAGIC, 5, 0)
