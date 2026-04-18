@@ -2,6 +2,10 @@ local _, PPBest = ...
 local AI = PPBest.AI
 local LogFrame = PPBest.LogFrame
 local BattleUtils = PPBest.BattleUtils
+local PetCombatLog = PPBest.PetCombatLog
+local PetCombatLogType = PPBest.PetCombatLogType
+local PetCombatLogTarget = PPBest.PetCombatLogTarget
+
 local SearchInterface = {
     game = nil,
     enemy_ability_hints = {}, -- 存储敌方技能使用记录 {pet_index = {ability_id = count}}
@@ -71,7 +75,6 @@ local function get_team(player)
             set_possible_abilitys(pet)
         end
         pet:install_default_ability()
-        
         table.insert(team, pet)
         LogFrame:AddLog(string.format("玩家%d 宠物%d 技能1:%d 技能2:%d 技能3:%d", player, i,
                 pet:get_ability(1).id, pet:get_ability(2).id, pet:get_ability(3).id))
@@ -174,75 +177,95 @@ function SearchInterface:UpdateState(round)
     self:CleanExpiredAuras()
 end
 
--- 处理战斗日志消息
--- 格式示例: "|T136122:14|t|cff4e96f7|HbattlePetAbil:218:1806:276:227|h[厄运诅咒]|h|r对敌方的 |T646059:14|t超能浣熊 造成了|T136122:14|t|cff4e96f7|HbattlePetAbil:217:1806:276:227|h[厄运诅咒]|h|r效果."
+function SearchInterface:GuessEnemyAbility(log)
+    local abid = log.abilityInfo1.id
+    local ally_index = self.game.State.team_states[LE_BATTLE_PET_ALLY].active_index
+    local enemy_index = self.game.State.team_states[LE_BATTLE_PET_ENEMY].active_index
+    local enemy_pet = self.game.Rule.teams[LE_BATTLE_PET_ENEMY][enemy_index]
+    local ally_pet = self.game.Rule.teams[LE_BATTLE_PET_ALLY][ally_index]
+    local abilitys = BattleUtils:GetAbilitysByPetID(enemy_pet.id)
+    if not abilitys then
+        return
+    end
+    local enemy_has, ally_has = false, false
+    local ab_index = 0
+
+    for i, ability in ipairs(abilitys) do 
+        if ability == abid then
+            enemy_has = true
+            ab_index = i
+        end
+    end
+    if not enemy_has then
+        return
+    end
+    for i = 1,3 do
+        if ally_pet.abilitys[i] == abid then
+            ally_has = true
+        end
+    end
+    if not ally_has then
+        if ab_index > 3 then
+            ab_index = ab_index - 3
+        end
+        if enemy_pet.abilitys[ab_index].id == abid then
+            enemy_pet.abilitys[ab_index].certain = true
+            return 
+        end
+        assert(not enemy_pet.abilitys[ab_index].certain)
+        local ability = enemy_pet:install_ability_by_id(abid, ab_index)
+        if ability then
+            LogFrame:AddLog(string.format("确定敌方宠物%d 技能%d 为 %d", enemy_index, ab_index, abid))
+            ability.certain = true
+        end
+
+    end
+
+end
+
 function SearchInterface:ProcessCombatLog(msg)
     if not self.game then
         return
     end
     local state = self.game.State
-    -- 提取技能信息
-    -- 格式: |HbattlePetAbil:ability_id:health:power:speed|h[skill_name]|h|r
-    local ab_info = {}
-    for ability_id, health, power, speed in msg:gmatch("|HbattlePetAbil:(%d+):(%d+):(%d+):(%d+)|h") do
-        ability_id = tonumber(ability_id)
-        health = tonumber(health)
-        power = tonumber(power)
-        speed = tonumber(speed)
-        table.insert(ab_info, {
-            ability_id = ability_id,
-            health = health,
-            power = power,
-            speed = speed,
-        })
+    local log = PetCombatLog.Parse(msg)
+    if log == nil then
+        return
     end
-    assert(#ab_info < 3)
-    if string.find(msg, "施放了") or string.find(msg, "效果") then
-        assert(#ab_info == 2)
-        local from_index = 0
-        local target_team = 0
-        local target_index = 0
-        --from_index参数目前只对附身类技能有用，因此只考虑敌方激活宠物的index
-        if string.find(msg, "对敌方的") or string.find(msg, "对敌方队伍") then
-            from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
-            target_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
-            target_team = LE_BATTLE_PET_ENEMY
-        elseif string.find(msg, "对你的") or string.find(msg, "对我方队伍")  then
-            from_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
-            target_index = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
-            target_team = LE_BATTLE_PET_ALLY
-        end
-        assert(target_team > 0)
-        local aura
-        if #ab_info == 1 then 
-            aura = AI.Aura.new_aura_by_id(ab_info[1].ability_id, ab_info[1].power, from_index)
-        else 
-            aura = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power, from_index)
-        end
+
+    --添加光环
+    if log.type == PetCombatLogType.AURA then 
+        assert(log.abilityInfo2)
+        assert(log.target == LE_BATTLE_PET_ALLY or log.target == LE_BATTLE_PET_ENEMY)
+        local from_index = C_PetBattles.GetActivePet(3-log.target)
+        local target_index = C_PetBattles.GetActivePet(log.target)
+        local aura = AI.Aura.new_aura_by_id(log.abilityInfo2.id, log.abilityInfo2.power, from_index)
         if aura then 
-            state:install_aura(self.game.Rule.teams, target_team, target_index, aura)
-            LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d，expire=%d", target_team, target_index, ab_info[2].ability_id, aura.expire))
+            state:install_aura(self.game.Rule.teams, log.target, from_index, aura)
+            LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d，expire=%d", log.target, target_index, aura.id, aura.expire))
             if aura.id == AI.AuraID.HAUNT then
                 --添加鬼影缠身时处理假死状态
-                local pet = state.team_states[3-target_team].pets[from_index]
-                if AI.AuraProcessor.get_aura_by_id(state, 3-target_team, from_index, AI.AuraID.UNDEAD) ~= nil then
+                local pet = state.team_states[3-log.target].pets[from_index]
+                if AI.AuraProcessor.get_aura_by_id(state, 3-log.target, from_index, AI.AuraID.UNDEAD) ~= nil then
                     pet.tmp_health = 0
                 else 
-                    pet.tmp_health = pet.current_health
+                    pet.tmp_health = log.abilityInfo2.health
                 end
             end
         else 
-            LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", target_team, target_index, ab_info[2].ability_id))
+            LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", log.target, target_index, aura.id))
         end
-    elseif  string.find(msg, "将天气转变为") then
-        assert(#ab_info == 2)
-        local weather = AI.Aura.new_aura_by_id(ab_info[2].ability_id, ab_info[2].power)
+    elseif log.type == PetCombatLogType.WEATHER then
+        local weather = AI.Aura.new_aura_by_id(log.abilityInfo2.id, log.abilityInfo2.power)
         if weather then
             state:install_weather(weather)
             LogFrame:AddLog(string.format("安装天气: %d", weather.id))
         else 
-            LogFrame:AddLog(string.format("未知天气: %d", ab_info[2].ability_id))
+            LogFrame:AddLog(string.format("未知天气: %d", log.abilityInfo2.id))
         end
+    end
+    if log.abilityInfo1 then
+        self:GuessEnemyAbility(log)
     end
 end
 
