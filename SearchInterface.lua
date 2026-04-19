@@ -8,7 +8,7 @@ local PetCombatLogTarget = PPBest.PetCombatLogTarget
 
 local SearchInterface = {
     game = nil,
-    enemy_ability_hints = {}, -- 存储敌方技能使用记录 {pet_index = {ability_id = count}}
+    last_enemy_ability_round = 0,
 }
 
 -- 根据宠物ID设置可能的技能组合（用于敌方宠物）
@@ -177,7 +177,11 @@ function SearchInterface:UpdateState(round)
     self:CleanExpiredAuras()
 end
 
-function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index)
+function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index, round)
+    if round <= self.last_enemy_ability_round then
+        return
+    end
+    self.last_enemy_ability_round = round
     local ability = self.game.Rule.teams[LE_BATTLE_PET_ENEMY][pet_index].abilitys[ab_index]
     if not ability then
         return
@@ -197,7 +201,7 @@ function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index)
             team_state.ability_index = ab_index
         end
     end
-    LogFrame.AddLog(string.format("敌方宠物%d技能%d 第%d轮", pet_index, ab_index, team_state.ability_round, team_state.ability_round))
+    LogFrame:AddLog(string.format("敌方宠物%d技能%d 第%d轮", pet_index, ab_index, team_state.ability_round))
 
     team_state.pets[team_state.active_index].cooldown_at[ab_index] = self.game.State.round + ability.cooldown
 end
@@ -235,7 +239,7 @@ function SearchInterface:GuessEnemyAbility(log)
         end
         if enemy_pet.abilitys[ab_index].id == abid then
             enemy_pet.abilitys[ab_index].certain = true
-            self:UpdateEnemyAbilityState(enemy_index, ab_index)
+            self:UpdateEnemyAbilityState(enemy_index, ab_index, self.game.State.round)
             return 
         end
         assert(not enemy_pet.abilitys[ab_index].certain)
