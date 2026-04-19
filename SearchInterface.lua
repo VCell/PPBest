@@ -225,7 +225,7 @@ function SearchInterface:GuessEnemyAbility(log)
         return
     end
     for i = 1,3 do
-        if ally_pet.abilitys[i] == abid then
+        if ally_pet.abilitys[i].id == abid then
             ally_has = true
         end
     end

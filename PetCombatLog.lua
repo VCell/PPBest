@@ -88,4 +88,3 @@ end
 
 PPBest.PetCombatLog = PetCombatLog
 PPBest.PetCombatLogType = PetCombatLogType
-PPBest.PetCombatLogTarget = PetCombatLogTarget
