@@ -7,6 +7,7 @@
 
 Utils.lua
 PetAbilitys.lua
+PetCombatLog.lua
 AI\AI.lua
 AI\PetsData.lua
 AI\Aura.lua
