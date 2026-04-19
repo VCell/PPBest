@@ -177,6 +177,31 @@ function SearchInterface:UpdateState(round)
     self:CleanExpiredAuras()
 end
 
+function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index)
+    local ability = self.game.Rule.teams[LE_BATTLE_PET_ENEMY][pet_index].abilitys[ab_index]
+    if not ability then
+        return
+    end
+    local team_state = self.game.State.team_states[LE_BATTLE_PET_ENEMY]
+    if team_state.ability_round > 1 then
+            -- 多轮技能逻辑
+        assert(ab_index == team_state.ability_index)
+        team_state.ability_round = team_state.ability_round + 1
+        if team_state.ability_round > ability.duration then
+            team_state.ability_round = 0
+            team_state.ability_index = 0
+        end
+    else
+        if ability.duration > 1 then
+            team_state.ability_round = 2
+            team_state.ability_index = ab_index
+        end
+    end
+    LogFrame.AddLog(string.format("敌方宠物%d技能%d 第%d轮", pet_index, ab_index, team_state.ability_round, team_state.ability_round))
+
+    team_state.pets[team_state.active_index].cooldown_at[ab_index] = self.game.State.round + ability.cooldown
+end
+
 function SearchInterface:GuessEnemyAbility(log)
     local abid = log.abilityInfo1.id
     local ally_index = self.game.State.team_states[LE_BATTLE_PET_ALLY].active_index
@@ -210,6 +235,7 @@ function SearchInterface:GuessEnemyAbility(log)
         end
         if enemy_pet.abilitys[ab_index].id == abid then
             enemy_pet.abilitys[ab_index].certain = true
+            self:UpdateEnemyAbilityState(enemy_index, ab_index)
             return 
         end
         assert(not enemy_pet.abilitys[ab_index].certain)
@@ -217,6 +243,7 @@ function SearchInterface:GuessEnemyAbility(log)
         if ability then
             LogFrame:AddLog(string.format("确定敌方宠物%d 技能%d 为 %d", enemy_index, ab_index, abid))
             ability.certain = true
+            self:UpdateEnemyAbilityState(enemy_index, ab_index)
         end
 
     end
