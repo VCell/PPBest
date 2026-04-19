@@ -280,7 +280,7 @@ function SearchInterface:ProcessCombatLog(msg)
                 end
             end
         else 
-            LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", log.target, target_index, aura.id))
+            LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", log.target, target_index, log.abilityInfo2.id))
         end
     elseif log.type == PetCombatLogType.WEATHER then
         local weather = AI.Aura.new_aura_by_id(log.abilityInfo2.id, log.abilityInfo2.power)
