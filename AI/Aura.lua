@@ -87,7 +87,10 @@ function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
         end
         if aura.type == AI.AuraType.BLOCK and Bit.band(ignore_bit, AI.IgnoreBit.BLOCK) == 0 then
             -- todo 计算格挡次数
-            return true
+            if aura.value > 0 then
+                aura.value = aura.value - 1
+                return true
+            end
         end
     end
     return false

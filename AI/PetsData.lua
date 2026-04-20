@@ -33,13 +33,17 @@ local AbilityID = {
     QUAKE = 644, -- 地震
     BONE_BITE = 648, -- 噬骨 100命中率亡灵普攻
     HAUNT = 652, -- 鬼影缠身 
+    BLITZ = 713, -- 迅猛突袭
     MISSILE = 777, -- 导弹 90命中机械普攻
     STONE_SHOT = 801, -- 投石 配波
     RUPTURE = 814, -- 割裂 配波
+    BUBBLE = 934, -- 气泡
     ARFUS_2 = 2530, -- 阿尔福斯 致命梦境
     SPRINT = 2531, -- 阿尔福斯 狂飙
     ARFUS_4 = 2532, -- 阿尔福斯 横扫
-    ARFUS_6 = 2533 -- 阿尔福斯 宠物游行
+    ARFUS_6 = 2533, -- 阿尔福斯 宠物游行
+    BUBBLE_BURST = 2535, -- 气泡爆炸 劫掠者小钳
+    SHELL_RUSH = 2536, -- 甲壳冲锋
 
 }
 
@@ -62,6 +66,7 @@ local AuraID = {
     POLYMORPH = 822, -- 变形
     SPEED_UP = 831, -- 速度提升
     STUN = 927, -- 眩晕
+    BUBBLE = 933, -- 气泡
     -- 天气类
     WEATHER_BURNT_EARTH = 171, -- 焦土 前排每轮受到龙类伤害61，被点燃
     WEATHER_ARCANE_SRORM = 590, -- 奥术风暴 免疫控制
@@ -87,6 +92,7 @@ local PetID = {
     DARKMOON_TONK = 338, -- 暗月坦克
     DARKMOON_ZEPPELIN = 339, -- 暗月飞艇
     MOUNTAIN_COTTONTAIL = 391, -- 高山短尾兔
+    FLAYER_YOUNGLING = 514, -- 剥石者幼崽
     SCOURGED_WHELPLING = 538, -- 痛苦的雏龙
     FEL_FLAME = 519, -- 邪焰
     TOLAI_HARE = 729, -- 多莱野兔
@@ -184,7 +190,8 @@ local EffectType = {
     WEATHER = 6,
     FEIGN_DEATH = 7, -- 假死
     FORCE_CHANGE = 8, -- 强制对手换人，换除当前宠物外的顺序靠前的宠物
-    OTHER = 9 -- 其他
+    HEALTHY_CHANGE = 9, -- 更换血量最高的宠物为当前宠物
+    OTHER = 100 -- 其他
 }
 
 local EffectDynamicType = {
@@ -411,6 +418,8 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         return Aura.new(aura_id, AuraType.WEATHER, 5, 0)
     elseif aura_id == AuraID.WEATHER_SANDSTORM then
         return Aura.new(aura_id, AuraType.WEATHER, 5, (20 + power) * 0.25)
+    elseif aura_id == AuraID.BUBBLE then
+        return Aura.new(aura_id, AuraType.BLOCK, 99, 2)
     end
 end
 
@@ -448,6 +457,10 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.FLURRY or id == AbilityID.TONGUE_LASH then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
         ability.effect_list[1] = {Effect.new_damage(TypeID.CRITTER, (20 + self.power) * 0.5):set_dynamic_type(
+            EffectDynamicType.FLURRY)}
+    elseif id == AbilityID.BLITZ then 
+        ability = Ability.new(id, TypeID.HUMANOID, 0, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.HUMANOID, (20 + self.power) * 0.5):set_dynamic_type(
             EffectDynamicType.FLURRY)}
     elseif id == AbilityID.DODGE then
         ability = Ability.new(id, TypeID.HUMANOID, 4, 0)
@@ -552,6 +565,10 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
         ability.effect_list[1] = {Effect.new_damage(TypeID.AQUATIC, (20 + self.power) * 0.75, 100)}
         ability.aways_first = true
+    elseif id == AbilityID.BUBBLE_BURST then 
+        ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.AQUATIC, 20 + self.power, 100)}
+        ability.aways_first = true
     elseif id == AbilityID.HEALING_WAVE then
         ability = Ability.new(id, TypeID.AQUATIC, 3, 0)
         ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.HEAL, 100, (20 + self.power) * 1.5,
@@ -560,6 +577,14 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.BEAST, 0, 0)
         ability.effect_list[1] = {Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SHELL_SHIELD, TargetType.ALLY,
             IGNORE_BIT_ALL)}
+    elseif id == AbilityID.BUBBLE then
+        ability = Ability.new(id, TypeID.HUMANOID, 8, 0)
+        ability.effect_list[1] = {Effect.new(TypeID.HUMANOID, EffectType.AURA, 100, AuraID.BUBBLE, TargetType.ALLY,
+            IGNORE_BIT_ALL)}
+    elseif id == AbilityID.SHELL_RUSH then
+        ability = Ability.new(id, TypeID.AQUATIC, 5, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.AQUATIC, (20 + self.power) * 0.6, 100, TargetType.ENEMY_TEAM),
+            Effect.new(TypeID.AQUATIC, EffectType.HEALTHY_CHANGE, 100, 0, TargetType.ALLY, IGNORE_BIT_ALL, true)}
     end
     if ability then
         self.abilitys[index] = ability

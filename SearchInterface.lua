@@ -295,6 +295,16 @@ function SearchInterface:ProcessCombatLog(msg)
         else 
             LogFrame:AddLog(string.format("未知天气: %d", log.abilityInfo2.id))
         end
+    elseif log.type == PetCombatLogType.BLOCK then
+        assert(log.target == LE_BATTLE_PET_ALLY or log.target == LE_BATTLE_PET_ENEMY)
+        local pets = self.game.State.team_state[log.target].pets
+        for index, pet in pairs(pets) do
+            for aura_id, aura in pairs(pet.auras) do
+                if aura.type == AI.AuraType.BLOCK then
+                    LogFrame:AddLog(string.format("玩家%d 宠物%d 消耗一次格挡，剩余：%d", log.target, index, aura.value))
+                end
+            end
+        end
     end
     if log.abilityInfo1 then
         self:GuessEnemyAbility(log)

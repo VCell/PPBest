@@ -325,13 +325,17 @@ function GameStateTemplate:process_effects(teams, player, effects)
             end
 
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then
-            for i, petState in ipairs(self.team_states[player].pets) do
-                self.apply_effect(self, teams, effect, player, player, i, hit_count)
+            for i, pet_state in ipairs(self.team_states[player].pets) do
+                if pet_state.current_health > 0 then
+                    hit_count = self.apply_effect(self, teams, effect, player, player, i, hit_count)
+                end
             end
         elseif effect.target_type == AI.TargetType.ENEMY_TEAM then
             local opponent = 3 - player
-            for i, petState in ipairs(self.team_states[opponent].pets) do
-                self.apply_effect(self, teams, effect, player, opponent, i, hit_count)
+            for i, pet_state in ipairs(self.team_states[opponent].pets) do
+                if pet_state.current_health > 0 then
+                    hit_count = self.apply_effect(self, teams, effect, player, opponent, i, hit_count)
+                end
             end
         elseif effect.target_type == AI.TargetType.ENEMY_BACK then
             local opponent = 3 - player
@@ -446,6 +450,21 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
             self.team_states[target_player].interrupted = true
             self:print_log(
                 string.format("玩家%d, 宠物%d 强制更换为%d", target_player, target_index, change_idx))
+        end
+    elseif effect.effect_type == AI.EffectType.HEALTHY_CHANGE then
+        local max_health = 0
+        local change_idx = 0
+        for i = 1,3 do
+            if i ~= target_index and self.team_states[target_player].pets[i].current_health > max_health then
+                max_health = self.team_states[target_player].pets[i].current_health
+                change_idx = i
+                break
+            end
+        end
+        if change_idx ~= target_index then 
+            self:change_pet(teams, target_player, change_idx)
+            self:print_log(
+                string.format("玩家%d, 宠物%d 被更换为%d", target_player, target_index, change_idx))
         end
     elseif effect.effect_type == AI.EffectType.OTHER then
 

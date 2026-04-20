@@ -4,8 +4,9 @@ local PetCombatLogType = {
     DAMAGE = 1,
     AURA = 2,
     IMMUNE = 3,
-    WEATHER = 4,
-    UNKNOWN = 5,
+    BLOCK = 4,
+    WEATHER = 5,
+    UNKNOWN = 6,
 }
 
 local function new_ability_log_info(id, health, power, speed)
@@ -63,7 +64,7 @@ function PetCombatLog.Parse(msg)
         ["将天气转变为"] = PetCombatLogType.WEATHER,
         ["未命中敌方的"] = PetCombatLogType.IMMUNE,
         ["未命中你的"] = PetCombatLogType.IMMUNE,
-        ["格挡了"] = PetCombatLogType.IMMUNE,
+        ["格挡了"] = PetCombatLogType.BLOCK,
         ["躲闪了"] = PetCombatLogType.IMMUNE,
     }
     for keyword, type in pairs(typeKeywords) do
