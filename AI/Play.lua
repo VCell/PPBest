@@ -461,7 +461,7 @@ function GameStateTemplate:apply_effect(teams, effect, from_player, target_playe
                 break
             end
         end
-        if change_idx ~= target_index then 
+        if change_idx > 0 then 
             self:change_pet(teams, target_player, change_idx)
             self:print_log(
                 string.format("玩家%d, 宠物%d 被更换为%d", target_player, target_index, change_idx))
