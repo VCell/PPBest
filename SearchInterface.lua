@@ -104,6 +104,7 @@ function SearchInterface:InitGame()
         team_state.active_index = C_PetBattles.GetActivePet(player) --？
         self.game.State.team_states[player] = team_state
     end
+    self.last_enemy_ability_round = 0
     LogFrame:AddLog("SearchInterface: 游戏队伍初始化完成")
     return true
 end
