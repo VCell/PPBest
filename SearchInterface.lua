@@ -125,7 +125,9 @@ function SearchInterface:UpdateActivePet()
     for player = 1, 2 do
         local active_index = C_PetBattles.GetActivePet(player)
         if self.game.State.team_states[player] then
-            self.game.State.team_states[player].active_index = active_index
+            if self.game.State.team_states[player].active_index ~= active_index then
+                self.game.State:changed_pet(player, active_index)
+            end
         end
     end
 end
@@ -172,14 +174,14 @@ end
 function SearchInterface:UpdateState(round)
     self.game.State.round = round
     self.game.State.change_round = 0
+    self:UpdateActivePet() -- 变更宠物有可能触发伤害，最先计算避免bug
     self:UpdateHealth()
-    self:UpdateActivePet()
     self:UpdateCooldowns(round)
     self:CleanExpiredAuras()
 end
 
 function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index, round)
-    if round <= self.last_enemy_ability_round then
+    if round and round <= self.last_enemy_ability_round then
         return
     end
     self.last_enemy_ability_round = round
@@ -297,10 +299,11 @@ function SearchInterface:ProcessCombatLog(msg)
         end
     elseif log.type == PetCombatLogType.BLOCK then
         assert(log.target == LE_BATTLE_PET_ALLY or log.target == LE_BATTLE_PET_ENEMY)
-        local pets = self.game.State.team_state[log.target].pets
+        local pets = self.game.State.team_states[log.target].pets
         for index, pet in pairs(pets) do
             for aura_id, aura in pairs(pet.auras) do
                 if aura.type == AI.AuraType.BLOCK then
+                    aura.value = aura.value - 1
                     LogFrame:AddLog(string.format("玩家%d 宠物%d 消耗一次格挡，剩余：%d", log.target, index, aura.value))
                 end
             end
