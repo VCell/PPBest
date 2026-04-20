@@ -126,7 +126,7 @@ function SearchInterface:UpdateActivePet()
         local active_index = C_PetBattles.GetActivePet(player)
         if self.game.State.team_states[player] then
             if self.game.State.team_states[player].active_index ~= active_index then
-                self.game.State:changed_pet(player, active_index)
+                self.game.State:changed_pet(self.game.Rule.teams, player, active_index)
             end
         end
     end
