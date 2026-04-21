@@ -169,7 +169,7 @@ end
 
 function SearchInterface:UpdateRound(round)
     self.game.State.round = round
-    StateFrame:SetState(self.game.State:tostring())
+    StateFrame:SetState(tostring(self.game.State))
 end
 
 function SearchInterface:UpdateState(round)

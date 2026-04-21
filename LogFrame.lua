@@ -95,7 +95,7 @@ local StateFrame = {
 }
 
 function StateFrame:Create()
-    if not PPBestConfig.enableStateWindow then return end
+    if not PPBestConfig.enableLogWindow then return end
     if self.frame then
         self.frame:Show()
         return
