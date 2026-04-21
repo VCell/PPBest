@@ -85,9 +85,17 @@ function LogFrame:RefreshLogDisplay()
     -- self.scrollArea:SetVerticalScroll(self.scrollChild:GetHeight())
 end
 
-function LogFrame:AddLog()
+function LogFrame:AddLog(message)
     if not PPBestConfig.enableLogWindow then return end
+    if not message then return end
+    local timeStr = date("%H:%M:%S")
+    self.logs = self.logs .. string.format("%s %s\n", timeStr, message)
 
+    self.logs = self.logs:sub(-10000)
+    -- 更新显示窗口（如果可见）
+    if self.frame:IsShown() then
+        self:RefreshLogDisplay()
+    end
 end
 
 local StateFrame = {
