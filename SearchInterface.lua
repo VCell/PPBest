@@ -182,10 +182,13 @@ function SearchInterface:UpdateState(round)
 end
 
 function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index, round)
-    if round and round <= self.last_enemy_ability_round then
+    if not round then 
+        round = 1
+    end
+    if round <= self.game.State.round then
         return
     end
-    self.last_enemy_ability_round = round
+
     local ability = self.game.Rule.teams[LE_BATTLE_PET_ENEMY][pet_index].abilitys[ab_index]
     if not ability then
         return

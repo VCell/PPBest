@@ -102,7 +102,7 @@ function StateFrame:Create()
     end
     local stateFrame = CreateFrame("Frame", "PPBestStateFrame", UIParent, "UIPanelDialogTemplate")
     stateFrame:SetSize(400, 500)
-    stateFrame:SetPoint("LEFT")
+    stateFrame:SetPoint("RIGHT")
     stateFrame:SetMovable(true)
     stateFrame:EnableMouse(true)
     stateFrame:SetClampedToScreen(true)
