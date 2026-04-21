@@ -4,7 +4,6 @@ local LogFrame = PPBest.LogFrame
 local BattleUtils = PPBest.BattleUtils
 local PetCombatLog = PPBest.PetCombatLog
 local PetCombatLogType = PPBest.PetCombatLogType
-local PetCombatLogTarget = PPBest.PetCombatLogTarget
 
 local SearchInterface = {
     game = nil,
