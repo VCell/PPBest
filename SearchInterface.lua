@@ -1,6 +1,7 @@
 local _, PPBest = ...
 local AI = PPBest.AI
 local LogFrame = PPBest.LogFrame
+local StateFrame = PPBest.StateFrame
 local BattleUtils = PPBest.BattleUtils
 local PetCombatLog = PPBest.PetCombatLog
 local PetCombatLogType = PPBest.PetCombatLogType
@@ -168,6 +169,7 @@ end
 
 function SearchInterface:UpdateRound(round)
     self.game.State.round = round
+    StateFrame:SetState(self.game.State:tostring())
 end
 
 function SearchInterface:UpdateState(round)

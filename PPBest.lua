@@ -3,6 +3,7 @@
 local _, PPBest = ...
 local Const = PPBest.Const
 local LogFrame = PPBest.LogFrame
+local StateFrame = PPBest.StateFrame
 local OptionPanel = PPBest.OptionPanel
 local BattleUtils = PPBest.BattleUtils
 local Strategy = PPBest.Strategy
@@ -195,6 +196,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "PET_BATTLE_OPENING_START" then
         PPBestLastLog = {}
         LogFrame:Create()
+        StateFrame:Create()
         LogFrame:AddLog("EVENT: PET_BATTLE_OPENING_START")
         isInPetBattle = true
         if autoButton then

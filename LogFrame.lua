@@ -2,6 +2,7 @@ local _,PPBest = ...
 
 local LogFrame = {
     logs = "", -- 存储日志历史
+    frame = nil,
 }
 
 function LogFrame:Create()
@@ -13,7 +14,7 @@ function LogFrame:Create()
     end
     -- 创建主框架
     local logFrame = CreateFrame("Frame", "PPBestLogFrame", UIParent, "UIPanelDialogTemplate")
-    logFrame:SetSize(400, 600)
+    logFrame:SetSize(400, 500)
     logFrame:SetPoint("LEFT")
     logFrame:SetMovable(true)
     logFrame:EnableMouse(true)
@@ -69,6 +70,7 @@ function LogFrame:Create()
     self.text = logText
     self.scrollChild = scrollChild
     self.scrollArea = scrollArea
+
 end
 
 -- 刷新日志显示
@@ -83,18 +85,48 @@ function LogFrame:RefreshLogDisplay()
     -- self.scrollArea:SetVerticalScroll(self.scrollChild:GetHeight())
 end
 
-function LogFrame:AddLog(message)
+function LogFrame:AddLog()
     if not PPBestConfig.enableLogWindow then return end
-    if not message then return end
-    local timeStr = date("%H:%M:%S")
-    self.logs = self.logs .. string.format("%s %s\n", timeStr, message)
 
-    self.logs = self.logs:sub(-10000)
-    -- 更新显示窗口（如果可见）
-    if self.frame:IsShown() then
-        self:RefreshLogDisplay()
-    end
 end
 
+local StateFrame = {
+    frame = nil,
+}
+
+function StateFrame:Create()
+    if not PPBestConfig.enableStateWindow then return end
+    if self.frame then
+        self.frame:Show()
+        return
+    end
+    local stateFrame = CreateFrame("Frame", "PPBestStateFrame", UIParent, "UIPanelDialogTemplate")
+    stateFrame:SetSize(400, 500)
+    stateFrame:SetPoint("LEFT")
+    stateFrame:SetMovable(true)
+    stateFrame:EnableMouse(true)
+    stateFrame:SetClampedToScreen(true)
+    stateFrame:SetFrameStrata("DIALOG") -- 设置层级，避免被其他UI遮挡
+    stateFrame.title = stateFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    stateFrame.title:SetPoint("TOP", stateFrame, "TOP", 0, -5)
+    stateFrame.title:SetText("对战状态窗口")
+
+   local stateText = stateFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    stateText:SetPoint("TOPLEFT", 0, 0)
+    stateText:SetPoint("TOPRIGHT", 0, 0)
+    stateText:SetJustifyH("LEFT")
+    stateText:SetJustifyV("TOP")
+    stateText:SetText("") -- 初始为空
+    local fontName, fontSize, fontFlags = stateText:GetFont()
+    stateText:SetFont(fontName, 10, fontFlags) --设置字号
+
+    self.frame = stateFrame
+    self.text = stateText
+end
+
+function StateFrame:SetState(state)
+    self.text:SetText(state)
+end
 
 PPBest.LogFrame = LogFrame
+PPBest.StateFrame = StateFrame

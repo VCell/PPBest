@@ -339,7 +339,7 @@ function Aura:is_weather(weather_id, round)
 end
 
 Aura.__index = Aura
-Aura__tostring = function(self)
+Aura.__tostring = function(self)
     return string.format("Aura(id=%d, type=%d, duration=%d, value=%d, keep_front=%s)",
         self.id, self.type, self.duration, self.value, self.keep_front)
 end

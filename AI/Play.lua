@@ -82,6 +82,48 @@ end
 
 local GameStateTemplate = {}
 
+function GameStateTemplate:__tostring()
+    local res = ""
+    res = res .. string.format("\n当前第%d回合:", self.round)
+    if self.weather then
+        res = res .. string.format("\n天气: %d (持续到回合%d)", self.weather.id, self.weather.expire)
+    end
+
+    for player = 1, 2 do
+        local team_state = self.team_states[player]
+        res = res .. string.format("\n玩家%d:", player)
+        res = res .. string.format("\n  活跃宠物: %d", team_state.active_index)
+
+        for i, pet_state in ipairs(team_state.pets) do
+            local prefix = (i == team_state.active_index) and "→ " or "  "
+            res = res .. string.format("\n%s宠物%d: 生命 %d", prefix, i, pet_state.current_health)
+
+            -- 显示光环
+            local aura_str = ""
+            if pet_state.auras then
+                for j, aura in pairs(pet_state.auras) do
+                    aura_str = aura_str .. string.format("id:%d,expire:%d ", aura.id, aura.expire)
+                end
+            end
+            if #aura_str > 0 then
+                res = res .. string.format("\n      光环: %s", aura_str)
+            end
+
+        end
+        local team_aura_str = ""
+        if team_state.active_auras then
+            for j, aura in pairs(team_state.active_auras) do
+                team_aura_str = team_aura_str .. string.format("id:%d,expire:%d ", aura.id, aura.expire)
+            end
+        end
+        if #team_aura_str > 0 then
+            res = res .. string.format("\n      队伍光环: %s", team_aura_str)
+        end
+    end
+
+    return res
+end
+
 function GameStateTemplate:print_log(...)
     if self.is_logging then
         print("PlayLog ------ ", ...)
@@ -836,7 +878,8 @@ function Game.new()
     -- 设置元表，让实例可以访问Game的方法
     setmetatable(game, Game)
     setmetatable(game.State, {
-        __index = GameStateTemplate
+        __index = GameStateTemplate,
+        __tostring = GameStateTemplate.__tostring
     })
     setmetatable(game.Rule, {
         __index = GameRuleTemplate
