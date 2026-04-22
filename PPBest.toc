@@ -9,6 +9,7 @@ Utils.lua
 PetAbilitys.lua
 PetCombatLog.lua
 AI\AI.lua
+AI\Explain.lua
 AI\PetsData.lua
 AI\Aura.lua
 AI\Search.lua

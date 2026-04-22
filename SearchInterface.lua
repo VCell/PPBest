@@ -5,6 +5,7 @@ local StateFrame = PPBest.StateFrame
 local BattleUtils = PPBest.BattleUtils
 local PetCombatLog = PPBest.PetCombatLog
 local PetCombatLogType = PPBest.PetCombatLogType
+local Explain = PPBest.AI.Explain
 
 local SearchInterface = {
     game = nil,
@@ -169,7 +170,7 @@ end
 
 function SearchInterface:UpdateRound(round)
     self.game.State.round = round
-    StateFrame:SetState(tostring(self.game.State))
+    StateFrame:SetState(Explain.getGameStateInfo(self.game.State, self.game.Rule.teams))
 end
 
 function SearchInterface:UpdateState(round)

@@ -327,5 +327,71 @@ function Explain.printState(state, teams)
     print(string.format("\n局面评估值: %.3f（玩家1的胜率）", utility))
 end
 
+function Explain.getGameStateInfo(state,teams)
+    local res = ""
+    res = res .. string.format("\n当前第%d回合:", state.round)
+    if state.weather then
+        local weather_name = AI.Explain.getAuraName(state.weather.id) or weather_name
+        res = res .. string.format("\n天气: %s (持续到回合%d)", weather_name, state.weather.expire)
+    end
+
+    for player = 1, 2 do
+        local team_state = state.team_states[player]
+        res = res .. string.format("\n玩家%d:", player)
+        res = res .. string.format("\n  活跃宠物: %d", team_state.active_index)
+
+        for i, pet_state in ipairs(team_state.pets) do
+            local prefix = (i == team_state.active_index) and "→ " or "  "
+            res = res .. string.format("\n%s宠物%d: 生命 %d / %d", prefix, i, pet_state.current_health, teams[player][i].health)
+            if pet_state.tmp_health then
+                res = res .. string.format(" 假死中 源血量：%d", pet_state.tmp_health)
+            end
+            -- 显示技能和冷却
+            if pet_state.cooldown_at then
+                res = res .. "\n      技能:"
+                for skill_idx = 1, 3 do
+                    local cooldown = pet_state.cooldown_at[skill_idx] or 0
+                    local cooldown_info = ""
+                    if cooldown >= state.round then
+                        cooldown_info = string.format(" (冷却中，回合%d可用)", cooldown + 1)
+                    end
+                    res = res .. string.format("\n        %d %s:%s", skill_idx, Explain.getAbilityName(teams[player][i].abilitys[skill_idx].id), cooldown_info)
+                end
+            end
+
+            -- 显示光环
+            local aura_str = ""
+            if pet_state.auras then
+                for j, aura in pairs(pet_state.auras) do
+                    local aura_name = "未知光环"
+                    if AI.Explain and AI.Explain.getAuraName then
+                        aura_name = AI.Explain.getAuraName(aura.id) or aura_name
+                    end
+                    aura_str = aura_str .. string.format("%s (持续到回合%d) ", aura_name, aura.expire)
+                end
+            end
+            if #aura_str > 0 then
+                res = res .. string.format("\n      光环: %s", aura_str)
+            end
+
+        end
+        local team_aura_str = ""
+        if team_state.active_auras then
+            for j, aura in pairs(team_state.active_auras) do
+                local aura_name = "未知光环"
+                if AI.Explain and AI.Explain.getAuraName then
+                    aura_name = AI.Explain.getAuraName(aura.id) or aura_name
+                end
+                team_aura_str = team_aura_str .. string.format("%s (持续到回合%d) ", aura_name, aura.expire)
+            end
+        end
+        if #team_aura_str > 0 then
+            res = res .. string.format("\n      队伍光环: %s", team_aura_str)
+        end
+    end
+
+    return res
+end
+
 AI.Explain = Explain
 return Explain
