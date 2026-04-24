@@ -51,6 +51,11 @@ DUCT_MCTS.Config = {
     max_simulation_depth = 10,    -- 模拟最大深度
     hybrid_random_factor = 0.3,
     enable_debug_log = false,       -- 调试日志开关
+
+        -- === Risk-sensitive ===
+    risk_lambda = 0.3,        -- >0 保守，<0 激进
+    risk_use_std = true,      -- 用标准差（推荐）否则用variance
+    risk_min_visits = 5       -- 小样本保护
 }
 
 -- ==================== 树节点定义 ====================
@@ -81,7 +86,9 @@ DUCT_MCTS.Node = {
                     node.stats[player][tostring(action)] = {
                         total_reward = 0,
                         visits = 0,
-                        average_reward = 0
+                        average_reward = 0,
+                        total_squared_reward = 0,
+                        variance = 0,
                     }
                 end
             end
@@ -102,7 +109,9 @@ DUCT_MCTS.Node = {
             self.stats[player][key] = {
                 total_reward = 0,
                 visits = 0,
-                average_reward = 0
+                average_reward = 0,
+                total_squared_reward = 0,
+                variance = 0,
             }
         end
         return self.stats[player][key]
@@ -185,24 +194,42 @@ DUCT_MCTS.Node = {
 local function calculate_uct_value(node, player, action, exploration_c)
     local stats = node:get_stats(player, action)
 
-    -- 未访问优先探索
+    -- 未访问优先
     if stats.visits == 0 then
         return math.huge
     end
 
-    local exploitation = stats.average_reward
+    local mean = stats.average_reward
+    local variance = stats.variance or 0
 
-    -- 使用节点总访问次数（标准UCT）
-    local total_visits = node.total_visits
-    if total_visits <= 0 then
-        return exploitation
+    -- === 小样本保护 ===
+    if stats.visits < DUCT_MCTS.Config.risk_min_visits then
+        variance = 0
     end
 
-    local exploration =
-        exploration_c * math.sqrt(math.log(total_visits) / stats.visits)
+    -- === 风险项 ===
+    local lambda = DUCT_MCTS.Config.risk_lambda
+
+    local risk_penalty
+    if DUCT_MCTS.Config.risk_use_std then
+        risk_penalty = lambda * math.sqrt(variance)
+    else
+        risk_penalty = lambda * variance
+    end
+
+    local exploitation = mean - risk_penalty
+
+    -- === exploration ===
+    local total_visits = node.total_visits
+    local exploration = 0
+    if total_visits > 0 then
+        exploration =
+            exploration_c * math.sqrt(math.log(total_visits) / stats.visits)
+    end
 
     return exploitation + exploration
 end
+
 -- ==================== DUCT选择策略 ====================
 local function select_joint_action_duct(node, exploration_c)
     local game_rules = node._game_rules
@@ -414,17 +441,26 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
         -- 更新节点访问次数
         current_node.total_visits = current_node.total_visits + 1
 
-        -- 玩家1
         local stats1 = current_node:get_stats(1, action1)
         stats1.total_reward = stats1.total_reward + utility
+        stats1.total_squared_reward = stats1.total_squared_reward + utility * utility
         stats1.visits = stats1.visits + 1
-        stats1.average_reward = stats1.total_reward / stats1.visits
+
+        local mean1 = stats1.total_reward / stats1.visits
+        local mean_sq1 = stats1.total_squared_reward / stats1.visits
+        stats1.average_reward = mean1
+        stats1.variance = math.max(0, mean_sq1 - mean1 * mean1)
 
         -- 玩家2
         local stats2 = current_node:get_stats(2, action2)
         stats2.total_reward = stats2.total_reward + utility2
+        stats2.total_squared_reward = stats2.total_squared_reward + utility2 * utility2
         stats2.visits = stats2.visits + 1
-        stats2.average_reward = stats2.total_reward / stats2.visits
+
+        local mean2 = stats2.total_reward / stats2.visits
+        local mean_sq2 = stats2.total_squared_reward / stats2.visits
+        stats2.average_reward = mean2
+        stats2.variance = math.max(0, mean_sq2 - mean2 * mean2)
     end
     
     if DUCT_MCTS.Config.enable_debug_log then
@@ -496,9 +532,10 @@ DUCT_MCTS.Searcher = {
             table.insert(
                 reward_info,
                 string.format(
-                    "[%s: avg=%.3f v=%d]",
+                    "[%s: avg=%.3f var=%.3f v=%d]",
                     tostring(action),
                     stats.average_reward,
+                    stats.variance,
                     stats.visits
                 )
             )

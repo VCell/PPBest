@@ -186,7 +186,7 @@ function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index, round)
     if not round then 
         round = 1
     end
-    if round <= self.game.State.round then
+    if round <= self.last_enemy_ability_round then
         return
     end
 
