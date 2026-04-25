@@ -220,7 +220,7 @@ local function calculate_uct_value(node, player, action, exploration_c)
     local exploitation = mean - risk_penalty
 
     -- === exploration ===
-    local total_visits = node.total_visits
+    local total_visits = node:get_total_visits_for_player(player)
     local exploration = 0
     if total_visits > 0 then
         exploration =
@@ -372,9 +372,9 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     
     -- === 选择阶段 ===
     while not node.is_terminal do
-        -- if not node:is_fully_expanded() then
-        --     break
-        -- end
+        if not node:is_fully_expanded() then
+            break
+        end
         
         local action1, action2 = select_joint_action_duct(node, exploration_c)
         local child = node:get_child(action1, action2)
