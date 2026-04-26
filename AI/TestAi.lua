@@ -38,7 +38,14 @@ local function dofile(path)
 end
 
 -- 加载模块
-local dofile_list = {"Utils.lua", "AI/PetsData.lua", "AI/Aura.lua", "AI/Search.lua", "AI/Play.lua", "AI/explain.lua"}
+local dofile_list = {
+    "Utils.lua", 
+    "AI/PetsData.lua", 
+    "AI/Aura.lua", 
+    "AI/Search.lua", 
+    "AI/GameState.lua", 
+    "AI/GameRule.lua", 
+    "AI/explain.lua"}
 for _, path in ipairs(dofile_list) do
     dofile(path)
 end
@@ -115,7 +122,7 @@ end
 
 local function init_game_state()
     local pets2 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.CROW})
-    local pets1 = create_test_pets({AI.PetID.SCAVENGING_PINCHER, AI.PetID.EMPERPR_CRAB, AI.PetID.FIENDISH_LMP})
+    local pets1 = create_test_pets({AI.PetID.EMPERPR_CRAB, AI.PetID.ARFUS, AI.PetID.FIENDISH_LMP})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1

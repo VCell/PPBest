@@ -300,7 +300,10 @@ function Ability.get_effectiveness_rate(ability_id)
         [AbilityID.BURROW] = 0.9,
         [AbilityID.ARFUS_6] = 0.8,
         [AbilityID.DODGE] = 0,
-        [AbilityID.MINEFIELD] = 0
+        [AbilityID.MINEFIELD] = 0,
+        [AbilityID.HEALING_WAVE] = 0,
+        [AbilityID.SHELL_SHIELD] = 0,
+        [AbilityID.NETHER_GATE] = 0.5,
     }
     if rate_map[ability_id] then
         return rate_map[ability_id]

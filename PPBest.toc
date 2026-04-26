@@ -13,7 +13,8 @@ AI\Explain.lua
 AI\PetsData.lua
 AI\Aura.lua
 AI\Search.lua
-AI\Play.lua
+AI\GameState.lua
+AI\GameRule.lua
 LogFrame.lua
 BattleUtils.lua
 SearchInterface.lua
