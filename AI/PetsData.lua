@@ -4,9 +4,11 @@ local Bit = PPBest.Bit
 
 local AbilityID = {
     NONE = 1, -- 用于技能不明时的默认技能
+    BITE = 110, -- 撕咬 100命中野兽普攻
     BURN = 113, -- 燃烧 90命中元素普攻
     HEALING_WAVE = 123, -- 治疗波
     BURROW = 159, -- 兔子 钻地
+    THRASH = 202, -- 痛击
     ION_CANNON = 209, -- 离子炮 
     SHADOW_SLASH = 210, -- 暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, -- 厄运诅咒 
@@ -17,6 +19,7 @@ local AbilityID = {
     DODGE = 312, -- 闪避
     DECOY = 334, -- 诱饵
     FLURRY = 360, -- 乱舞
+    HOWL = 362, -- 嚎叫
     IMMOLATION = 409, -- 献祭
     SHADOW_SHOCK = 422, -- 暗影震击 85命中率亡灵普攻
     SAND_STORM = 453, -- 沙暴
@@ -25,6 +28,7 @@ local AbilityID = {
     SURGE = 509, -- 汹涌
     NOCTURNAL_STRIKE = 517, -- 夜袭
     ARCANE_SRORM = 589, -- 奥术风暴
+    SURGE_OF_POWER = 593, -- 能量涌动
     MOON_FIRE = 595, -- 月火术
     STONE_RUSH = 621, -- 巨石奔袭 配波
     ICE_TOMB = 624, -- 阿尔福斯 寒冰之墓
@@ -38,7 +42,7 @@ local AbilityID = {
     STONE_SHOT = 801, -- 投石 配波
     RUPTURE = 814, -- 割裂 配波
     BUBBLE = 934, -- 气泡
-    ARFUS_2 = 2530, -- 阿尔福斯 致命梦境
+    DEADLY_DREAMM = 2530, -- 阿尔福斯 致命梦境
     SPRINT = 2531, -- 阿尔福斯 狂飙
     ARFUS_4 = 2532, -- 阿尔福斯 横扫
     ARFUS_6 = 2533, -- 阿尔福斯 宠物游行
@@ -99,6 +103,7 @@ local PetID = {
     TOLAI_HARE_PUP = 730, -- 多莱兔仔
     EMPERPR_CRAB = 746, -- 君王蟹
     CROW = 1068, -- 乌鸦
+    CHROMINIUS = 1152, -- 克洛玛尼斯
     ANUBISATH_IDOL = 1155, -- 阿奴比萨斯
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     FIENDISH_LMP = 1229, -- 恶魔小鬼
@@ -432,6 +437,10 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
         local ef = Effect.new_damage(TypeID.UNDEAD, 20 + self.power)
         ability.effect_list[1] = {ef}
+    elseif id == AbilityID.BITE then
+        ability = Ability.new(id, TypeID.BEAST, 0, 0)
+        local ef = Effect.new_damage(TypeID.BEAST, 20 + self.power)
+        ability.effect_list[1] = {ef}
     elseif id == AbilityID.SHADOW_SHOCK then
         ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
         local ef = Effect.new_damage(TypeID.UNDEAD, (20 + self.power) * 1.3, 85)
@@ -443,6 +452,10 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.ICE_TOMB then
         ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
         local ef = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 999, AuraID.ICE_TOMB, TargetType.ENEMY, IGNORE_BIT_ALL)
+        ability.effect_list[1] = {ef}
+    elseif id == AbilityID.HOWL then
+        ability = Ability.new(id, TypeID.BEAST, 5, 0)
+        local ef = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SHATTER_DEFENSE, TargetType.ENEMY)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.ARFUS_6 then
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
@@ -460,6 +473,10 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.FLURRY or id == AbilityID.TONGUE_LASH then
         ability = Ability.new(id, TypeID.CRITTER, 0, 0)
         ability.effect_list[1] = {Effect.new_damage(TypeID.CRITTER, (20 + self.power) * 0.5):set_dynamic_type(
+            EffectDynamicType.FLURRY)}
+    elseif id == AbilityID.THRASH then 
+        ability = Ability.new(id, TypeID.BEAST, 0, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.BEAST, (20 + self.power) * 0.5):set_dynamic_type(
             EffectDynamicType.FLURRY)}
     elseif id == AbilityID.BLITZ then 
         ability = Ability.new(id, TypeID.HUMANOID, 0, 0)
@@ -511,7 +528,7 @@ function Pet:install_ability_by_id(id, index)
             [1] = {Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),
                    Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true)}
         }
-    elseif id == AbilityID.ARFUS_2 then
+    elseif id == AbilityID.DEADLY_DREAMM then
         ability = Ability.new(id, TypeID.UNDEAD, 4, 0)
         ability.effect_list = {
             [1] = {Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),
@@ -536,7 +553,11 @@ function Pet:install_ability_by_id(id, index)
             TargetType.ENEMY, IGNORE_BIT_ALL)}
     elseif id == AbilityID.ION_CANNON then
         ability = Ability.new(id, TypeID.MECHANICAL, 5, 3)
-        local ef = Effect.new_damage(TypeID.MECHANICAL, 50 + self.power * 2.5, 100)
+        local ef = Effect.new_damage(TypeID.MECHANICAL, (20 + self.power) * 2.5, 100)
+        ability.effect_list = {{ef}, {}, {}}
+    elseif id == AbilityID.SURGE_OF_POWER then
+        ability = Ability.new(id, TypeID.MAGIC, 5, 3)
+        local ef = Effect.new_damage(TypeID.MAGIC, (20 + self.power) * 2.5, 100)
         ability.effect_list = {{ef}, {}, {}}
     elseif id == AbilityID.ALPHA_STRIKE then
         ability = Ability.new(id, TypeID.FLYING, 0, 0)
