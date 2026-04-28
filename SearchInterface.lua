@@ -283,7 +283,7 @@ function SearchInterface:ProcessCombatLog(msg)
         local target_index = C_PetBattles.GetActivePet(log.target)
         local aura = AI.Aura.new_aura_by_id(log.abilityInfo2.id, log.abilityInfo2.power, from_index)
         if aura then 
-            state:install_aura(self.game.Rule.teams, log.target, from_index, aura)
+            state:install_aura(self.game.Rule.teams, log.target, target_index, aura)
             LogFrame:AddLog(string.format("添加宠物光环: player=%d, pet=%d, aura_id=%d，expire=%d", log.target, target_index, aura.id, aura.expire))
             if aura.id == AI.AuraID.HAUNT then
                 --添加鬼影缠身时处理假死状态
