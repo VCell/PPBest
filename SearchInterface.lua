@@ -29,7 +29,7 @@ local function set_possible_abilitys(pet)
         pet:install_ability_by_id(AI.AbilityID.HAUNT, 3) 
     elseif pet.id == AI.PetID.ARFUS then 
         pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1) 
-        pet:install_ability_by_id(AI.AbilityID.ARFUS_2, 2) 
+        pet:install_ability_by_id(AI.AbilityID.DEADLY_DREAM, 2) 
         pet:install_ability_by_id(AI.AbilityID.SPRINT, 3) 
     else 
         local abilitys = BattleUtils:GetAbilitysByPetID(pet.id)
@@ -200,7 +200,7 @@ function SearchInterface:UpdateEnemyAbilityState(pet_index, ab_index, round)
     local team_state = self.game.State.team_states[LE_BATTLE_PET_ENEMY]
     if team_state.ability_round > 1 then
             -- 多轮技能逻辑
-        assert(ab_index == team_state.ability_index)
+        assert(ab_index == team_state.ability_index, string.format("多轮技能id不匹配 %d vs %d", ab_index, team_state.ability_index))
         team_state.ability_round = team_state.ability_round + 1
         if team_state.ability_round > ability.duration then
             team_state.ability_round = 0
@@ -294,6 +294,9 @@ function SearchInterface:ProcessCombatLog(msg)
                     pet.tmp_health = log.abilityInfo2.health
                 end
             end
+            if aura.type == AI.AuraType.STUN then
+                state.team_states[log.target].ability_round = 0
+            end
         else 
             LogFrame:AddLog(string.format("未知光环: player=%d, pet=%d, aura_id=%d", log.target, target_index, log.abilityInfo2.id))
         end
@@ -342,6 +345,65 @@ function SearchInterface:SetChangePetState(round)
     end
 end
 
+function SearchInterface:NewSearch(key)
+    local root = AI.DUCT_MCTS.Searcher.init_node(self.game.State, self.game.Rule)
+    local MCTS_ITERATIONS_STEP = 1000
+    local MAX_MCTS_ITERATIONS = 10000
+    local rule = self.game.Rule
+    local state = self.game.State
+    return {
+        root = root,
+        key = key,
+        result = nil,
+        Search = function(self) 
+            AI.DUCT_MCTS.Searcher.do_search_by_iterations(self.root, MCTS_ITERATIONS_STEP)
+            if self.root.total_visits >= MAX_MCTS_ITERATIONS then
+                self.DecideActions()
+            end
+        end,
+        IsDone = function(self)
+            return self.result ~= nil
+        end,
+        DecideActions = function(self)
+            if self.result then
+                return self.result
+            end
+            for player = 1, 2 do
+                local actions = rule:get_legal_actions(state, player)
+                local info = ""
+                local best_action = nil
+                local best_visits = -1
+
+                for _, action in ipairs(actions) do
+                    local stats = self.root:get_stats(player, action)
+
+                    if stats.visits > best_visits then
+                        best_visits = stats.visits
+                        best_action = action
+                    end
+
+                    info = info .. string.format(
+                            "[%s: avg=%.3f var=%.3f v=%d],",
+                            tostring(action),
+                            stats.average_reward,
+                            stats.variance,
+                            stats.visits
+                        )
+                    
+                end
+
+                assert(best_action ~= nil)
+                if player == LE_BATTLE_PET_ALLY then
+                    self.result = best_action
+                end
+                LogFrame:AddLog(string.format("Player%d key=%s MCTS rewards:%s", player, self.key, info))
+
+            end
+
+        end,
+    }
+end
+
 -- 决定行动
 function SearchInterface:DecideActions(round)
     if not self.game then
@@ -349,10 +411,7 @@ function SearchInterface:DecideActions(round)
         return
     end
 
-    local root = AI.DUCT_MCTS.Searcher.run_search(self.game.State, self.game.Rule, {
-                iterations = 3000,
-                exploration_c = 1.414,
-            })
+    local root = AI.DUCT_MCTS.Searcher.init_node(self.game.State, self.game.Rule)
     local action, info = AI.DUCT_MCTS.Searcher.select_best_action(root, LE_BATTLE_PET_ALLY)
 
     for _, line in ipairs(info) do

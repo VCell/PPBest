@@ -52,7 +52,7 @@ DUCT_MCTS.Config = {
     hybrid_random_factor = 0.3,
     enable_debug_log = false,       -- 调试日志开关
 
-        -- === Risk-sensitive ===
+-- === Risk-sensitive ===
     risk_lambda = 0.3,        -- >0 保守，<0 激进
     risk_use_std = true,      -- 用标准差（推荐）否则用variance
     risk_min_visits = 5       -- 小样本保护
@@ -477,7 +477,6 @@ DUCT_MCTS.Searcher = {
         local exploration_c = options.exploration_c or DUCT_MCTS.Config.exploration_constant
         local simulation_policy = options.simulation_policy or smart_simulation_policy
         --local simulation_policy = options.simulation_policy or default_simulation_policy
-        local time_budget_ms = options.time_budget_ms
         
         print(string.format("Starting DUCT-MCTS search (%d iterations)...", iterations))
         
@@ -486,30 +485,20 @@ DUCT_MCTS.Searcher = {
         local completed_iterations = 0
         
         for i = 1, iterations do
-            -- 检查时间预算
-            -- if time_budget_ms then
-            --     local current_time = os.clock()
-            --     if (current_time - start_time) * 1000 >= time_budget_ms then
-            --         print(string.format("Time budget exceeded after %d iterations", i-1))
-            --         break
-            --     end
-            -- end
-            
             run_simulation(root_node, exploration_c, simulation_policy)
             completed_iterations = i
-            
-            -- 进度显示
-            -- if i % 500 == 0 then
-            --     local elapsed = (os.clock() - start_time) * 1000
-            --     print(string.format("  Completed %d iterations (%.1f ms)", i, elapsed))
-            -- end
         end
-        
-        -- local total_time = (os.clock() - start_time) * 1000
-        -- print(string.format("Search completed: %d iterations in %.1f ms (%.1f iter/sec)", 
-        --       completed_iterations, total_time, completed_iterations / (total_time / 1000)))
-        
+
         return root_node
+    end,
+
+    init_node = function(initial_state, game_rules)
+        return DUCT_MCTS.Node:new(initial_state, game_rules)
+    end,
+    do_search_by_iterations = function(root, iterations)
+        for i = 1, iterations do
+            run_simulation(root, DUCT_MCTS.Config.exploration_constant, smart_simulation_policy)
+        end
     end,
     
     -- 选择最佳动作（基于最高平均奖励）

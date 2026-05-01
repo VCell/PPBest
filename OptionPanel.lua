@@ -101,7 +101,7 @@ function OptionPanel:CreateUI()
         UIDropDownMenu_Initialize(self, 
             function (self, level)
                 local options = {
-                    { text = "单刷-默认策略", value = Const.MODE_DEFAULT },
+                    { text = "单刷-基础策略", value = Const.MODE_DEFAULT },
                     { text = "单刷-AI", value = Const.MODE_AI },
                     { text = "互刷-协助方", value = Const.MODE_ASSIST },
                     { text = "互刷-我要角色经验", value = Const.MODE_WANT_EXP },
@@ -132,7 +132,9 @@ function OptionPanel:CreateUI()
     targetNameBox:SetSize(200, 20)
     targetNameBox:SetPoint("TOPLEFT", targetNameLabel, "BOTTOMLEFT", 0, -10)
     targetNameBox:SetAutoFocus(false)                -- 不自动获得焦点
+    targetNameBox:SetTextInsets(5, 5, 0, 0)
     targetNameBox:SetText(PPBestConfig.assistTarget or "")       -- 显示保存的内容
+    targetNameBox:SetCursorPosition(0)
     targetNameBox:SetScript("OnEnterPressed", function(self)
         PPBestConfig.assistTarget = self:GetText()
         -- print("已保存: " .. self:GetText())
@@ -140,7 +142,7 @@ function OptionPanel:CreateUI()
 
     -- 创建确认按钮
     local targetNameButton = CreateFrame("Button", nil, PPBestOptions, "GameMenuButtonTemplate")
-    targetNameButton:SetSize(80, 25)
+    targetNameButton:SetSize(100, 25)
     targetNameButton:SetPoint("LEFT", targetNameBox, "RIGHT", 10, 0)
     targetNameButton:SetText("保存")
     targetNameButton:SetScript("OnClick", function()
@@ -161,6 +163,22 @@ function OptionPanel:CreateUI()
     logCheckButton:SetChecked(PPBestConfig.enableLogWindow or false)
     logCheckButton:SetScript("OnClick", function(self)
         PPBestConfig.enableLogWindow = self:GetChecked()
+    end)
+
+    local searchTimeLaber = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    searchTimeLaber:SetPoint("TOPLEFT", logCheckButton, "BOTTOMLEFT", 0, -10)
+    searchTimeLaber:SetText("【单刷-AI】模式下的计算强度，当前" .. tostring(PPBestConfig.searchTime or 5))
+    local searchTimeSlider = CreateFrame("Slider", nil, PPBestOptions, "OptionsSliderTemplate")
+    searchTimeSlider:SetPoint("TOPLEFT", searchTimeLaber, "BOTTOMLEFT", 0, -10)
+    searchTimeSlider:SetWidth(200)     -- 滑动条宽度
+    searchTimeSlider:SetHeight(20)     -- 滑动条高度
+    searchTimeSlider:SetMinMaxValues(1, 10)       -- 设置最小值1，最大值10
+    searchTimeSlider:SetValueStep(1)              -- 设置步长为1，每次移动一格
+    searchTimeSlider:SetObeyStepOnDrag(true)      -- 拖动时也按步长移动，不会出现小数
+    searchTimeSlider:SetValue(PPBestConfig.searchTime or 5)   
+    searchTimeSlider:SetScript("OnValueChanged", function(self, value)
+        PPBestConfig.searchTime = value
+        searchTimeLaber:SetText("【单刷-AI】模式下的计算强度，当前" .. tostring(value))
     end)
 end
 

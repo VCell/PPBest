@@ -5,6 +5,7 @@ PPBestConfig = PPBestConfig or {
     mode = "default", --default,ai
     assistTarget = "",
     enableLogWindow = false,
+    searchTime = 10,
 }
 
 local Const = {

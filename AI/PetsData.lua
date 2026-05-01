@@ -42,7 +42,7 @@ local AbilityID = {
     STONE_SHOT = 801, -- 投石 配波
     RUPTURE = 814, -- 割裂 配波
     BUBBLE = 934, -- 气泡
-    DEADLY_DREAMM = 2530, -- 阿尔福斯 致命梦境
+    DEADLY_DREAM = 2530, -- 阿尔福斯 致命梦境
     SPRINT = 2531, -- 阿尔福斯 狂飙
     ARFUS_4 = 2532, -- 阿尔福斯 横扫
     ARFUS_6 = 2533, -- 阿尔福斯 宠物游行
@@ -528,7 +528,7 @@ function Pet:install_ability_by_id(id, index)
             [1] = {Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),
                    Effect.new(TypeID.UNDEAD, EffectType.FEIGN_DEATH, 100, 0, TargetType.ALLY, 0, true)}
         }
-    elseif id == AbilityID.DEADLY_DREAMM then
+    elseif id == AbilityID.DEADLY_DREAM then
         ability = Ability.new(id, TypeID.UNDEAD, 4, 0)
         ability.effect_list = {
             [1] = {Effect.new(TypeID.UNDEAD, EffectType.AURA, 100, AuraID.HAUNT, TargetType.ENEMY),

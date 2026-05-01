@@ -6,6 +6,7 @@ local LogFrame = PPBest.LogFrame
 local MAX_RECORDS = 200
 local LOSS_REST_TIME = 30  -- 失败后休息时间，单位秒
 
+
 local PET_ID_NEXUS_WHELPLING = 1165 --节点雏龙
 local PET_ID_FOSSILIZED_HATCHLING = 266 --化石幼兽
 local PET_ID_PERSONAL_WORLD_DESTROYER = 261  --便携式世界毁灭者
@@ -317,31 +318,44 @@ function GetSchemeAI()
     return {
         --todo 需要确认事件次序。确认回合结束时buff和cd的时间
         schemeName = "AIScheme",
-        action_round = -1,
-        change_round = -1,
         InitGame = function(self)
             AII:InitGame()
         end,
-        Select = function(self, round)
-            if round == self.change_round then
-                return 
+        roundSearcher = nil,
+        -- onPerform = function(self, round)
+        -- end,
+        perform = function(self, actionType, round)
+            local key = actionType..tostring(round)
+            if not self.roundSearcher or self.roundSearcher.key ~= key then
+                AII:UpdateState(round)
+                AII:SetChangePetState(round)
+                self.roundSearcher = AII:NewSearch(key)
+                self.roundSearcher:Search()
+            elseif self.roundSearcher:IsDone() then
+                return self.roundSearcher:DecideActions(round)
+            else 
+                local timeRemaining, turnTime = C_PetBattles.GetTurnTimeInfo()
+                local timeCost = turnTime - timeRemaining
+                if timeCost > PPBestConfig.searchTime then
+                    return self.roundSearcher:DecideActions(round)
+                else 
+                    self.roundSearcher:Search(round)
+                end
             end
-            -- 使用增量更新机制
-            AII:UpdateState(round)
-            AII:SetChangePetState(round)
-            local action = AII:DecideActions(round)
-            assert(action and action.type == "change", "error action")
-            performAction(action)
-            self.change_round = round
+            return nil
+        end,
+        Select = function(self, round)
+            local action = self:perform("select", round)
+            if action then
+                assert(action and action.type == "change", "error action")
+                performAction(action)
+            end
         end,
         Battle = function(self, round)
-            if round == self.action_round then
-                return 
+            local action = self:perform("battle", round)
+            if action then
+                performAction(action)
             end
-            AII:UpdateState(round)
-            local action = AII:DecideActions(round)
-            performAction(action)
-            self.action_round = round
         end,
         OnRoundComplete = function(self, round)
             AII:UpdateRound(round)

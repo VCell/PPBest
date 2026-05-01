@@ -376,9 +376,11 @@ function GameState:apply_effect(teams, effect, from_player, target_player, targe
             local accuracy = effect.accuracy + AuraProcessor.get_active_accuracy_modifier(self, from_player)
             accuracy = accuracy - AuraProcessor.get_dodge_modifier(self, target_player, target_index)
             if not roll(accuracy) then
-                self:print_log(string.format("玩家%d, 宠物%d 攻击命中失败", target_player, target_index))
+                self:print_log(string.format("玩家%d, 宠物%d 命中%d, 攻击命中失败", target_player, target_index, accuracy))
                 return hit_count
             end
+            self:print_log(string.format("玩家%d, 宠物%d 命中%d, 攻击命中成功", target_player, target_index, accuracy))
+
         end
     end
     self:print_log(string.format("玩家%d, 宠物%d 判定通过", target_player, target_index))
