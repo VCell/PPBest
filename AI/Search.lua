@@ -49,13 +49,9 @@ local Rules = {
 DUCT_MCTS.Config = {
     exploration_constant = 1.414,  -- 默认探索系数 √2
     max_simulation_depth = 10,    -- 模拟最大深度
-    hybrid_random_factor = 0.3,
+    hybrid_random_factor = 0.2,
     enable_debug_log = false,       -- 调试日志开关
 
--- === Risk-sensitive ===
-    risk_lambda = 0.3,        -- >0 保守，<0 激进
-    risk_use_std = true,      -- 用标准差（推荐）否则用variance
-    risk_min_visits = 5       -- 小样本保护
 }
 
 -- ==================== 树节点定义 ====================
@@ -87,8 +83,6 @@ DUCT_MCTS.Node = {
                         total_reward = 0,
                         visits = 0,
                         average_reward = 0,
-                        total_squared_reward = 0,
-                        variance = 0,
                     }
                 end
             end
@@ -99,19 +93,12 @@ DUCT_MCTS.Node = {
     
     -- 获取动作统计
     get_stats = function(self, player, action)
-        -- return self.stats[player][action] or {
-        --     total_reward = 0,
-        --     visits = 0,
-        --     average_reward = 0
-        -- }
         local key = tostring(action)
         if not self.stats[player][key] then
             self.stats[player][key] = {
                 total_reward = 0,
                 visits = 0,
                 average_reward = 0,
-                total_squared_reward = 0,
-                variance = 0,
             }
         end
         return self.stats[player][key]
@@ -198,36 +185,17 @@ local function calculate_uct_value(node, player, action, exploration_c)
     if stats.visits == 0 then
         return math.huge
     end
-
-    local mean = stats.average_reward
-    local variance = stats.variance or 0
-
-    -- === 小样本保护 ===
-    if stats.visits < DUCT_MCTS.Config.risk_min_visits then
-        variance = 0
-    end
-
-    -- === 风险项 ===
-    local lambda = DUCT_MCTS.Config.risk_lambda
-
-    local risk_penalty
-    if DUCT_MCTS.Config.risk_use_std then
-        risk_penalty = lambda * math.sqrt(variance)
-    else
-        risk_penalty = lambda * variance
-    end
-
-    local exploitation = mean - risk_penalty
-
+    -- === exploitation ===
+    local exploitation = stats.average_reward
     -- === exploration ===
+        -- 使用节点总访问次数（标准UCT）
     local total_visits = node:get_total_visits_for_player(player)
-    local exploration = 0
-    if total_visits > 0 then
-        exploration =
-            exploration_c * math.sqrt(math.log(total_visits) / stats.visits)
+    if total_visits <= 0 then
+        return exploitation
     end
+    local exploration = exploration_c * math.sqrt(math.log(total_visits) / stats.visits)
 
-    return exploitation + exploration
+    return exploration + exploitation
 end
 
 -- ==================== DUCT选择策略 ====================
@@ -443,24 +411,13 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
 
         local stats1 = current_node:get_stats(1, action1)
         stats1.total_reward = stats1.total_reward + utility
-        stats1.total_squared_reward = stats1.total_squared_reward + utility * utility
         stats1.visits = stats1.visits + 1
-
-        local mean1 = stats1.total_reward / stats1.visits
-        local mean_sq1 = stats1.total_squared_reward / stats1.visits
-        stats1.average_reward = mean1
-        stats1.variance = math.max(0, mean_sq1 - mean1 * mean1)
-
+        stats1.average_reward = stats1.total_reward / stats1.visits
         -- 玩家2
         local stats2 = current_node:get_stats(2, action2)
         stats2.total_reward = stats2.total_reward + utility2
-        stats2.total_squared_reward = stats2.total_squared_reward + utility2 * utility2
         stats2.visits = stats2.visits + 1
-
-        local mean2 = stats2.total_reward / stats2.visits
-        local mean_sq2 = stats2.total_squared_reward / stats2.visits
-        stats2.average_reward = mean2
-        stats2.variance = math.max(0, mean_sq2 - mean2 * mean2)
+        stats2.average_reward = stats2.total_reward / stats2.visits
     end
     
     if DUCT_MCTS.Config.enable_debug_log then
@@ -481,12 +438,10 @@ DUCT_MCTS.Searcher = {
         print(string.format("Starting DUCT-MCTS search (%d iterations)...", iterations))
         
         local root_node = DUCT_MCTS.Node:new(initial_state, game_rules)
-        -- local start_time = os.clock()
-        local completed_iterations = 0
+
         
         for i = 1, iterations do
             run_simulation(root_node, exploration_c, simulation_policy)
-            completed_iterations = i
         end
 
         return root_node
@@ -521,10 +476,9 @@ DUCT_MCTS.Searcher = {
             table.insert(
                 reward_info,
                 string.format(
-                    "[%s: avg=%.3f var=%.3f v=%d]",
+                    "[%s: avg=%.3f v=%d]",
                     tostring(action),
                     stats.average_reward,
-                    stats.variance,
                     stats.visits
                 )
             )

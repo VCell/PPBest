@@ -357,6 +357,7 @@ function SearchInterface:NewSearch(key)
         result = nil,
         Search = function(self) 
             AI.DUCT_MCTS.Searcher.do_search_by_iterations(self.root, MCTS_ITERATIONS_STEP)
+            LogFrame:AddLog(string.format("MCTS iterations: %d", self.root.total_visits))
             if self.root.total_visits >= MAX_MCTS_ITERATIONS then
                 self.DecideActions()
             end

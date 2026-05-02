@@ -23,6 +23,7 @@ local AbilityID = {
     IMMOLATION = 409, -- 献祭
     SHADOW_SHOCK = 422, -- 暗影震击 85命中率亡灵普攻
     SAND_STORM = 453, -- 沙暴
+    FLASH = 463, -- 闪电
     NETHER_GATE = 466, -- 虚空之门
     ALPHA_STRIKE = 504, -- 突然袭击
     SURGE = 509, -- 汹涌
@@ -61,7 +62,7 @@ local AuraID = {
     DECOY = 333, -- 诱饵
     BURROW = 340, -- 钻地
     IMMOLATION = 408, -- 献祭
-    BLIND = 496, -- 半盲
+    BLIND = 462, -- 半盲 462
     SHATTER_DEFENSE = 542, -- 破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
@@ -428,6 +429,8 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         return Aura.new(aura_id, AuraType.WEATHER, 5, (20 + power) * 0.25)
     elseif aura_id == AuraID.BUBBLE then
         return Aura.new(aura_id, AuraType.BLOCK, 99, 2)
+    elseif aura_id == AuraID.BLIND then 
+        return Aura.new(aura_id, AuraType.ACCURACY, 2, -50)
     end
 end
 
@@ -603,12 +606,21 @@ function Pet:install_ability_by_id(id, index)
             IGNORE_BIT_ALL)}
     elseif id == AbilityID.BUBBLE then
         ability = Ability.new(id, TypeID.HUMANOID, 8, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.HUMANOID, EffectType.AURA, 100, AuraID.BUBBLE, TargetType.ALLY,
-            IGNORE_BIT_ALL)}
+        ability.effect_list[1] = {
+            Effect.new(TypeID.HUMANOID, EffectType.AURA, 100, AuraID.BUBBLE, TargetType.ALLY,IGNORE_BIT_ALL)
+        }
     elseif id == AbilityID.SHELL_RUSH then
         ability = Ability.new(id, TypeID.AQUATIC, 5, 0)
-        ability.effect_list[1] = {Effect.new_damage(TypeID.AQUATIC, (20 + self.power) * 0.6, 100, TargetType.ENEMY_TEAM),
-            Effect.new(TypeID.AQUATIC, EffectType.HEALTHY_CHANGE, 100, 0, TargetType.ALLY, IGNORE_BIT_ALL, true)}
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.AQUATIC, (20 + self.power) * 0.6, 100, TargetType.ENEMY_TEAM),
+            Effect.new(TypeID.AQUATIC, EffectType.HEALTHY_CHANGE, 100, 0, TargetType.ALLY, IGNORE_BIT_ALL, true)
+        }
+    elseif id == AbilityID.FLASH then 
+        ability = Ability.new(id, TypeID.MAGIC, 3, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.MAGIC, (20 + self.power) * 0.5, 100, TargetType.ENEMY),
+            Effect.new(TypeID.MAGIC, EffectType.AURA, 100, AuraID.BLIND, TargetType.ENEMY,IGNORE_BIT_ALL, true)
+        }
     end
     if ability then
         self.abilitys[index] = ability

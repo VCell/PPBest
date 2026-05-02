@@ -7,7 +7,7 @@ local Action = AI.Action
 
 local function evaluate_ability_effectiveness(ability, opponent)
     local effectiveness = AI.TypeID.GetEffectiveness(ability.type, opponent.type)
-    return 1 + (effectiveness - 1) * AI.Ability.get_effectiveness_rate(ability.id)
+    return (effectiveness - 1) * AI.Ability.get_effectiveness_rate(ability.id)
 end
 
 local function evaluate_pet_effectiveness(pet, opponent)
@@ -16,20 +16,33 @@ local function evaluate_pet_effectiveness(pet, opponent)
                evaluate_ability_effectiveness(pet:get_ability(3), opponent)
 end
 
-local function fix_aura_score(ability, state, player)
+local function fix_ability_score(ability, state, player)
     local index = state.team_states[player].active_index
+    local op = 3 - player
+    local op_index = state.team_states[op].active_index
     if ability.id == AI.AbilityID.IMMOLATION then
         if AuraProcessor.get_aura_by_id(state, player, index, AI.AuraID.IMMOLATION) == nil then
-            return 15
+            return 10
         end
     elseif ability.id == AI.AbilityID.SHELL_SHIELD then
         if AuraProcessor.get_aura_by_id(state, player, index, AI.AuraID.SHELL_SHIELD) == nil then
-            return 15
+            return 10
         end
     elseif ability.id == AI.AbilityID.HAUNT then
-        return 10
+        return 5
+    elseif ability.id == AI.AbilityID.NOCTURNAL_STRIKE then
+        if not AuraProcessor.is_blind(state, op, op_index) then
+            return -5
+        end
     end
     return 0
+end
+
+local function fix_change_score(state, player)
+    local my_index = state.team_states[player].active_index
+    if AuraProcessor.get_aura_by_id(state, player, my_index, AI.AuraID.UNDEAD) ~= nil  then
+        return -5
+    end
 end
 
 local GameRule = {}
@@ -51,10 +64,11 @@ function GameRule:evaluate_action(state, player, action)
         if ability.cooldown > 0 then
             score = score + ability.cooldown * 2 -- 高冷却技能通常更强
         end
-        score = score + fix_aura_score(ability, state, player)
+        score = score + fix_ability_score(ability, state, player)
     elseif action.type == 'change' then
         -- 换宠评估
         local my_pet = self.teams[player][action.value]
+
         local op_index = state.team_states[3 - player].active_index
         if op_index == 0 then
             op_index = 1
@@ -66,10 +80,11 @@ function GameRule:evaluate_action(state, player, action)
         local my_health_percent = state.team_states[player].pets[action.value].current_health / my_pet.health
         local op_health_percent = state.team_states[3 - player].pets[op_index].current_health / op_pet.health
 
-        score = score + 10 + (effectiveness - 1) * my_health_percent * op_health_percent * 10
+        score = score + fix_change_score(state, player)
+        score = score + effectiveness * my_health_percent * op_health_percent * 10
 
     elseif action.type == 'standby' then
-        score = 10 
+        score = 0
     end
     return score
 end

@@ -96,11 +96,17 @@ function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
     return false
 end
 
+-- 查询是否有指定id的aura，pet_index为0时查询团队的aura
 function AuraProcessor.get_aura_by_id(state, team_index, pet_index, aura_id)
     local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    if ps.auras[aura_id] then
-        return ps.auras[aura_id]
+    local auras = nil
+    if pet_index > 0 then
+        auras = team_state.pets[pet_index].auras
+    else 
+        auras = team_state.active_auras
+    end
+    if auras[aura_id] then
+        return auras[aura_id]
     end
     return nil
 end
