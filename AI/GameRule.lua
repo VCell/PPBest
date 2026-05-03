@@ -33,6 +33,8 @@ local function fix_ability_score(ability, state, player)
     elseif ability.id == AI.AbilityID.NOCTURNAL_STRIKE then
         if not AuraProcessor.is_blind(state, op, op_index) then
             return -5
+        else 
+            return 5
         end
     end
     return 0
@@ -43,6 +45,7 @@ local function fix_change_score(state, player)
     if AuraProcessor.get_aura_by_id(state, player, my_index, AI.AuraID.UNDEAD) ~= nil  then
         return -5
     end
+    return 0
 end
 
 local GameRule = {}
