@@ -384,10 +384,9 @@ function SearchInterface:NewSearch(key)
                     end
 
                     info = info .. string.format(
-                            "[%s: avg=%.3f var=%.3f v=%d],",
+                            "[%s: avg=%.3f v=%d],",
                             tostring(action),
                             stats.average_reward,
-                            stats.variance,
                             stats.visits
                         )
                     
