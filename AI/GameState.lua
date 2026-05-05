@@ -249,12 +249,14 @@ function GameState:get_action_order(teams, action1, action2)
     -- 总是先手属性的技能+1000速度
     if action1.type == 'use' then
         local ability1 = teams[1][team1.active_index]:get_ability(action1.value)
+        assert(ability1, string.format('team1[%d] ability[%d] not found', team1.active_index, action1.value))
         if ability1.aways_first then
             speed1 = speed1 + 1000
         end
     end
     if action2.type == 'use' then
         local ability2 = teams[2][team2.active_index]:get_ability(action2.value)
+        assert(ability2, string.format('team2[%d] ability[%d] not found', team2.active_index, action2.value))
         if ability2.aways_first then
             speed2 = speed2 + 1000
         end
@@ -524,9 +526,13 @@ function GameState:process_use_action(teams, player, action)
         local ability = teams[player][team_state.active_index]:get_ability(action.value)
         -- 使用技能逻辑
         local effects = nil
+        if action.value ~= team_state.ability_index then
+            team_state.ability_round = 0
+        end
         if team_state.ability_round > 1 then
             -- 多轮技能逻辑
-            assert(action.value == team_state.ability_index)
+            assert(action.value == team_state.ability_index, 
+            string.format("玩家%d宠物%d 使用技能%d，但当前技能%d", player, team_state.active_index, action.value, team_state.ability_index))
             effects = ability.effect_list[team_state.ability_round]
             team_state.ability_round = team_state.ability_round + 1
             if team_state.ability_round > ability.duration then

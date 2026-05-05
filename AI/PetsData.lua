@@ -487,11 +487,11 @@ function Pet:install_ability_by_id(id, index)
             EffectDynamicType.FLURRY)}
     elseif id == AbilityID.DODGE then
         ability = Ability.new(id, TypeID.HUMANOID, 4, 0)
-        local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 100, AuraID.DODGE, TargetType.ALLY, IGNORE_BIT_ALL)
+        local ef = Effect.new(TypeID.CRITTER, EffectType.AURA, 999, AuraID.DODGE, TargetType.ALLY, IGNORE_BIT_ALL)
         ability.effect_list[1] = {ef}
     elseif id == AbilityID.BURROW then
         ability = Ability.new(id, TypeID.BEAST, 4, 2)
-        local ef1 = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.BURROW, TargetType.ALLY)
+        local ef1 = Effect.new(TypeID.BEAST, EffectType.AURA, 999, AuraID.BURROW, TargetType.ALLY)
         local ef2 = Effect.new_damage(TypeID.BEAST, 1.75 * (self.power + 20), 80)
         ef2.dynamic_type = EffectDynamicType.BURROW
         ability.effect_list[1] = {ef1}
@@ -581,7 +581,7 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {Effect.new_damage(TypeID.ELEMENTAL, (20 + self.power) * 1.2, 90)}
     elseif id == AbilityID.IMMOLATION then
         ability = Ability.new(id, TypeID.ELEMENTAL, 0, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.IMMOLATION, TargetType.ALLY,
+        ability.effect_list[1] = {Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 999, AuraID.IMMOLATION, TargetType.ALLY,
             IGNORE_BIT_ALL)}
     elseif id == AbilityID.NETHER_GATE then
         ability = Ability.new(id, TypeID.MAGIC, 5, 0)
@@ -598,11 +598,11 @@ function Pet:install_ability_by_id(id, index)
         ability.aways_first = true
     elseif id == AbilityID.HEALING_WAVE then
         ability = Ability.new(id, TypeID.AQUATIC, 3, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.HEAL, 100, (20 + self.power) * 1.5,
+        ability.effect_list[1] = {Effect.new(TypeID.AQUATIC, EffectType.HEAL, 999, (20 + self.power) * 1.5,
             TargetType.ALLY, IGNORE_BIT_ALL)}
     elseif id == AbilityID.SHELL_SHIELD then
         ability = Ability.new(id, TypeID.BEAST, 0, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SHELL_SHIELD, TargetType.ALLY,
+        ability.effect_list[1] = {Effect.new(TypeID.BEAST, EffectType.AURA, 999, AuraID.SHELL_SHIELD, TargetType.ALLY,
             IGNORE_BIT_ALL)}
     elseif id == AbilityID.BUBBLE then
         ability = Ability.new(id, TypeID.HUMANOID, 8, 0)

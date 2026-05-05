@@ -199,22 +199,21 @@ local function calculate_uct_value(node, player, action, exploration_c)
 end
 
 -- ==================== DUCT选择策略 ====================
-local function select_joint_action_duct(node, exploration_c)
+local function select_joint_action_duct(node, current_state, exploration_c)
     local game_rules = node._game_rules
-    local actions1 = game_rules:get_legal_actions(node.state, 1)
-    local actions2 = game_rules:get_legal_actions(node.state, 2)
+    local actions1 = game_rules:get_legal_actions(current_state, 1)
+    local actions2 = game_rules:get_legal_actions(current_state, 2)
 
     local best_action1, best_action2
     local best_ucb1, best_ucb2 = -math.huge, -math.huge
 
-    -- 玩家1
+    -- 玩家1（注意：使用 node:get_stats 以保留已有统计，但候选动作来自 current_state）
     for _, a1 in ipairs(actions1) do
         local ucb = calculate_uct_value(node, 1, a1, exploration_c)
 
         if a1.type == "change" then
-            ucb = ucb - 0.01   -- switching penalty
+            ucb = ucb - 0.01
         end
-        -- 加小噪声避免振荡
         ucb = ucb + math.random() * 1e-6
 
         if ucb > best_ucb1 then
@@ -226,7 +225,6 @@ local function select_joint_action_duct(node, exploration_c)
     -- 玩家2
     for _, a2 in ipairs(actions2) do
         local ucb = calculate_uct_value(node, 2, a2, exploration_c)
-
         ucb = ucb + math.random() * 1e-6
 
         if ucb > best_ucb2 then
@@ -235,18 +233,11 @@ local function select_joint_action_duct(node, exploration_c)
         end
     end
 
-    -- fallback
-    if not best_action1 then
-        best_action1 = actions1[math.random(#actions1)]
-    end
-
-    if not best_action2 then
-        best_action2 = actions2[math.random(#actions2)]
-    end
+    if not best_action1 and #actions1 > 0 then best_action1 = actions1[math.random(#actions1)] end
+    if not best_action2 and #actions2 > 0 then best_action2 = actions2[math.random(#actions2)] end
 
     return best_action1, best_action2
 end
-
 -- 启发式动作选择
 local function select_action_heuristic(game_rules, state, player, actions)
 
@@ -332,47 +323,73 @@ local function default_simulation_policy(state, game_rules, depth)
     return game_rules.get_utility(current_state, depth)
 end
 
--- ==================== 单次MCTS模拟 ====================
 local function run_simulation(root_node, exploration_c, simulation_policy)
     local path = {}  -- 记录路径：{node, action1, action2}
     local node = root_node
     local game_rules = node._game_rules
-    
+
+    -- 本次模拟的动态状态（用于重新采样随机性）
+    local current_state = root_node.state
+
     -- === 选择阶段 ===
-    while not node.is_terminal do
+    while true do
+        -- 如果 current_state 已终局，则标记并退出
+        if game_rules.is_terminal(current_state) then
+            node.is_terminal = true
+            break
+        end
+
+        -- 如果当前树节点未完全展开，转到扩展阶段
         if not node:is_fully_expanded() then
             break
         end
-        
-        local action1, action2 = select_joint_action_duct(node, exploration_c)
+
+        -- 根据 current_state 获取合法动作，并结合 node 的统计做UCT选择
+        local action1, action2 = select_joint_action_duct(node, current_state, exploration_c)
         local child = node:get_child(action1, action2)
-        
-        if not child then
+
+        -- 对 current_state 进行随机性采样推进（下沉随机）
+        current_state = game_rules:apply_joint_action(current_state, action1, action2)
+
+        if child then
+            -- 如果子节点存在，记录路径并继续
+            table.insert(path, {
+                node = node,
+                action1 = action1,
+                action2 = action2,
+                child = child
+            })
+            node = child
+        else
+            -- 没有子节点，停止选择，转扩展（current_state 已为该 action 对的采样结果）
             break
         end
-        
-        table.insert(path, {
-            node = node,
-            action1 = action1,
-            action2 = action2,
-            child = child
-        })
-        node = child
     end
-    
+
     -- === 扩展阶段 ===
     if not node.is_terminal then
-        local unexpanded = node:get_unexpanded_pairs()
-        
+        -- 构造基于 current_state 的未展开动作对（不要用 node.state）
+        local actions1 = game_rules:get_legal_actions(current_state, 1)
+        local actions2 = game_rules:get_legal_actions(current_state, 2)
+        local unexpanded = {}
+
+        for _, a1 in ipairs(actions1) do
+            for _, a2 in ipairs(actions2) do
+                if not node:get_child(a1, a2) then
+                    table.insert(unexpanded, {a1, a2})
+                end
+            end
+        end
+
         if #unexpanded > 0 then
             -- 随机选择一个未展开的动作对
             local pair = unexpanded[math.random(#unexpanded)]
             local action1, action2 = pair[1], pair[2]
-            
-            -- 创建新状态和子节点
-            local new_state = game_rules:apply_joint_action(node.state, action1, action2)
+
+            -- 以 current_state 为基础再采样一次（保证扩展时使用一个具体样例）
+            local new_state = game_rules:apply_joint_action(current_state, action1, action2)
+
             local child_node = DUCT_MCTS.Node:new(new_state, game_rules)
-            
             node:add_child(action1, action2, child_node)
             table.insert(path, {
                 node = node,
@@ -380,24 +397,24 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
                 action2 = action2,
                 child = child_node
             })
+
             node = child_node
+            current_state = new_state
         end
     end
-    
+
     -- === 模拟阶段 ===
     local utility = 0
-    if node.is_terminal then
-        utility = game_rules.get_utility(node.state, #path)
+    if game_rules.is_terminal(current_state) then
+        utility = game_rules.get_utility(current_state, #path)
     else
-        utility = simulation_policy(node.state, game_rules, #path)
+        utility = simulation_policy(current_state, game_rules, #path)
     end
-    
+
     local constant_sum = game_rules.constant_sum or 1
     local utility2 = constant_sum - utility  -- 玩家2的奖励
-    
-    -- === 回溯阶段 ===
- -- === 回溯阶段 ===
 
+    -- === 回溯阶段 ===
     -- 叶节点也计入访问
     node.total_visits = node.total_visits + 1
 
@@ -419,7 +436,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
         stats2.visits = stats2.visits + 1
         stats2.average_reward = stats2.total_reward / stats2.visits
     end
-    
+
     if DUCT_MCTS.Config.enable_debug_log then
         print(string.format("Simulation completed. Utility: %.3f, Path length: %d", utility, #path))
     end
