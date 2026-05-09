@@ -32,7 +32,8 @@ local PetState = {
     current_health = 0,
     auras = {},
     cooldown_at = {}, -- 冷却回合数组。cooldown_at[i]=x表示第i个技能在x+1回合中才可以用
-    is_dead = false -- 是否死亡 目前主要用于机械
+    is_dead = false, -- 是否死亡 目前主要用于机械
+    dealt_damage = false, -- 本轮是否造成伤害。用于人形回血
 }
 PetState.__index = PetState
 function PetState.new(health)
@@ -136,6 +137,10 @@ function GameState:pre_step(teams)
     for player = 1, 2 do
         self.team_states[player].interrupted = false
         local index = self.team_states[player].active_index
+
+        for _,pet in ipairs(self.team_states[player].pets) do
+            pet.dealt_damage = false
+        end
         if teams[player][index].type == AI.TypeID.FLYING then
             if self.team_states[player].pets[index].current_health > teams[player][index].health * 0.5 then
                 local aura = AI.Aura.new_aura_by_id(AI.AuraID.FLYING)
@@ -236,12 +241,19 @@ function GameState:post_step(teams)
                 end
             end
         end
-        
+        --处理aura过期和周期效果
         process_auras(team_state.active_auras, team_state.active_index)
         for pet_index, pet in ipairs(team_state.pets) do
             process_auras(pet.auras, pet_index)
         end
-
+        --处理人形回血
+        for i, pet in ipairs(team_state.pets) do
+            if pet.current_health > 0 then 
+                if teams[player][i].type == AI.TypeID.HUMANOID and pet.dealt_damage then
+                    pet.current_health = pet.current_health + teams[player][i].health * 0.04
+                end
+            end
+        end
     end
     if self.change_round == 0 then
         self.round = self.round + 1
@@ -293,10 +305,9 @@ function GameState:process_effects(teams, player, pet_index, effects)
     for i, effect in ipairs(effects) do
         if effect.target_type == AI.TargetType.ALLY then
             if not effect.dynamic_type or effect.dynamic_type == 0 then
-                hit_count = self.apply_effect(self, teams, effect, player, player, pet_index, hit_count)
+                self.apply_effect(self, teams, effect, player, player, pet_index, hit_count)
             elseif effect.dynamic_type == AI.EffectDynamicType.SPRINT then
-                effect.value = 10 * hit_count
-                hit_count = self.apply_effect(self, teams, effect, player, player, pet_index, hit_count)
+                self.apply_effect(self, teams, effect, player, player, pet_index, hit_count)
             end
         elseif effect.target_type == AI.TargetType.ENEMY then -- 调整HIT_AURA一类伴随效果的实现方式
             if not effect.dynamic_type or effect.dynamic_type == 0 then
@@ -333,11 +344,11 @@ function GameState:process_effects(teams, player, pet_index, effects)
                 hit_count = self.apply_effect(self, teams, effect, player, opponent,
                     self.team_states[opponent].active_index, hit_count)
             end
-
+            
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then
             for i, pet_state in ipairs(self.team_states[player].pets) do
                 if pet_state.current_health > 0 then
-                    hit_count = self.apply_effect(self, teams, effect, player, player, i, hit_count)
+                    self.apply_effect(self, teams, effect, player, player, i, hit_count)
                 end
             end
         elseif effect.target_type == AI.TargetType.ENEMY_TEAM then
@@ -357,14 +368,14 @@ function GameState:process_effects(teams, player, pet_index, effects)
         end
 
     end
+    if hit_count > 0 then
+        self.team_states[player].pets[pet_index].dealt_damage = true
+    end
 end
 
 local function roll(point)
     local roll = math.random(1, 100)
     return roll <= point
-end
-
-local function feign_death(state, player, pet_index)
 end
 
 -- 处理单个效果
