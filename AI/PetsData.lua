@@ -280,12 +280,11 @@ local AuraType = {
     MAX_HEALTH = 12,
     FLYING = 13,
     BURROW = 14,
-    UNDEAD = 15,
-    HEAL = 16, -- 治疗量百分比修正
-    POSSESSION = 18, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
-    END_EFFECT = 19, -- 结束时生效 effects可以有多个，都在结束时生效
-    WEATHER = 20, -- 天气类效果
-    OTHER = 21 -- 其他不需要类型逻辑的效果，生效时根据id生效
+    HEAL = 15, -- 治疗量百分比修正
+    POSSESSION = 16, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
+    END_EFFECT = 17, -- 结束时生效 effects可以有多个，都在结束时生效
+    WEATHER = 18, -- 天气类效果
+    OTHER = 19 -- 其他不需要类型逻辑的效果，生效时根据id生效
 }
 
 local Ability = {
@@ -337,7 +336,8 @@ local Aura = {
     value = 0,
     expire = 0,
     keep_front = false,
-    effects = nil
+    effects = nil,
+    from_index = 0,
 }
 
 function Aura:is_weather(weather_id, round)
@@ -363,75 +363,65 @@ function Aura.new(id, type, duration, value)
 end
 
 function Aura.new_aura_by_id(aura_id, power, from_index)
+    local aura = nil
     if aura_id == AuraID.ICE_TOMB then
-        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 2, 0)
+        aura = Aura.new(aura_id, AuraType.END_EFFECT, 2, 0)
         aura.keep_front = true
         local ef1 = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20 + power) * 1.5, TargetType.ALLY)
         local ef2 = Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.STUN, TargetType.ALLY, 0, true)
         aura.effects = {ef1, ef2}
-        return aura
     elseif aura_id == AuraID.UNDEAD then
-        local aura = Aura.new(aura_id, AuraType.UNDEAD, 1, 0)
-        return aura
+        aura = Aura.new(aura_id, AuraType.OTHER, 1, 0)
     elseif aura_id == AuraID.SHATTER_DEFENSE then
-        local aura = Aura.new(aura_id, AuraType.DAMAGE_TAKEN, 2, 100)
-        return aura
+        aura = Aura.new(aura_id, AuraType.DAMAGE_TAKEN, 2, 100)
     elseif aura_id == AuraID.DODGE then
-        local aura = Aura.new(aura_id, AuraType.DODGE, 1, 0)
-        return aura
+        aura = Aura.new(aura_id, AuraType.DODGE, 1, 0)
     elseif aura_id == AuraID.BURROW then
-        local aura = Aura.new(aura_id, AuraType.BURROW, 1, 0)
-        return aura
+        aura = Aura.new(aura_id, AuraType.BURROW, 1, 0)
     elseif aura_id == AuraID.STUN or aura_id == AuraID.POLYMORPH then
-        local aura = Aura.new(aura_id, AuraType.STUN, 1, 0)
-        return aura
+        aura = Aura.new(aura_id, AuraType.STUN, 1, 0)
     elseif aura_id == AuraID.ROCK_BARRAGE then
-        local aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
+        aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
         aura.keep_front = true
         local ef = Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20 + power) * 0.3, TargetType.ALLY)
         aura.effects = {ef}
-        return aura
     elseif aura_id == AuraID.CURSE_OF_DOOM then
-        local aura = Aura.new(aura_id, AuraType.END_EFFECT, 4, 100)
+        aura = Aura.new(aura_id, AuraType.END_EFFECT, 4, 100)
         aura.effects = {Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, (20 + power) * 2, TargetType.ALLY)}
-        return aura
     elseif aura_id == AuraID.HAUNT then
-        local aura = Aura.new(aura_id, AuraType.POSSESSION, 4, 100)
+        aura = Aura.new(aura_id, AuraType.POSSESSION, 4, 100)
         local ef1 = Effect.new(TypeID.UNDEAD, EffectType.DAMAGE, 100, (20 + power) * 0.5, TargetType.ALLY,
             IGNORE_BIT_ALL)
         aura.effects = {ef1}
-        aura.value = from_index
-        return aura
     elseif aura_id == AuraID.MINEFIELD then
-        local aura = Aura.new(aura_id, AuraType.MINEFIELD, 9, 0)
+        aura = Aura.new(aura_id, AuraType.MINEFIELD, 9, 0)
         aura.keep_front = true
         aura.effects = {Effect.new(TypeID.MECHANICAL, EffectType.DAMAGE, 100, (20 + power) * 2, TargetType.ALLY)}
-        return aura
     elseif aura_id == AuraID.MECHANICAL then
-        local aura = Aura.new(aura_id, AuraType.OTHER, 99, 0)
-        return aura
+        aura = Aura.new(aura_id, AuraType.OTHER, 99, 0)
     elseif aura_id == AuraID.FLYING then
-        return Aura.new(aura_id, AuraType.SPEED, 0, 50)
+        aura = Aura.new(aura_id, AuraType.SPEED, 0, 50)
     elseif aura_id == AuraID.IMMOLATION then
-        local aura = Aura.new(aura_id, AuraType.DOT, 9, 0)
+        aura = Aura.new(aura_id, AuraType.DOT, 9, 0)
         aura.effects = {Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20 + power) * 0.25, TargetType.ENEMY)}
-        return aura
     elseif aura_id == AuraID.SHELL_SHIELD then
-        local aura = Aura.new(aura_id, AuraType.DEFEND, 5, (20 + power) * 0.25)
-        return aura
+        aura = Aura.new(aura_id, AuraType.DEFEND, 5, (20 + power) * 0.25)
     elseif aura_id == AuraID.SPEED_UP then
         -- 阿尔福斯 狂飙技能的加速，按照40%估计
-        local aura = Aura.new(aura_id, AuraType.SPEED, 2, 40)
-        return aura
+        aura = Aura.new(aura_id, AuraType.SPEED, 2, 40)
     elseif aura_id == AuraID.WEATHER_DARKNESS then
-        return Aura.new(aura_id, AuraType.WEATHER, 5, 0)
+        aura = Aura.new(aura_id, AuraType.WEATHER, 5, 0)
     elseif aura_id == AuraID.WEATHER_SANDSTORM then
-        return Aura.new(aura_id, AuraType.WEATHER, 5, (20 + power) * 0.25)
+        aura = Aura.new(aura_id, AuraType.WEATHER, 5, (20 + power) * 0.25)
     elseif aura_id == AuraID.BUBBLE then
-        return Aura.new(aura_id, AuraType.BLOCK, 99, 2)
+        aura = Aura.new(aura_id, AuraType.BLOCK, 99, 2)
     elseif aura_id == AuraID.BLIND then 
-        return Aura.new(aura_id, AuraType.ACCURACY, 2, -50)
+        aura = Aura.new(aura_id, AuraType.ACCURACY, 2, -50)
     end
+    if aura then
+        aura.from_index = from_index
+    end
+    return aura
 end
 
 function Pet:install_ability_by_id(id, index)
