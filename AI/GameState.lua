@@ -175,6 +175,7 @@ end
 
 function GameState:install_aura(teams, target_player, pet_index, aura)
     aura.expire = aura.duration + self.round
+    aura.start_round = self.round
     local ts = self.team_states[target_player]
     if aura.keep_front then
         ts.active_auras[aura.id] = aura
@@ -208,13 +209,21 @@ function GameState:post_step(teams)
             for i, aura in pairs(auras) do
                 if aura.type == AI.AuraType.DOT then
                     assert(aura.effects[1].effect_type == AI.EffectType.DAMAGE)
-                    state:process_effects(teams, player, pet_index, auras[i].effects)
+                    state:process_effects(teams, player, pet_index, aura.effects)
                 elseif aura.type == AI.AuraType.POSSESSION then
                     -- todo 实战中有buff提前结束了的情况
-                    state:process_effects(teams, player, pet_index, auras[i].effects)
+                    state:process_effects(teams, player, pet_index, aura.effects)
+                elseif aura.type == AI.AuraType.SPECIAL_DOT then
+                    local round = state.round - aura.start_round
+                    -- 效果轮次从0开始算，第0轮是施加buff的回合
+                    if aura.effects[round] then
+                        state:process_effects(teams, player, pet_index, aura.effects[round])
+                    end
                 end
 
                 if aura.expire <= state.round then
+                    table.insert(to_remove, i)
+                elseif aura.type == AI.AuraType.BLOCK and aura.value <= 0 then
                     table.insert(to_remove, i)
                 end
             end

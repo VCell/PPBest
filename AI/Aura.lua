@@ -93,6 +93,15 @@ function AuraProcessor.is_immune(state, team_index, pet_index, ignore_bit)
             end
         end
     end
+    for i,aura in pairs(team_state.active_auras) do 
+        if aura.type == AI.AuraType.BLOCK and Bit.band(ignore_bit, AI.IgnoreBit.BLOCK) == 0 then
+            -- todo 计算格挡次数
+            if aura.value > 0 then
+                aura.value = aura.value - 1
+                return true
+            end
+        end
+    end
     return false
 end
 
@@ -185,21 +194,6 @@ function AuraProcessor.get_defand(state, team_index, pet_index)
         defend = defend + state.weather.value
     end
     return defend
-end
-
-function AuraProcessor.process_block(state, team_index, pet_index)
-    local team_state = state.team_states[team_index]
-    local ps = team_state.pets[pet_index]
-    for i, aura in pairs(ps.auras) do
-        if aura.type == AI.AuraType.BLOCK then
-            aura.value = aura.value - 1
-            if aura.value <= 0 then
-                ps.auras[i] = nil
-            end
-            return true
-        end
-    end
-    return false
 end
 
 function AuraProcessor.get_max_health_modifier(state, team_index, pet_index)

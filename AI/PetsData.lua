@@ -8,6 +8,7 @@ local AbilityID = {
     BURN = 113, -- 燃烧 90命中元素普攻
     HEALING_WAVE = 123, -- 治疗波
     BURROW = 159, -- 兔子 钻地
+    VOLCANO = 176, -- 火山 p*0.85
     THRASH = 202, -- 痛击
     ION_CANNON = 209, -- 离子炮 
     SHADOW_SLASH = 210, -- 暗影鞭笞 90命中率亡灵普攻
@@ -20,9 +21,11 @@ local AbilityID = {
     DECOY = 334, -- 诱饵
     FLURRY = 360, -- 乱舞
     HOWL = 362, -- 嚎叫
+    CRUSH = 406, -- 重压
     IMMOLATION = 409, -- 献祭
     SHADOW_SHOCK = 422, -- 暗影震击 85命中率亡灵普攻
-    SAND_STORM = 453, -- 沙暴
+    ONYX_BARRIER = 439, -- 玛瑙壁垒
+    SANDSTORM = 453, -- 沙暴
     FLASH = 463, -- 闪电
     NETHER_GATE = 466, -- 虚空之门
     ALPHA_STRIKE = 504, -- 突然袭击
@@ -40,7 +43,7 @@ local AbilityID = {
     HAUNT = 652, -- 鬼影缠身 
     BLITZ = 713, -- 迅猛突袭
     MISSILE = 777, -- 导弹 90命中机械普攻
-    STONE_SHOT = 801, -- 投石 配波
+    STONE_SHOT = 801, -- 投石 95命中元素普攻
     RUPTURE = 814, -- 割裂 配波
     BUBBLE = 934, -- 气泡
     DEADLY_DREAM = 2530, -- 阿尔福斯 致命梦境
@@ -53,6 +56,7 @@ local AbilityID = {
 }
 
 local AuraID = {
+    VOLCANO = 175, -- 火山
     CURSE_OF_DOOM = 217, -- 厄运诅咒
     FLYING = 239, -- 飞行 血量高于50%时速度提升50%
     UNDEAD = 242, -- 亡灵
@@ -62,7 +66,9 @@ local AuraID = {
     DECOY = 333, -- 诱饵
     BURROW = 340, -- 钻地
     IMMOLATION = 408, -- 献祭
+    ONYX_BARRIER = 438, -- 玛瑙壁垒
     BLIND = 462, -- 半盲 462
+    SLEEP = 498, -- 沉睡
     SHATTER_DEFENSE = 542, -- 破碎防御
     ICE_TOMB = 623, -- 阿尔福斯 寒冰之墓
     ROCK_BARRAGE = 627, -- 配波 岩石弹幕
@@ -110,7 +116,8 @@ local PetID = {
     FIENDISH_LMP = 1229, -- 恶魔小鬼
     UNBORN_VALKYR = 1238, -- 幼年瓦格里
     ARFUS = 4329, -- 阿尔福斯
-    SCAVENGING_PINCHER = 4532 -- 劫掠者小钳
+    SCAVENGING_PINCHER = 4532, -- 劫掠者小钳
+    CHAR = 4533, -- 阿尔福斯 宠物游行
 }
 
 local TypeID = {
@@ -283,8 +290,10 @@ local AuraType = {
     HEAL = 15, -- 治疗量百分比修正
     POSSESSION = 16, -- 附身类效果，例如鬼影缠身。用value保存转生前血量。其他类似于dot
     END_EFFECT = 17, -- 结束时生效 effects可以有多个，都在结束时生效
-    WEATHER = 18, -- 天气类效果
-    OTHER = 19 -- 其他不需要类型逻辑的效果，生效时根据id生效
+    SPECIAL_DOT = 18, -- 特殊dot效果，每轮不同，按照effect生效
+    WEATHER = 19, -- 天气类效果
+
+    OTHER = 20 -- 其他不需要类型逻辑的效果，生效时根据id生效
 }
 
 local Ability = {
@@ -335,6 +344,7 @@ local Aura = {
     duration = 0, -- 持续回合数，0：当前回合有效；1：下一回合结束时结束; 以此类推
     value = 0,
     expire = 0,
+    start_round = 0,
     keep_front = false,
     effects = nil,
     from_index = 0,
@@ -378,7 +388,7 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         aura = Aura.new(aura_id, AuraType.DODGE, 1, 0)
     elseif aura_id == AuraID.BURROW then
         aura = Aura.new(aura_id, AuraType.BURROW, 1, 0)
-    elseif aura_id == AuraID.STUN or aura_id == AuraID.POLYMORPH then
+    elseif aura_id == AuraID.STUN or aura_id == AuraID.POLYMORPH or aura_id == AuraID.SLEEP then
         aura = Aura.new(aura_id, AuraType.STUN, 1, 0)
     elseif aura_id == AuraID.ROCK_BARRAGE then
         aura = Aura.new(aura_id, AuraType.DOT, 3, 0)
@@ -415,8 +425,22 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         aura = Aura.new(aura_id, AuraType.WEATHER, 5, (20 + power) * 0.25)
     elseif aura_id == AuraID.BUBBLE then
         aura = Aura.new(aura_id, AuraType.BLOCK, 99, 2)
+    elseif aura_id == AuraID.ONYX_BARRIER or aura_id == AuraID.DECOY then
+        aura = Aura.new(aura_id, AuraType.BLOCK, 99, 2)
+        aura.keep_front = true
     elseif aura_id == AuraID.BLIND then 
         aura = Aura.new(aura_id, AuraType.ACCURACY, 2, -50)
+    elseif aura_id == AuraID.VOLCANO then
+        aura = Aura.new(aura_id, AuraType.SPECIAL_DOT, 3, 0)
+        aura.keep_front = true
+        aura.effects = { nil,{
+                Effect.new(aura_id, EffectType.DAMAGE, 100, (20 + power) * 0.85, TargetType.ALLY),
+                Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 25, AuraID.STUN, TargetType.ALLY, 0, true)
+            },{
+                Effect.new(aura_id, EffectType.DAMAGE, 100, (20 + power) * 0.85, TargetType.ALLY),
+                Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 25, AuraID.STUN, TargetType.ALLY, 0, true)
+            },
+        }
     end
     if aura then
         aura.from_index = from_index
@@ -434,6 +458,9 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.BEAST, 0, 0)
         local ef = Effect.new_damage(TypeID.BEAST, 20 + self.power)
         ability.effect_list[1] = {ef}
+    elseif id == AbilityID.CRUSH then
+        ability = Ability.new(id, TypeID.HUMANOID, 0, 0)
+        ability.effect_list[1] = {Effect.new_damage(TypeID.HUMANOID, (20 + self.power) * 1.4, 80)}
     elseif id == AbilityID.SHADOW_SHOCK then
         ability = Ability.new(id, TypeID.UNDEAD, 0, 0)
         local ef = Effect.new_damage(TypeID.UNDEAD, (20 + self.power) * 1.3, 85)
@@ -559,9 +586,16 @@ function Pet:install_ability_by_id(id, index)
             TargetType.ENEMY, 0, true):set_dynamic_type(EffectDynamicType.ALPHA_STRIKE)}
     elseif id == AbilityID.CALL_DARKNESS then
         ability = Ability.new(id, TypeID.HUMANOID, 5, 0)
-        ability.effect_list[1] = {Effect.new_damage(TypeID.HUMANOID, 1.5 * (self.power + 20)),
-                                  Effect.new(TypeID.HUMANOID, EffectType.WEATHER, 100, AuraID.WEATHER_DARKNESS,
-            TargetType.ENEMY)}
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.HUMANOID, 1.5 * (self.power + 20)),
+            Effect.new(TypeID.HUMANOID, EffectType.WEATHER, 999, AuraID.WEATHER_DARKNESS,TargetType.ENEMY, IGNORE_BIT_ALL),
+        }
+    elseif id == AbilityID.SANDSTORM then
+        ability = Ability.new(id, TypeID.FLYING, 5, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.FLYING, 1.25 * (self.power + 20)),
+            Effect.new(TypeID.FLYING, EffectType.WEATHER, 999, AuraID.WEATHER_SANDSTORM,TargetType.ENEMY, IGNORE_BIT_ALL),
+        }
     elseif id == AbilityID.NOCTURNAL_STRIKE then
         ability = Ability.new(id, TypeID.FLYING, 3, 0)
         ability.effect_list[1] = {Effect.new_damage(TypeID.FLYING, (20 + self.power) * 2, 50):set_dynamic_type(
@@ -592,12 +626,23 @@ function Pet:install_ability_by_id(id, index)
             TargetType.ALLY, IGNORE_BIT_ALL)}
     elseif id == AbilityID.SHELL_SHIELD then
         ability = Ability.new(id, TypeID.BEAST, 0, 0)
-        ability.effect_list[1] = {Effect.new(TypeID.BEAST, EffectType.AURA, 999, AuraID.SHELL_SHIELD, TargetType.ALLY,
-            IGNORE_BIT_ALL)}
+        ability.effect_list[1] = {
+            Effect.new(TypeID.BEAST, EffectType.AURA, 999, AuraID.SHELL_SHIELD, TargetType.ALLY,IGNORE_BIT_ALL)
+        }
     elseif id == AbilityID.BUBBLE then
         ability = Ability.new(id, TypeID.HUMANOID, 8, 0)
         ability.effect_list[1] = {
             Effect.new(TypeID.HUMANOID, EffectType.AURA, 100, AuraID.BUBBLE, TargetType.ALLY,IGNORE_BIT_ALL)
+        }
+    elseif id == AbilityID.DECOY then
+        ability = Ability.new(id, TypeID.MECHANICAL, 8, 0)
+        ability.effect_list[1] = {
+            Effect.new(TypeID.MECHANICAL, EffectType.AURA, 100, AuraID.DECOY, TargetType.ALLY,IGNORE_BIT_ALL)
+        }
+    elseif id == AbilityID.ONYX_BARRIER then
+        ability = Ability.new(id, TypeID.MAGIC, 5, 0)
+        ability.effect_list[1] = {
+            Effect.new(TypeID.MAGIC, EffectType.AURA, 100, AuraID.ONYX_BARRIER, TargetType.ALLY,IGNORE_BIT_ALL)
         }
     elseif id == AbilityID.SHELL_RUSH then
         ability = Ability.new(id, TypeID.AQUATIC, 5, 0)
@@ -610,6 +655,11 @@ function Pet:install_ability_by_id(id, index)
         ability.effect_list[1] = {
             Effect.new_damage(TypeID.MAGIC, (20 + self.power) * 0.5, 100, TargetType.ENEMY),
             Effect.new(TypeID.MAGIC, EffectType.AURA, 100, AuraID.BLIND, TargetType.ENEMY,IGNORE_BIT_ALL, true)
+        }
+    elseif id == AbilityID.VOLCANO then 
+        ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
+        ability.effect_list[1] = {
+            Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.VOLCANO, TargetType.ENEMY,IGNORE_BIT_ALL)
         }
     end
     if ability then

@@ -115,6 +115,12 @@ local function create_test_pets(petlist)
             pet:install_ability_by_id(AI.AbilityID.SHELL_RUSH, 2)
             pet:install_ability_by_id(AI.AbilityID.BUBBLE, 3)
             table.insert(res, pet)
+        elseif pet_id == AI.PetID.CHAR then
+            local pet = AI.Pet.new(AI.PetID.CHAR, 1648, 301, 228, AI.TypeID.ELEMENTAL)
+            pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1)
+            pet:install_ability_by_id(AI.AbilityID.VOLCANO, 2)
+            pet:install_ability_by_id(AI.AbilityID.ONYX_BARRIER, 3)
+            table.insert(res, pet)
         end
     end
     return res
@@ -122,7 +128,7 @@ end
 
 local function init_game_state()
     local pets1 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.CROW})
-    local pets2 = create_test_pets({AI.PetID.EMPERPR_CRAB, AI.PetID.ARFUS, AI.PetID.FIENDISH_LMP})
+    local pets2 = create_test_pets({AI.PetID.CROW, AI.PetID.ARFUS, AI.PetID.CHAR})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1
