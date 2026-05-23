@@ -5,6 +5,8 @@ local AI = PPBest.AI
 local AuraProcessor = AI.AuraProcessor
 local Utils = PPBest.Utils
 
+local MAX_STACK_COUNT = 3
+
 local function update_change_round(old, player)
     if old == 0 or old == 3 - player then
         return old + player
@@ -34,6 +36,7 @@ local PetState = {
     cooldown_at = {}, -- 冷却回合数组。cooldown_at[i]=x表示第i个技能在x+1回合中才可以用
     is_dead = false, -- 是否死亡 目前主要用于机械
     dealt_damage = false, -- 本轮是否造成伤害。用于人形回血
+    stack_count = 0, -- 随使用次数增加的伤害的计数。这里假定每个宠物有最多一个stack类技能
 }
 PetState.__index = PetState
 function PetState.new(health)
@@ -118,6 +121,7 @@ function GameState:change_pet(teams, player, new_index)
     team_state.active_index = new_index
     team_state.ability_round = 0
     team_state.ability_index = 0
+    team_state.pets[new_index].stack_count = 0
     -- 检查是否有雷区
     local to_remove = {}
     for i, aura in pairs(team_state.active_auras) do
@@ -188,6 +192,10 @@ function GameState:install_aura(teams, target_player, pet_index, aura)
             if AI.Aura.is_weather(self.weather, AI.AuraID.WEATHER_ARCANE_SRORM, self.round) then
                 return false
             end
+            if AuraProcessor.get_aura_by_id(self, target_player, pet_index, AI.AuraID.TENACITY) then
+                self:print_log(string.format("玩家%d, 宠物%d 韧性免控", target_player, pet_index))
+                return false
+            end
         end
         ts.pets[pet_index].auras[aura.id] = aura
     end
@@ -236,6 +244,9 @@ function GameState:post_step(teams)
                     elseif aura.type == AI.AuraType.POSSESSION then
                         local op_pet = state.team_states[3 - player].pets[aura.from_index]
                         op_pet:feign_death_end(state.round)
+                    elseif aura.type == AI.AuraType.STUN then
+                        local aura = AI.Aura.new_aura_by_id(AI.AuraID.TENACITY)
+                        state:install_aura(teams, player, pet_index, aura)
                     elseif aura.type == AI.AuraType.OTHER then
                         if aura.id == AI.AuraID.UNDEAD then
                             local pet = team_state.pets[pet_index]
@@ -310,6 +321,7 @@ function GameState:process_effects(teams, player, pet_index, effects)
     -- print("process_effects", player)
     local opponent = 3 - player
     local hit_count = 0 -- 用于记录follow_hit为false的命中次数
+    local pet_state = self.team_states[player].pets[pet_index]
     -- 处理效果列表
     for i, effect in ipairs(effects) do
         if effect.target_type == AI.TargetType.ALLY then
@@ -352,6 +364,15 @@ function GameState:process_effects(teams, player, pet_index, effects)
                 end
                 hit_count = self.apply_effect(self, teams, effect, player, opponent,
                     self.team_states[opponent].active_index, hit_count)
+            elseif effect.dynamic_type == AI.EffectDynamicType.STACK then
+                effect = Utils.deepcopy(effect)
+                effect.value = effect.value * (1 + pet_state.stack_count * 0.5)
+                hit_count = self.apply_effect(self, teams, effect, player, opponent,
+                    self.team_states[opponent].active_index, hit_count)
+                pet_state.stack_count = pet_state.stack_count + 1
+                if pet_state.stack_count > MAX_STACK_COUNT then
+                    pet_state.stack_count = MAX_STACK_COUNT
+                end
             end
             
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then

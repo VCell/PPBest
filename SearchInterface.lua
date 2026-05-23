@@ -311,13 +311,19 @@ function SearchInterface:ProcessCombatLog(msg)
     elseif log.type == PetCombatLogType.BLOCK then
         assert(log.target == LE_BATTLE_PET_ALLY or log.target == LE_BATTLE_PET_ENEMY)
         local pets = self.game.State.team_states[log.target].pets
-        for index, pet in pairs(pets) do
-            for aura_id, aura in pairs(pet.auras) do
-                if aura.type == AI.AuraType.BLOCK then
-                    aura.value = aura.value - 1
-                    LogFrame:AddLog(string.format("玩家%d 宠物%d 消耗一次格挡，剩余：%d", log.target, index, aura.value))
-                end
+        local index = C_PetBattles.GetActivePet(log.target)
+        for aura_id, aura in pairs(pets[index].auras) do
+            if aura.type == AI.AuraType.BLOCK then
+                aura.value = aura.value - 1
+                LogFrame:AddLog(string.format("玩家%d 宠物%d 消耗一次格挡，剩余：%d", log.target, index, aura.value))
             end
+        end
+    end
+    if log.abilityInfo1 and log.abilityInfo1.id == AI.AbilityID.FROG_KISS then
+        if log.type ~= AI.AbilityType.AURA then
+            local ts = state.team_states[3-log.target]
+            local active_index = C_PetBattles.GetActivePet(3-log.target)
+            ts.pets[active_index].stack_count = ts.pets[active_index].stack_count + 1
         end
     end
     if log.abilityInfo1 then

@@ -225,6 +225,10 @@ local function select_joint_action_duct(node, current_state, exploration_c)
     -- 玩家2
     for _, a2 in ipairs(actions2) do
         local ucb = calculate_uct_value(node, 2, a2, exploration_c)
+
+        if a2.type == "change" then
+            ucb = ucb - 0.01
+        end
         ucb = ucb + math.random() * 1e-6
 
         if ucb > best_ucb2 then

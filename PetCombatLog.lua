@@ -23,6 +23,7 @@ local PetCombatLog = {
     abilityInfo1 = nil,
     abilityInfo2 = nil,
     target = 0,
+    value = 0,
 }
 PetCombatLog.__index = PetCombatLog
 
@@ -83,6 +84,11 @@ function PetCombatLog.Parse(msg)
             log.abilityInfo2 = new_ability_log_info(tonumber(id), tonumber(health), tonumber(power), tonumber(speed))
         end
         assert(log.abilityInfo2 ~= nil)
+    elseif log.type == PetCombatLogType.DAMAGE then
+        log.value = tonumber(string.match(msg, "了(%d+)点伤害"))
+    end
+    if log.value == nil then
+        log.value = 0
     end
     return log
 end

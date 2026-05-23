@@ -34,8 +34,8 @@ local AbilityID = {
     ARCANE_SRORM = 589, -- 奥术风暴
     SURGE_OF_POWER = 593, -- 能量涌动
     MOON_FIRE = 595, -- 月火术
-    STONE_RUSH = 621, -- 巨石奔袭 配波
-    ICE_TOMB = 624, -- 阿尔福斯 寒冰之墓
+    STONE_RUSH = 621, -- 配波
+    ICE_TOMB = 624, -- 寒冰之墓
     ROCK_BARRAGE = 628, -- 岩石弹幕 配波
     MINEFIELD = 634, -- 雷区
     QUAKE = 644, -- 地震
@@ -46,11 +46,11 @@ local AbilityID = {
     STONE_SHOT = 801, -- 投石 95命中元素普攻
     RUPTURE = 814, -- 割裂 配波
     BUBBLE = 934, -- 气泡
-    DEADLY_DREAM = 2530, -- 阿尔福斯 致命梦境
-    SPRINT = 2531, -- 阿尔福斯 狂飙
+    DEADLY_DREAM = 2530, -- 致命梦境
+    SPRINT = 2531, -- 狂飙
     ARFUS_4 = 2532, -- 阿尔福斯 横扫
-    ARFUS_6 = 2533, -- 阿尔福斯 宠物游行
-    BUBBLE_BURST = 2535, -- 气泡爆炸 劫掠者小钳
+    PET_PARADE = 2533, -- 宠物游行
+    BUBBLE_BURST = 2535, -- 气泡爆炸
     SHELL_RUSH = 2536, -- 甲壳冲锋
 
 }
@@ -76,6 +76,7 @@ local AuraID = {
     HAUNT = 653, -- 鬼影缠身
     POLYMORPH = 822, -- 变形
     SPEED_UP = 831, -- 速度提升
+    TENACITY = 924, -- 韧性 免控
     STUN = 927, -- 眩晕
     BUBBLE = 933, -- 气泡
     -- 天气类
@@ -115,9 +116,10 @@ local PetID = {
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     FIENDISH_LMP = 1229, -- 恶魔小鬼
     UNBORN_VALKYR = 1238, -- 幼年瓦格里
+    CHAR = 3042, -- 查尔
     ARFUS = 4329, -- 阿尔福斯
     SCAVENGING_PINCHER = 4532, -- 劫掠者小钳
-    CHAR = 4533, -- 阿尔福斯 宠物游行
+    
 }
 
 local TypeID = {
@@ -211,7 +213,8 @@ local EffectDynamicType = {
     FLURRY = 1, -- 攻击1-2次，如果比对方快则额外攻击一次
     BURROW = 2, -- 钻地 触发时需要取消id=340的aura
     ALPHA_STRIKE = 3, -- 如果我方先手，则伤害提升2/3
-    NOCTURNAL_STRIKE = 4 -- 如果目标被致盲，命中提升至100
+    NOCTURNAL_STRIKE = 4, -- 如果目标被致盲，命中提升至100
+    STACK = 5, -- 伤害随着使用次数增加
 }
 local TargetType = {
     ALLY = 1, -- 我方单体
@@ -312,7 +315,7 @@ function Ability.get_effectiveness_rate(ability_id)
         [AbilityID.ICE_TOMB] = 0.9,
         [AbilityID.NOCTURNAL_STRIKE] = 0.9,
         [AbilityID.BURROW] = 0.9,
-        [AbilityID.ARFUS_6] = 0.8,
+        [AbilityID.PET_PARADE] = 0.8,
         [AbilityID.DODGE] = 0,
         [AbilityID.MINEFIELD] = 0,
         [AbilityID.HEALING_WAVE] = 0,
@@ -441,6 +444,8 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
                 Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 25, AuraID.STUN, TargetType.ALLY, 0, true)
             },
         }
+    elseif aura_id == AuraID.TENACITY then
+        aura = Aura.new(aura_id, AuraType.TENACITY, 2, 0)
     end
     if aura then
         aura.from_index = from_index
@@ -477,7 +482,7 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.BEAST, 3, 0)
         local ef = Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.SHATTER_DEFENSE, TargetType.ENEMY)
         ability.effect_list[1] = {ef}
-    elseif id == AbilityID.ARFUS_6 then
+    elseif id == AbilityID.PET_PARADE then
         ability = Ability.new(id, TypeID.BEAST, 0, 3)
         ability.effect_list = {
             [1] = {Effect.new_damage(TypeID.BEAST, 54), Effect.new_damage(TypeID.BEAST, 54),
@@ -516,7 +521,7 @@ function Pet:install_ability_by_id(id, index)
     elseif id == AbilityID.FROG_KISS then
         ability = Ability.new(id, TypeID.AQUATIC, 0, 0)
         ability.effect_list[1] = {
-            Effect.new_damage(TypeID.AQUATIC, 20 + self.power),
+            Effect.new_damage(TypeID.AQUATIC, (20 + self.power) * 0.5):set_dynamic_type(EffectDynamicType.STACK),
             Effect.new(TypeID.AQUATIC, EffectType.AURA, 25, AuraID.POLYMORPH, TargetType.ENEMY, 0, true)
         }
     elseif id == AbilityID.STONE_SHOT then
