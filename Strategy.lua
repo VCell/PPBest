@@ -4,7 +4,7 @@ local BattleUtils = PPBest.BattleUtils
 local Const = PPBest.Const
 local LogFrame = PPBest.LogFrame
 local MAX_RECORDS = 200
-local LOSS_REST_TIME = 30  -- 失败后休息时间，单位秒
+local LOSS_REST_TIME = 35  -- 失败后休息时间，单位秒
 
 
 local PET_ID_NEXUS_WHELPLING = 1165 --节点雏龙

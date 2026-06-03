@@ -56,70 +56,78 @@ local TestAI = {
     version = "1.0"
 }
 
+local BASE_PET_ID_2 = 10000
+local PET_ID_ARFUS_2 = AI.PetID.ARFUS + BASE_PET_ID_2
+
 local function create_test_pets(petlist)
     local res = {}
     for i, pet_id in ipairs(petlist or {}) do
+        local pet = nil
         if pet_id == AI.PetID.SPRING_RABBIT then
             -- 春兔
-            local pet = AI.Pet.new(AI.PetID.SPRING_RABBIT, 1400, 227, 357, AI.TypeID.CRITTER)
+            pet = AI.Pet.new(AI.PetID.SPRING_RABBIT, 1400, 227, 357, AI.TypeID.CRITTER)
             pet:install_ability_by_id(AI.AbilityID.FLURRY, 1) -- 乱舞
             pet:install_ability_by_id(AI.AbilityID.DODGE, 2) -- 闪避
             pet:install_ability_by_id(AI.AbilityID.BURROW, 3) -- 钻地
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.ARFUS then
             -- 阿尔福斯
-            local pet = AI.Pet.new(AI.PetID.ARFUS, 1319, 341, 260, AI.TypeID.UNDEAD)
+            pet = AI.Pet.new(AI.PetID.ARFUS, 1319, 341, 260, AI.TypeID.UNDEAD)
             pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1) -- 啃骨头
             pet:install_ability_by_id(AI.AbilityID.DEADLY_DREAM, 2)
             pet:install_ability_by_id(AI.AbilityID.SPRINT, 3)
-            table.insert(res, pet)
+        elseif pet_id == PET_ID_ARFUS_2 then
+            -- 阿尔福斯
+            pet = AI.Pet.new(AI.PetID.ARFUS, 1319, 341, 260, AI.TypeID.UNDEAD)
+            pet:install_ability_by_id(AI.AbilityID.BONE_BITE, 1) -- 啃骨头
+            pet:install_ability_by_id(AI.AbilityID.ICE_TOMB, 2)
+            pet:install_ability_by_id(AI.AbilityID.PET_PARADE, 3)
         elseif pet_id == AI.PetID.PEBBLE then
-            local pet = AI.Pet.new(AI.PetID.ARFUS, 1969, 260, 211, AI.TypeID.ELEMENTAL)
+            pet = AI.Pet.new(AI.PetID.PEBBLE, 1969, 260, 211, AI.TypeID.ELEMENTAL)
             pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1) -- 投石
             pet:install_ability_by_id(AI.AbilityID.RUPTURE, 2) -- 割裂
             pet:install_ability_by_id(AI.AbilityID.ROCK_BARRAGE, 3) -- 岩石弹幕
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.UNBORN_VALKYR then
-            local pet = AI.Pet.new(AI.PetID.UNBORN_VALKYR, 1563, 293, 244, AI.TypeID.UNDEAD)
+            pet = AI.Pet.new(AI.PetID.UNBORN_VALKYR, 1563, 293, 244, AI.TypeID.UNDEAD)
             pet:install_ability_by_id(AI.AbilityID.SHADOW_SHOCK, 1)
             pet:install_ability_by_id(AI.AbilityID.CURSE_OF_DOOM, 2)
             pet:install_ability_by_id(AI.AbilityID.HAUNT, 3)
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.DARKMOON_TONK then
-            local pet = AI.Pet.new(AI.PetID.DARKMOON_TONK, 1627, 273, 260, AI.TypeID.MECHANICAL)
+            pet = AI.Pet.new(AI.PetID.DARKMOON_TONK, 1627, 273, 260, AI.TypeID.MECHANICAL)
             pet:install_ability_by_id(AI.AbilityID.MISSILE, 1)
             pet:install_ability_by_id(AI.AbilityID.MINEFIELD, 2)
             pet:install_ability_by_id(AI.AbilityID.ION_CANNON, 3)
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.CROW then
-            local pet = AI.Pet.new(AI.PetID.CROW, 1465, 289, 273, AI.TypeID.FLYING)
+            pet = AI.Pet.new(AI.PetID.CROW, 1465, 289, 273, AI.TypeID.FLYING)
             pet:install_ability_by_id(AI.AbilityID.ALPHA_STRIKE, 1) -- 乱舞
             pet:install_ability_by_id(AI.AbilityID.CALL_DARKNESS, 2) -- 召唤
             pet:install_ability_by_id(AI.AbilityID.NOCTURNAL_STRIKE, 3) -- 钻地
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.FIENDISH_LMP then
-            local pet = AI.Pet.new(AI.PetID.FIENDISH_LMP, 1359, 260, 333, AI.TypeID.HUMANOID)
+            pet = AI.Pet.new(AI.PetID.FIENDISH_LMP, 1359, 260, 333, AI.TypeID.HUMANOID)
             pet:install_ability_by_id(AI.AbilityID.BURN, 1)
             pet:install_ability_by_id(AI.AbilityID.IMMOLATION, 2)
             pet:install_ability_by_id(AI.AbilityID.NETHER_GATE, 3)
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.EMPERPR_CRAB then
-            local pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1481, 358, 211, AI.TypeID.AQUATIC)
+            pet = AI.Pet.new(AI.PetID.EMPERPR_CRAB, 1481, 358, 211, AI.TypeID.AQUATIC)
             pet:install_ability_by_id(AI.AbilityID.SURGE, 1)
             pet:install_ability_by_id(AI.AbilityID.HEALING_WAVE, 2)
             pet:install_ability_by_id(AI.AbilityID.SHELL_SHIELD, 3)
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.SCAVENGING_PINCHER then
-            local pet = AI.Pet.new(AI.PetID.SCAVENGING_PINCHER, 1287, 289, 249, AI.TypeID.AQUATIC)
+            pet = AI.Pet.new(AI.PetID.SCAVENGING_PINCHER, 1287, 289, 249, AI.TypeID.AQUATIC)
             pet:install_ability_by_id(AI.AbilityID.BUBBLE_BURST, 1)
             pet:install_ability_by_id(AI.AbilityID.SHELL_RUSH, 2)
             pet:install_ability_by_id(AI.AbilityID.BUBBLE, 3)
-            table.insert(res, pet)
         elseif pet_id == AI.PetID.CHAR then
-            local pet = AI.Pet.new(AI.PetID.CHAR, 1648, 301, 228, AI.TypeID.ELEMENTAL)
+            pet = AI.Pet.new(AI.PetID.CHAR, 1648, 301, 228, AI.TypeID.ELEMENTAL)
             pet:install_ability_by_id(AI.AbilityID.STONE_SHOT, 1)
             pet:install_ability_by_id(AI.AbilityID.VOLCANO, 2)
             pet:install_ability_by_id(AI.AbilityID.ONYX_BARRIER, 3)
+        elseif pet_id == AI.PetID.LIFELIKE_TOAD then
+            pet = AI.Pet.new(AI.PetID.LIFELIKE_TOAD, 1481, 276, 276, AI.TypeID.MECHANICAL)
+            pet:install_ability_by_id(AI.AbilityID.TONGUE_LASH, 1)
+            pet:install_ability_by_id(AI.AbilityID.HEALING_WAVE, 2)
+            pet:install_ability_by_id(AI.AbilityID.FROG_KISS, 3)
+        end
+        if pet then
             table.insert(res, pet)
         end
     end
@@ -127,8 +135,8 @@ local function create_test_pets(petlist)
 end
 
 local function init_game_state()
-    local pets1 = create_test_pets({AI.PetID.ARFUS, AI.PetID.DARKMOON_TONK, AI.PetID.CROW})
-    local pets2 = create_test_pets({AI.PetID.CROW, AI.PetID.ARFUS, AI.PetID.CHAR})
+    local pets1 = create_test_pets({PET_ID_ARFUS_2, AI.PetID.CROW, AI.PetID.DARKMOON_TONK, })
+    local pets2 = create_test_pets({AI.PetID.ARFUS, AI.PetID.FIENDISH_LMP, AI.PetID.LIFELIKE_TOAD})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
     game.Rule.teams[1] = pets1

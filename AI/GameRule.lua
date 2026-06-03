@@ -81,7 +81,7 @@ function GameRule:evaluate_action(state, player, action)
         local op_pet = self.teams[3 - player][op_index]
 
         -- 克制关系
-        local effectiveness = evaluate_pet_effectiveness(my_pet, op_pet) / evaluate_pet_effectiveness(op_pet, my_pet)
+        local effectiveness = (1+evaluate_pet_effectiveness(my_pet, op_pet)) / (1+evaluate_pet_effectiveness(op_pet, my_pet))
         local my_health_percent = state.team_states[player].pets[action.value].current_health / my_pet.health
         local op_health_percent = state.team_states[3 - player].pets[op_index].current_health / op_pet.health
 
