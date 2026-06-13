@@ -148,6 +148,27 @@ function SearchInterface:UpdateCooldowns(round)
     end
 end
 
+function SearchInterface:UpdateAuras()
+    for player = 1, 2 do
+        local team_state = self.game.State.team_states[player]
+        
+        if team_state then
+            for pet_index = 1, 3 do
+                local num_auras = C_PetBattles.GetNumAuras(player, pet_index)
+                local pet_state = team_state.pets[pet_index]
+                for i = 1, num_auras do
+                    local aura_id, _, turns_remaining = C_PetBattles.GetAuraInfo(player, pet_index, i)
+                    if aura_id == AI.AuraID.IMMOLATION then
+                        if pet_state.auras[aura_id] then
+                            pet_state.auras[aura_id].expire = self.game.State.round + turns_remaining
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 function SearchInterface:CleanExpiredAuras()
     --调用的时机是回合开始，因此只移除aura.expire<round的光环,保留aura.expire=round的光环
     for player = 1, 2 do
@@ -182,6 +203,7 @@ function SearchInterface:UpdateState(round)
     self:UpdateActivePet() -- 变更宠物有可能触发伤害，最先计算避免bug
     self:UpdateHealth()
     self:UpdateCooldowns(round)
+    self:UpdateAuras()
     self:CleanExpiredAuras()
 end
 

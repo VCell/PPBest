@@ -101,8 +101,8 @@ function OptionPanel:CreateUI()
         UIDropDownMenu_Initialize(self, 
             function (self, level)
                 local options = {
-                    { text = "单刷-基础策略", value = Const.MODE_DEFAULT },
-                    { text = "单刷-AI", value = Const.MODE_AI },
+                    -- { text = "单刷-基础策略", value = Const.MODE_DEFAULT },
+                    { text = "单刷", value = Const.MODE_AI },
                     { text = "互刷-协助方", value = Const.MODE_ASSIST },
                     { text = "互刷-我要角色经验", value = Const.MODE_WANT_EXP },
                     { text = "互刷-我要胜场数", value = Const.MODE_WANT_WIN },
@@ -167,7 +167,7 @@ function OptionPanel:CreateUI()
 
     local searchTimeLaber = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     searchTimeLaber:SetPoint("TOPLEFT", logCheckButton, "BOTTOMLEFT", 0, -10)
-    searchTimeLaber:SetText("【单刷-AI】模式下的计算强度，当前" .. tostring(PPBestConfig.searchTime or 5))
+    searchTimeLaber:SetText("【单刷】模式下的计算强度，当前" .. tostring(PPBestConfig.searchTime or 5))
     local searchTimeSlider = CreateFrame("Slider", nil, PPBestOptions, "OptionsSliderTemplate")
     searchTimeSlider:SetPoint("TOPLEFT", searchTimeLaber, "BOTTOMLEFT", 0, -10)
     searchTimeSlider:SetWidth(200)     -- 滑动条宽度
@@ -175,10 +175,10 @@ function OptionPanel:CreateUI()
     searchTimeSlider:SetMinMaxValues(1, 10)       -- 设置最小值1，最大值10
     searchTimeSlider:SetValueStep(1)              -- 设置步长为1，每次移动一格
     searchTimeSlider:SetObeyStepOnDrag(true)      -- 拖动时也按步长移动，不会出现小数
-    searchTimeSlider:SetValue(PPBestConfig.searchTime or 5)   
+    searchTimeSlider:SetValue(PPBestConfig.searchTime or 10)   
     searchTimeSlider:SetScript("OnValueChanged", function(self, value)
         PPBestConfig.searchTime = value
-        searchTimeLaber:SetText("【单刷-AI】模式下的计算强度，当前" .. tostring(value))
+        searchTimeLaber:SetText("【单刷】模式下的计算强度，当前" .. tostring(value))
     end)
 end
 
