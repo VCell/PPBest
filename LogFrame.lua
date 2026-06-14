@@ -135,7 +135,9 @@ function StateFrame:Create()
 end
 
 function StateFrame:SetState(state)
-    self.text:SetText(state)
+    if self.text then 
+        self.text:SetText(state)
+    end
 end
 
 PPBest.LogFrame = LogFrame

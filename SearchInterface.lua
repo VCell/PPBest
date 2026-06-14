@@ -342,7 +342,7 @@ function SearchInterface:ProcessCombatLog(msg)
         end
     end
     if log.abilityInfo1 and log.abilityInfo1.id == AI.AbilityID.FROG_KISS then
-        if log.type ~= AI.AbilityType.AURA then
+        if log.type ~= PetCombatLogType.AURA then
             local ts = state.team_states[3-log.target]
             local active_index = C_PetBattles.GetActivePet(3-log.target)
             ts.pets[active_index].stack_count = ts.pets[active_index].stack_count + 1
@@ -387,7 +387,7 @@ function SearchInterface:NewSearch(key)
             AI.DUCT_MCTS.Searcher.do_search_by_iterations(self.root, MCTS_ITERATIONS_STEP)
             LogFrame:AddLog(string.format("MCTS iterations: %d", self.root.total_visits))
             if self.root.total_visits >= MAX_MCTS_ITERATIONS then
-                self.DecideActions()
+                self:DecideActions()
             end
         end,
         IsDone = function(self)
