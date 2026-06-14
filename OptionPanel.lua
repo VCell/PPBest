@@ -120,7 +120,7 @@ function OptionPanel:CreateUI()
                 end
             end
         )
-        local currentValue = PPBestConfig.mode or "default" 
+        local currentValue = PPBestConfig.mode or Const.MODE_AI
         UIDropDownMenu_SetSelectedValue(self, currentValue)
     end)
 
