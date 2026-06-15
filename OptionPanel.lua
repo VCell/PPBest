@@ -167,7 +167,7 @@ function OptionPanel:CreateUI()
 
     local searchTimeLaber = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     searchTimeLaber:SetPoint("TOPLEFT", logCheckButton, "BOTTOMLEFT", 0, -10)
-    searchTimeLaber:SetText("【单刷】模式下的计算强度，当前" .. tostring(PPBestConfig.searchTime or 5))
+    searchTimeLaber:SetText("【单刷】模式下的计算强度，当前" .. tostring(PPBestConfig.searchTime))
     local searchTimeSlider = CreateFrame("Slider", nil, PPBestOptions, "OptionsSliderTemplate")
     searchTimeSlider:SetPoint("TOPLEFT", searchTimeLaber, "BOTTOMLEFT", 0, -10)
     searchTimeSlider:SetWidth(200)     -- 滑动条宽度

@@ -2,7 +2,7 @@ local _, PPBest = ...
 
 PPBestConfig = PPBestConfig or {
     hotkey = "F8",
-    mode = "default", --default,ai
+    mode = "AI", --default,ai
     assistTarget = "",
     enableLogWindow = false,
     searchTime = 10,
