@@ -36,10 +36,11 @@ end
 
 function BattleUtils:checkTeamByMode(mode)
     if mode == Const.MODE_WANT_PET_LEVEL then
+        local maxLevel = 25
         -- 宠物升级模式检查第三位是否满级
         local oldGuid = C_PetJournal.GetPetLoadOutInfo(3)
         local _,_,oldLevel = C_PetJournal.GetPetInfoByPetID(oldGuid)
-        if oldLevel == 25 then
+        if oldLevel >= maxLevel then
             local numPets, numOwned = C_PetJournal.GetNumPets()
             if numPets<numOwned then
                 print("清空宠物手册的筛选栏再试")
@@ -47,7 +48,7 @@ function BattleUtils:checkTeamByMode(mode)
             end
             for i = 1, numPets do
                 local guid,_,_,_,level,favorite = C_PetJournal.GetPetInfoByIndex(i)
-                if favorite and level<25 then
+                if favorite and level < maxLevel then
                     C_PetJournal.SetPetLoadOutInfo(3, guid)
                     return true
                 end
