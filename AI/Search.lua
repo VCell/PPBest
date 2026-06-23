@@ -42,6 +42,10 @@ local Rules = {
     evaluate_action = function(self,state, player, action)
         error("evaluate_action not implemented")
     end,
+
+    get_static_policy_action = function(state, player)
+        error("get_static_policy_action not implemented")
+    end
     
 }  -- 游戏规则接口，需要用户实现
 

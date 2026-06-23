@@ -49,6 +49,20 @@ function AuraProcessor.is_blind(state, team_index, pet_index)
     return false
 end
 
+function AuraProcessor.is_chilled(state, team_index, pet_index)
+    local team_state = state.team_states[team_index]
+    local ps = team_state.pets[pet_index]
+    for i, aura in pairs(ps.auras) do
+        if aura.id == AI.AuraID.FROST_SHOCK then
+            return true
+        end
+    end
+    if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_BLIZZARD, state.round) then
+        return true
+    end
+    return false
+end
+
 function AuraProcessor.get_active_accuracy_modifier(state, team_index)
     if team_index == nil then
         -- 没有来源时，预期是buff触发，返回100%

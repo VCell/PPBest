@@ -185,7 +185,7 @@ function GameState:install_aura(teams, target_player, pet_index, aura)
         ts.active_auras[aura.id] = aura
     else
         if aura.type == AI.AuraType.STUN then
-            if teams[target_player][pet_index].type == AI.TypeID.CRITTER then
+            if ts.pets[pet_index].type == AI.TypeID.CRITTER then
                 return false
             end
             -- 奥术风暴免控
@@ -196,6 +196,7 @@ function GameState:install_aura(teams, target_player, pet_index, aura)
                 self:print_log(string.format("玩家%d, 宠物%d 韧性免控", target_player, pet_index))
                 return false
             end
+            ts.interrupted = true
         end
         ts.pets[pet_index].auras[aura.id] = aura
     end
@@ -373,8 +374,20 @@ function GameState:process_effects(teams, player, pet_index, effects)
                 if pet_state.stack_count > MAX_STACK_COUNT then
                     pet_state.stack_count = MAX_STACK_COUNT
                 end
+            elseif effect.dynamic_type == AI.EffectDynamicType.DEEP_FREEZE then
+                if AuraProcessor.is_chilled(self, opponent, self.team_states[opponent].active_index) then
+                    effect = Utils.deepcopy(effect)
+                    effect.accuracy = 100
+                end
+                hit_count = self.apply_effect(self, teams, effect, player, opponent,
+                    self.team_states[opponent].active_index, hit_count)
+            elseif effect.dynamic_type == AI.EffectDynamicType.TAKEDOWN then
+                if AuraProcessor.is_stunned(self, opponent, self.team_states[opponent].active_index) then
+                    hit_count = self.apply_effect(self, teams, effect, player, opponent,
+                        self.team_states[opponent].active_index, hit_count)
+                end
             end
-            
+        
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then
             for i, pet_state in ipairs(self.team_states[player].pets) do
                 if pet_state.current_health > 0 then

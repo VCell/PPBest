@@ -7,12 +7,13 @@ local AbilityID = {
     BITE = 110, -- 撕咬 100命中野兽普攻
     BURN = 113, -- 燃烧 90命中元素普攻
     HEALING_WAVE = 123, -- 治疗波
-    BURROW = 159, -- 兔子 钻地
+    BURROW = 159, -- 钻地
     VOLCANO = 176, -- 火山
     THRASH = 202, -- 痛击
     ION_CANNON = 209, -- 离子炮 
     SHADOW_SLASH = 210, -- 暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, -- 厄运诅咒 
+    TAKEDOWN = 221, -- 打倒
     TONGUE_LASH = 228, -- 毒舌鞭笞
     FROG_KISS = 233, -- 青蛙的吻
     CALL_DARKNESS = 256, -- 召唤黑暗
@@ -23,11 +24,13 @@ local AbilityID = {
     HOWL = 362, -- 嚎叫
     CRUSH = 406, -- 重压
     IMMOLATION = 409, -- 献祭
+    FROST_SHOCK = 416, -- 冰霜震击
     SHADOW_SHOCK = 422, -- 暗影震击 85命中率亡灵普攻
     ONYX_BARRIER = 439, -- 玛瑙壁垒
     SANDSTORM = 453, -- 沙暴
     FLASH = 463, -- 闪电
     NETHER_GATE = 466, -- 虚空之门
+    DEEP_FREEZE = 481, -- 深度冻结
     ALPHA_STRIKE = 504, -- 突然袭击
     SURGE = 509, -- 汹涌
     NOCTURNAL_STRIKE = 517, -- 夜袭
@@ -36,7 +39,7 @@ local AbilityID = {
     MOON_FIRE = 595, -- 月火术
     STONE_RUSH = 621, -- 配波
     ICE_TOMB = 624, -- 寒冰之墓
-    ROCK_BARRAGE = 628, -- 岩石弹幕 配波
+    ROCK_BARRAGE = 628, -- 岩石弹幕
     MINEFIELD = 634, -- 雷区
     QUAKE = 644, -- 地震
     BONE_BITE = 648, -- 噬骨 100命中率亡灵普攻
@@ -66,6 +69,7 @@ local AuraID = {
     DECOY = 333, -- 诱饵
     BURROW = 340, -- 钻地
     IMMOLATION = 408, -- 献祭
+    FROST_SHOCK = 415, -- 冰霜震击
     ONYX_BARRIER = 438, -- 玛瑙壁垒
     BLIND = 462, -- 半盲 462
     SLEEP = 498, -- 沉睡
@@ -85,7 +89,7 @@ local AuraID = {
     WEATHER_MOONLIGHT = 596, -- 月光 治疗+25%，魔法伤害+10%
     WEATHER_DARKNESS = 257, -- 黑暗 治疗-50%，命中-10%，被致盲
     WEATHER_SANDSTORM = 454, -- 沙暴 命中-10%，所有伤害降低74 
-    WEATHER_BLIZZARD = 0, -- 暴风雪
+    WEATHER_BLIZZARD = 205, -- 暴风雪 所有宠物视为被冰冻
     WEATHER_MUD = 0, -- 泥泞
     WEATHER_RAIN = 0, -- 降雨
     WEATHER_SUNLIGHT = 403, -- 晴天 最大生命+50%，治疗+25%
@@ -113,6 +117,7 @@ local PetID = {
     CROW = 1068, -- 乌鸦
     CHROMINIUS = 1152, -- 克洛玛尼斯
     ANUBISATH_IDOL = 1155, -- 阿奴比萨斯
+    KUNLAI_RUNT = 1166, --昆莱小雪人
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     FIENDISH_LMP = 1229, -- 恶魔小鬼
     UNBORN_VALKYR = 1238, -- 幼年瓦格里
@@ -215,6 +220,8 @@ local EffectDynamicType = {
     ALPHA_STRIKE = 3, -- 如果我方先手，则伤害提升2/3
     NOCTURNAL_STRIKE = 4, -- 如果目标被致盲，命中提升至100
     STACK = 5, -- 伤害随着使用次数增加
+    DEEP_FREEZE = 6, -- 如果目标被冰冻，100%昏迷
+    TAKEDOWN = 7, -- 如果目标昏迷，造成双倍伤害
 }
 local TargetType = {
     ALLY = 1, -- 我方单体
@@ -446,6 +453,8 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         }
     elseif aura_id == AuraID.TENACITY then
         aura = Aura.new(aura_id, AuraType.TENACITY, 2, 0)
+    elseif aura_id == AuraID.FROST_SHOCK then
+        aura = Aura.new(aura_id, AuraType.SPEED, 2, -25)
     end
     if aura then
         aura.from_index = from_index
@@ -665,6 +674,26 @@ function Pet:install_ability_by_id(id, index)
         ability = Ability.new(id, TypeID.ELEMENTAL, 5, 0)
         ability.effect_list[1] = {
             Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.VOLCANO, TargetType.ENEMY,IGNORE_BIT_ALL)
+        }
+    elseif id == AbilityID.FROST_SHOCK then
+        ability = Ability.new(id, TypeID.ELEMENTAL, 0, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.ELEMENTAL, (20 + self.power) * 0.5, 100, TargetType.ENEMY),
+            Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 100, AuraID.FROST_SHOCK, TargetType.ENEMY, 0, true)
+        }
+    elseif id == AbilityID.DEEP_FREEZE then
+        ability = Ability.new(id, TypeID.ELEMENTAL, 4, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.ELEMENTAL, (20 + self.power) * 1.5, 100, TargetType.ENEMY),
+            Effect.new(TypeID.ELEMENTAL, EffectType.AURA, 25, AuraID.STUN, TargetType.ENEMY, 0, true)
+                    :set_dynamic_type(EffectDynamicType.DEEP_FREEZE)
+        }
+    elseif id == AbilityID.TAKEDOWN then
+        ability = Ability.new(id, TypeID.HUMANOID, 0, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.HUMANOID, (20 + self.power) * 0.9, 100, TargetType.ENEMY),
+            Effect.new(TypeID.HUMANOID, EffectType.DAMAGE, 100, (20 + self.power) * 0.9, TargetType.ENEMY, 0, true)
+                    :set_dynamic_type(EffectDynamicType.TAKEDOWN),
         }
     end
     if ability then

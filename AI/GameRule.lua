@@ -36,11 +36,19 @@ local function fix_ability_score(ability, state, player)
     elseif ability.id == AI.AbilityID.VOLCANO then
         return 5
     elseif ability.id == AI.AbilityID.NOCTURNAL_STRIKE then
-        if not AuraProcessor.is_blind(state, op, op_index) then
-            return -5
-        else 
+        if AuraProcessor.is_blind(state, op, op_index) then
             return 5
+        else 
+            return -5
         end
+    elseif ability.id == AI.AbilityID.DEEP_FREEZE then
+        if AuraProcessor.is_chilled(state, op, op_index) then
+            return 5
+        else 
+            return -5
+        end
+    elseif ability.id == AI.AbilityID.FROST_SHOCK then
+        return 500
     elseif ability.id == AI.AbilityID.SPRINT then
         return 5
     end
@@ -97,6 +105,10 @@ function GameRule:evaluate_action(state, player, action)
         score = 0
     end
     return score
+end
+
+function GameRule:get_static_policy_action(state, player)
+    
 end
 
 function GameRule:get_legal_actions(state, player)
