@@ -79,6 +79,7 @@ local function get_team(player)
         table.insert(team, pet)
         LogFrame:AddLog(string.format("玩家%d 宠物%d 技能1:%d 技能2:%d 技能3:%d", player, i,
                 pet:get_ability(1).id, pet:get_ability(2).id, pet:get_ability(3).id))
+        LogFrame:AddLog(string.format("health%d power:%d speed:%d", health, power, speed))
         
     end
     return team

@@ -180,7 +180,8 @@ local Pet = {
     power = 0,
     speed = 0,
     type = 0,
-    abilitys = {}
+    abilitys = {},
+    build_policy = nil
 }
 Pet.__index = Pet
 function Pet.new(id, health, power, speed, pettype)

@@ -4,7 +4,6 @@ local AuraProcessor = AI.AuraProcessor
 local Utils = PPBest.Utils
 local Action = AI.Action
 
-
 local function evaluate_ability_effectiveness(ability, opponent)
     local effectiveness = AI.TypeID.GetEffectiveness(ability.type, opponent.type)
     return (effectiveness - 1) * AI.Ability.get_effectiveness_rate(ability.id)
@@ -107,8 +106,21 @@ function GameRule:evaluate_action(state, player, action)
     return score
 end
 
-function GameRule:get_static_policy_action(state, player)
-    
+function GameRule:update_build_policy(team_id) 
+    local team = self.teams[team_id]
+    for i, pet in ipairs(team) do
+        if pet.id == AI.PetID.ARFUS and pet.abilitys[1].id == AI.AbilityID.BONE_BITE and 
+                pet.abilitys[2].id == AI.AbilityID.DEADLY_DREAM and pet.abilitys[3].id == AI.AbilityID.SPRINT then
+            pet.build_policy = function(state, player, actions)
+
+            end
+        end
+    end
+end
+
+function GameRule:get_static_policy_action(state, player, actions)
+    local pet_index = state.team_states[player].active_index
+    local pet = team[pet_index]
 end
 
 function GameRule:get_legal_actions(state, player)
@@ -306,7 +318,7 @@ function Game.new()
     local game = {
         State = {
             team_states = {
-                [1] = {},
+                [1] = {}, -- PetState数组
                 [2] = {}
             },
             round = 1,
@@ -316,7 +328,7 @@ function Game.new()
         Rule = {
             constant_sum = 1,
             teams = {
-                [1] = {},
+                [1] = {},  -- Pet数组
                 [2] = {}
             }
         }

@@ -249,6 +249,8 @@ end
 -- 启发式动作选择
 local function select_action_heuristic(game_rules, state, player, actions)
 
+  
+
     local scores = {}
     local max_score = -math.huge
 
