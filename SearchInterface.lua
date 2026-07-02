@@ -159,6 +159,7 @@ function SearchInterface:UpdateAuras()
         [AI.AuraID.IMMOLATION] = true,
         [AI.AuraID.FLYING] = true,
         [AI.AuraID.POLYMORPH] = true,
+        [AI.AuraID.SHELL_SHIELD] = true,
     }
     for player = 1, 2 do
         local team_state = self.game.State.team_states[player]
