@@ -107,20 +107,59 @@ function GameRule:evaluate_action(state, player, action)
 end
 
 function GameRule:update_build_policy(team_id) 
+    local rule = self
     local team = self.teams[team_id]
     for i, pet in ipairs(team) do
         if pet.id == AI.PetID.ARFUS and pet.abilitys[1].id == AI.AbilityID.BONE_BITE and 
                 pet.abilitys[2].id == AI.AbilityID.DEADLY_DREAM and pet.abilitys[3].id == AI.AbilityID.SPRINT then
-            pet.build_policy = function(state, player, actions)
-
+            pet.build_policy = function(state, player, action_map)
+                local pet_index = state.team_states[player].active_index
+                local enemy_index = state.team_states[3 - player].active_index
+                local aura_ice_tomb = AI.AuraProcessor.get_aura_by_id(state, player, 0, AI.AuraID.ICE_TOMB)
+                if aura_ice_tomb then 
+                    if aura_ice_tomb.expire == state.round then
+                        if action_map[2] then return action_map[2] end
+                    else  
+                        action_map[2] = nil
+                    end
+                end
+                local enemy_pet = rule.teams[3-player][enemy_index]
+                if enemy_pet.type == AI.TypeID.HUMANOID then
+                    return action_map[1]
+                elseif enemy_pet.type == AI.TypeID.CRITTER then
+                    if action_map[3] then return action_map[3] end
+                end
+                if enemy_pet.speed >= rule.teams[player][pet_index].speed then
+                    if action_map[3] then return action_map[3] end
+                end
+                if action_map[2] then return action_map[2] end
+                return action_map[1]
             end
         end
     end
 end
 
-function GameRule:get_static_policy_action(state, player, actions)
+function GameRule:static_policy_action_filter(state, player, actions)
     local pet_index = state.team_states[player].active_index
-    local pet = team[pet_index]
+    local pet = self.teams[player][pet_index]
+    if pet.build_policy then
+        local action_map = {}
+        local other_actions = {}
+        for i, action in ipairs(actions) do
+            if action.type == 'use' then
+                action_map[action.value] = action
+            else 
+                table.insert(other_actions, action)
+            end
+        end
+        local res = pet.build_policy(state, player, action_map)
+        if res then
+            return {res}
+        else
+            return other_actions
+        end
+    end
+    return actions
 end
 
 function GameRule:get_legal_actions(state, player)

@@ -140,7 +140,7 @@ local function create_test_pets(petlist)
 end
 
 local function init_game_state()
-    local pets1 = create_test_pets({AI.PetID.KUNLAI_RUNT, AI.PetID.CROW, AI.PetID.DARKMOON_TONK, })
+    local pets1 = create_test_pets({PET_ID_ARFUS_2, AI.PetID.CROW, AI.PetID.DARKMOON_TONK, })
     local pets2 = create_test_pets({AI.PetID.ARFUS, AI.PetID.FIENDISH_LMP, AI.PetID.LIFELIKE_TOAD})
     local game = AI.Game.new()
     assert(#pets1 == 3 and #pets2 == 3, "每队必须有3只宠物")
@@ -156,7 +156,7 @@ local function init_game_state()
         end
         team_state.active_index = 0 -- 对局初始双方都未选择首发的状态
         game.State.team_states[player] = team_state
-
+        game.Rule:update_build_policy(player)
     end
     -- setmetatable(game.State, {__index = AI.Game.State})
     game.State.round = 0

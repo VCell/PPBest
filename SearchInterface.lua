@@ -57,6 +57,10 @@ local function get_team(player)
         local type = C_PetBattles.GetPetType(player, i)
         local pet = AI.Pet.new(id, health, power, speed, type)
 
+        if type == AI.TypeID.FLYING then 
+            speed = speed / 1.5
+        end
+        
         --pvp中己方可以获取ability，敌方没有
         if player == LE_BATTLE_PET_ALLY then
             for ab_index = 1,3 do
@@ -107,6 +111,7 @@ function SearchInterface:InitGame()
         self.game.State.team_states[player] = team_state
     end
     self.last_enemy_ability_round = 0
+    self.Rule:update_build_policy(LE_BATTLE_PET_ALLY)
     LogFrame:AddLog("SearchInterface: 游戏队伍初始化完成")
     return true
 end
@@ -150,16 +155,20 @@ function SearchInterface:UpdateCooldowns(round)
 end
 
 function SearchInterface:UpdateAuras()
+    local update_auras = {
+        [AI.AuraID.IMMOLATION] = true,
+        [AI.AuraID.FLYING] = true,
+        [AI.AuraID.POLYMORPH] = true,
+    }
     for player = 1, 2 do
         local team_state = self.game.State.team_states[player]
-        
         if team_state then
             for pet_index = 1, 3 do
                 local num_auras = C_PetBattles.GetNumAuras(player, pet_index)
                 local pet_state = team_state.pets[pet_index]
                 for i = 1, num_auras do
                     local aura_id, _, turns_remaining = C_PetBattles.GetAuraInfo(player, pet_index, i)
-                    if aura_id == AI.AuraID.IMMOLATION then
+                    if update_auras[aura_id] then
                         if pet_state.auras[aura_id] then
                             pet_state.auras[aura_id].expire = self.game.State.round + turns_remaining
                         end
@@ -201,6 +210,7 @@ end
 function SearchInterface:UpdateState(round)
     self.game.State.round = round
     self.game.State.change_round = 0
+    self.game.Rule:update_build_policy(LE_BATTLE_PET_ENEMY)
     self:UpdateActivePet() -- 变更宠物有可能触发伤害，最先计算避免bug
     self:UpdateHealth()
     self:UpdateCooldowns(round)

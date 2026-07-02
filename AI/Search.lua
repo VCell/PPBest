@@ -43,8 +43,8 @@ local Rules = {
         error("evaluate_action not implemented")
     end,
 
-    get_static_policy_action = function(state, player)
-        error("get_static_policy_action not implemented")
+    static_policy_action_filter = function(state, player, actions)
+        error("static_policy_action_filter not implemented")
     end
     
 }  -- 游戏规则接口，需要用户实现
@@ -246,11 +246,10 @@ local function select_joint_action_duct(node, current_state, exploration_c)
 
     return best_action1, best_action2
 end
--- 启发式动作选择
+-- 启发式动作选择 先判断静态规则，规则没有再根据评分随机
 local function select_action_heuristic(game_rules, state, player, actions)
 
-  
-
+    actions = game_rules:static_policy_action_filter(state, player, actions)
     local scores = {}
     local max_score = -math.huge
 
