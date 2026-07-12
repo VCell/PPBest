@@ -53,14 +53,14 @@ local Rules = {
 DUCT_MCTS.Config = {
     exploration_constant = 1.414,  -- 默认探索系数 √2
     max_simulation_depth = 10,    -- 模拟最大深度
-    hybrid_random_factor = 0.2,
+    hybrid_random_factor = 0.3,
     enable_debug_log = false,       -- 调试日志开关
 
 }
 
 -- ==================== 树节点定义 ====================
 DUCT_MCTS.Node = {
-    state = nil,           -- 游戏状态
+    state = nil,           -- 根节点保存初始状态；open-loop 子节点不依赖该状态
     children = {},         -- 子节点映射表
     stats = {[1] = {}, [2] = {}}, -- 玩家动作统计
     total_visits = 0,      -- 节点总访问次数
@@ -73,13 +73,13 @@ DUCT_MCTS.Node = {
             children = {},
             stats = {[1] = {}, [2] = {}},
             total_visits = 0,
-            is_terminal = game_rules.is_terminal(state),
+            is_terminal = state and game_rules.is_terminal(state) or false,
             _game_rules = game_rules  -- 保存游戏规则引用
         }
         setmetatable(node, {__index = self})
         
-        -- 初始化统计信息
-        if not node.is_terminal then
+        -- 根节点可提前初始化统计；open-loop 子节点按 current_state 延迟创建统计
+        if state and not node.is_terminal then
             for player = 1, 2 do
                 local actions = game_rules:get_legal_actions(state, player)
                 for _, action in ipairs(actions) do
@@ -130,9 +130,9 @@ DUCT_MCTS.Node = {
     end,
     
     -- 检查是否完全展开
-    is_fully_expanded = function(self)
-        local actions1 = self._game_rules:get_legal_actions(self.state, 1)
-        local actions2 = self._game_rules:get_legal_actions(self.state, 2)
+    is_fully_expanded = function(self, state)
+        local actions1 = self._game_rules:get_legal_actions(state, 1)
+        local actions2 = self._game_rules:get_legal_actions(state, 2)
         
         for _, a1 in ipairs(actions1) do
             for _, a2 in ipairs(actions2) do
@@ -150,9 +150,9 @@ DUCT_MCTS.Node = {
     end,
     
     -- 获取未展开的动作对
-    get_unexpanded_pairs = function(self)
-        local actions1 = self._game_rules:get_legal_actions(self.state, 1)
-        local actions2 = self._game_rules:get_legal_actions(self.state, 2)
+    get_unexpanded_pairs = function(self, state)
+        local actions1 = self._game_rules:get_legal_actions(state, 1)
+        local actions2 = self._game_rules:get_legal_actions(state, 2)
         local unexpanded = {}
         
         for _, a1 in ipairs(actions1) do
@@ -315,9 +315,9 @@ end
 -- ==================== 默认模拟策略 ====================
 local function default_simulation_policy(state, game_rules, depth)
     local current_state = state
-    local depth = 0
+    local rollout_depth = 0
     
-    while not game_rules.is_terminal(current_state) and depth < DUCT_MCTS.Config.max_simulation_depth do
+    while not game_rules.is_terminal(current_state) and rollout_depth < DUCT_MCTS.Config.max_simulation_depth do
         local actions1 = game_rules:get_legal_actions(current_state, 1)
         local actions2 = game_rules:get_legal_actions(current_state, 2)
         
@@ -326,10 +326,10 @@ local function default_simulation_policy(state, game_rules, depth)
         local a2 = actions2[math.random(#actions2)]
         
         current_state = game_rules:apply_joint_action(current_state, a1, a2)
-        depth = depth + 1
+        rollout_depth = rollout_depth + 1
     end
     
-    return game_rules.get_utility(current_state, depth)
+    return game_rules.get_utility(current_state, depth + rollout_depth)
 end
 
 local function run_simulation(root_node, exploration_c, simulation_policy)
@@ -342,14 +342,13 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
 
     -- === 选择阶段 ===
     while true do
-        -- 如果 current_state 已终局，则标记并退出
+        -- open-loop 节点不是唯一局面，终局只属于本次模拟的 current_state
         if game_rules.is_terminal(current_state) then
-            node.is_terminal = true
             break
         end
 
         -- 如果当前树节点未完全展开，转到扩展阶段
-        if not node:is_fully_expanded() then
+        if not node:is_fully_expanded(current_state) then
             break
         end
 
@@ -376,19 +375,8 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     end
 
     -- === 扩展阶段 ===
-    if not node.is_terminal then
-        -- 构造基于 current_state 的未展开动作对（不要用 node.state）
-        local actions1 = game_rules:get_legal_actions(current_state, 1)
-        local actions2 = game_rules:get_legal_actions(current_state, 2)
-        local unexpanded = {}
-
-        for _, a1 in ipairs(actions1) do
-            for _, a2 in ipairs(actions2) do
-                if not node:get_child(a1, a2) then
-                    table.insert(unexpanded, {a1, a2})
-                end
-            end
-        end
+    if not game_rules.is_terminal(current_state) then
+        local unexpanded = node:get_unexpanded_pairs(current_state)
 
         if #unexpanded > 0 then
             -- 随机选择一个未展开的动作对
@@ -398,7 +386,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
             -- 以 current_state 为基础再采样一次（保证扩展时使用一个具体样例）
             local new_state = game_rules:apply_joint_action(current_state, action1, action2)
 
-            local child_node = DUCT_MCTS.Node:new(new_state, game_rules)
+            local child_node = DUCT_MCTS.Node:new(nil, game_rules)
             node:add_child(action1, action2, child_node)
             table.insert(path, {
                 node = node,
