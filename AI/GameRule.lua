@@ -271,7 +271,7 @@ function GameRule.get_winner(state)
     end
 end
 
-function GameRule.get_utility(state, depth)
+function GameRule:get_utility(state, depth)
     -- 返回玩家1的奖励值（玩家2的奖励为 constant_sum - utility）
     local winner = GameRule.get_winner(state)
 
@@ -283,26 +283,27 @@ function GameRule.get_utility(state, depth)
         return 0.5
     end
 
-    local p1_health = 0
-    local p2_health = 0
-
-    for i, petState in ipairs(state.team_states[1].pets) do
-        if petState.current_health > 0 then
-            p1_health = p1_health + petState.current_health
-        elseif petState.tmp_health and petState.tmp_health > 0 then
-            p1_health = p1_health + petState.tmp_health
+    -- 使用整队最大生命归一化，避免高基础血量阵容在同等残血比例下被高估。
+    local health_ratio = {}
+    for player = 1, 2 do
+        local current_health = 0
+        local max_health = 0
+        for i, petState in ipairs(state.team_states[player].pets) do
+            local pet = self.teams[player][i]
+            assert(pet, string.format("玩家%d宠物%d缺少配置", player, i))
+            if petState.current_health > 0 then
+                current_health = current_health + math.max(0, petState.current_health)
+            elseif petState.tmp_health and petState.tmp_health > 0 then
+                current_health = current_health + math.max(0, petState.tmp_health)
+            end
+            max_health = max_health + pet.health
         end
-    end
-    for i, petState in ipairs(state.team_states[2].pets) do
-        if petState.current_health > 0 then
-            p2_health = p2_health + petState.current_health
-        elseif petState.tmp_health and petState.tmp_health > 0 then
-            p2_health = p2_health + petState.tmp_health
-        end
+        assert(max_health > 0, string.format("玩家%d队伍最大生命必须大于0", player))
+        health_ratio[player] = current_health / max_health
     end
 
-    local diff = p1_health - p2_health
-    local total = p1_health + p2_health
+    local diff = health_ratio[1] - health_ratio[2]
+    local total = health_ratio[1] + health_ratio[2]
     assert(total > 0)
 
     return 0.5 + 0.5 * math.tanh(diff / total)
@@ -315,7 +316,7 @@ local function auras_to_string(auras)
     end
     return res
 end
-function GameRule.print_state(state)
+function GameRule:print_state(state)
     print(string.format("\n当前第%d回合:", state.round))
     if state.weather then
         print(string.format("天气: %d (持续到回合%d)", state.weather.id, state.weather.expire))
@@ -344,7 +345,7 @@ function GameRule.print_state(state)
     end
 
     -- 显示评估值
-    local utility = GameRule.get_utility(state)
+    local utility = self:get_utility(state)
     print(string.format("\n局面评估值: %.3f（玩家1的胜率）", utility))
 end
 

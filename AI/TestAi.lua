@@ -343,7 +343,7 @@ function TestAI:manual_simulation()
     local rule = game.Rule
 
     -- 显示初始状态
-    rule.print_state(state)
+    rule:print_state(state)
 
     local max_rounds = 50
 
@@ -453,7 +453,7 @@ function TestAI:manual_simulation()
         state:close_log()
 
         -- 显示结果
-        rule.print_state(state)
+        rule:print_state(state)
     end
 
     if not rule.is_terminal(state) then

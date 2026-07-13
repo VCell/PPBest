@@ -309,7 +309,7 @@ local function smart_simulation_policy(state, game_rules, base_depth)
         depth = depth + 1
     end
     
-    return game_rules.get_utility(current_state, depth + base_depth)
+    return game_rules:get_utility(current_state, depth + base_depth)
 end
 
 -- ==================== 默认模拟策略 ====================
@@ -329,7 +329,7 @@ local function default_simulation_policy(state, game_rules, depth)
         rollout_depth = rollout_depth + 1
     end
     
-    return game_rules.get_utility(current_state, depth + rollout_depth)
+    return game_rules:get_utility(current_state, depth + rollout_depth)
 end
 
 local function run_simulation(root_node, exploration_c, simulation_policy)
@@ -403,7 +403,7 @@ local function run_simulation(root_node, exploration_c, simulation_policy)
     -- === 模拟阶段 ===
     local utility = 0
     if game_rules.is_terminal(current_state) then
-        utility = game_rules.get_utility(current_state, #path)
+        utility = game_rules:get_utility(current_state, #path)
     else
         utility = simulation_policy(current_state, game_rules, #path)
     end
@@ -592,7 +592,7 @@ DUCT_MCTS.Searcher = {
             
             -- 显示当前状态
             if game_rules.print_state then
-                game_rules.print_state(state)
+                game_rules:print_state(state)
             end
             
             -- 为当前状态运行MCTS
