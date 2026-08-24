@@ -102,12 +102,14 @@ local function PerformAutoBattle()
                     StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
                 end
             end
-        else 
+        elseif PPBestConfig.mode == Const.MODE_AI then
             if not Strategy:ShouldRest() then
                 C_PetBattles.StartPVPMatchmaking()
                 C_PetBattles.AcceptQueuedPVPMatch()
                 StaticPopupSpecial_Hide(PetBattleQueueReadyFrame)
             end
+        elseif PPBestConfig.mode == Const.MODE_XIAOYI then
+            Strategy:PerformOutBattle()
         end
     end
 

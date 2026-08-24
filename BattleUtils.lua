@@ -75,6 +75,74 @@ function BattleUtils:checkTeamByMode(mode)
     
 end
 
+
+-- 按优先级构建团队 传入{speciesID:priority}的map，数值越小优先级越高
+-- 只在存活(血量>0)且等级>20的宠物中选取，取优先级最高的3只编入队伍
+function BattleUtils:BuildTeamByProriority(petsPriority)
+    local candidates = {} --{{guid=guid, priority=priority}}
+    local numPets, numOwned = C_PetJournal.GetNumPets()
+    if numPets < numOwned then
+        print("清空宠物手册的筛选栏再试")
+        return false
+    end
+ 
+    for i = 1, numPets do
+        local guid, speciesID, owned, customName, level = C_PetJournal.GetPetInfoByIndex(i) 
+        if owned and level and level > 20 then
+            local priority = petsPriority[speciesID]
+            if priority then
+                local health = C_PetJournal.GetPetStats(guid)
+                if health and health > 0 then
+                    table.insert(candidates, {guid = guid, priority = priority})
+                end
+            end
+        end
+    end
+ 
+    if #candidates == 0 then
+        print("没有符合条件（存活且等级>20）的宠物可编队")
+        return false
+    end
+    print("找到"..#candidates.."个宠物可编队")
+    -- 按优先级从高到低排序（数值越小优先级越高）
+    table.sort(candidates, function(a, b) return a.priority < b.priority end)
+ 
+    local teamSize = math.min(3, #candidates)
+    for i = 1, teamSize do
+        C_PetJournal.SetPetLoadOutInfo(i, candidates[i].guid)
+    end
+ 
+    if teamSize < 3 then
+        print("符合条件的宠物不足3只，仅编入了", teamSize, "只")
+        return false
+    end
+ 
+    return true
+end
+
+-- 设置宠物技能 传入{speciesID:abilityList}的map，abilityList为3个技能ID的列表,为0代表对应技能不用设置
+function BattleUtils:SetPetsAbility(petsAbilityMap)
+    for teamIndex = 1, 3 do
+        local guid = C_PetJournal.GetPetLoadOutInfo(teamIndex)
+        if guid then
+            print(guid)
+            local speciesID = C_PetJournal.GetPetInfoByPetID(guid)
+            print(speciesID)
+            local abilityList = petsAbilityMap[speciesID]
+            if abilityList then
+                for slot = 1, 3 do
+                    local abilityID = abilityList[slot]
+                    if abilityID and abilityID ~= 0 then
+                        print("设置宠物"..guid.."的技能"..slot.."为"..abilityID)
+                        C_PetJournal.SetAbility(teamIndex, slot, abilityID)
+                        
+                    end
+                end
+            end
+        end
+    end
+end
+
 function BattleUtils:ExportPetAbilityMap()
     local res = {}
     local numPets, numOwned = C_PetJournal.GetNumPets()

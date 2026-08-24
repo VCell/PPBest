@@ -78,230 +78,6 @@ local function GetCooperateForfeitScheme(timeout, firstPetIndex)
     }
 end
 
-function SimplePerform()
-    local idx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
-    local id = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, idx)
-    local enemyIdx = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
-    local enemyId = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ENEMY, enemyIdx)
-
-    if id == PET_ID_NEXUS_WHELPLING then
-        local duration = BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_ARCANE_STORM)
-        local enemyType = BattleUtils:GetEnemyPetType()
-        if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
-            BattleUtils:UseSkillByPriority({3, 1})
-        elseif enemyType == BattleUtils.TYPE_MECHANICAL then
-            BattleUtils:UseSkillByPriority({1, 3})
-        elseif BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 and BattleUtils:GetAliveNum(LE_BATTLE_PET_ALLY) == 1 then
-            BattleUtils:UseSkillByPriority({2, 1,3})
-        elseif duration < 3 then 
-            BattleUtils:UseSkillByPriority({3, 2, 1})
-        else
-            BattleUtils:UseSkillByPriority({2, 1, 3})
-        end
-    elseif id == PET_ID_FOSSILIZED_HATCHLING then
-        BattleUtils:UseSkillByPriority({3,2,1})
-    elseif id == PET_ID_PERSONAL_WORLD_DESTROYER then
-        BattleUtils:UseSkillByPriority({3,2,1})
-    elseif id == PET_ID_CROW then
-        if BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_DARKNESS) then
-            BattleUtils:UseSkillByPriority({2,3,1})
-        else
-            BattleUtils:UseSkillByPriority({2,1,3})
-        end
-    elseif id == PET_ID_ARFUS then
-        if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) then
-            BattleUtils:UseSkillByPriority({3,1})
-        elseif BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_UNDEAD) then
-            BattleUtils:UseSkillByPriority({1,3})
-        elseif BattleUtils:CanKillEnemy(361, BattleUtils.TYPE_UNDEAD) then
-            BattleUtils:UseSkillByPriority({1})
-        elseif BattleUtils:CanKillEnemy(432, BattleUtils.TYPE_BEAST) then
-            BattleUtils:UseSkillByPriority({3,1})
-        else
-            BattleUtils:UseSkillByPriority({2,3,1})
-        end
-    elseif id == PET_ID_DARKMOON_ZEPPELIN then
-        BattleUtils:UseSkillByPriority({3,2,1})
-    elseif id == PET_ID_PANDAREN_MONK then
-        BattleUtils:UseSkillByPriority({3,1,2})
-    elseif id == PET_ID_UNBORN_VALKYR then
-        if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ALLY) then
-            BattleUtils:UseSkillByPriority({3})
-        else
-            BattleUtils:UseSkillByPriority({2,1})
-        end
-    elseif id == PET_ID_PEBBLE then
-        if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
-            BattleUtils:UseSkillByPriority({3,1,2})
-        elseif BattleUtils:GetWeatherDuration(BattleUtils.WEATHER_ID_SANDSTORM) > 0 then
-            BattleUtils:UseSkillByPriority({2,1})
-        else
-            BattleUtils:UseSkillByPriority({3,2,1})
-        end
-    elseif id == PET_ID_SPRINT_RABBIT or id == PET_ID_GRASSLANDS_COTTONTAIL or 
-            id == PET_ID_MOUNTAIN_COTTONTAIL or id == PET_ID_TOLAI_HARE
-            or id == PET_ID_TOLAI_RABBIT then
-        if  enemyId == PET_ID_SCOURGED_WHELPLING or enemyId == PET_ID_PERSONAL_WORLD_DESTROYER then
-            if BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then 
-                BattleUtils:UseSkillByPriority({3,2,1})
-            else
-                BattleUtils:UseSkillByPriority({1})
-            end
-        elseif enemyId == PET_ID_FOSSILIZED_HATCHLING then 
-            if BattleUtils:GetAbilityCooldown(LE_BATTLE_PET_ALLY, 3) == 0 and 
-                    BattleUtils:GetAbilityCooldown(LE_BATTLE_PET_ALLY, 2) == 0 then
-                BattleUtils:UseSkillByPriority({2,1})
-            else 
-                BattleUtils:UseSkillByPriority({1})
-            end
-        else
-            BattleUtils:UseSkillByPriority({3,2,1})
-        end
-    elseif id == PET_ID_KUNLAI_RUNR then
-        if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_ELEMENTAL) or 
-                BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_HUMANOID) then
-            BattleUtils:UseSkillByPriority({1,3})
-        else
-            if BattleUtils:CanKillEnemy(324, BattleUtils.TYPE_HUMANOID) or 
-                    BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_STUN) > 0 then
-                BattleUtils:UseSkillByPriority({1,2})
-            elseif BattleUtils:GetAuraRemaining(LE_BATTLE_PET_ENEMY, BattleUtils.AURA_ID_FROST_SHOCK) > 0 then
-                BattleUtils:UseSkillByPriority({3,1})
-            elseif BattleUtils:GetAbilityCooldown(LE_BATTLE_PET_ALLY, 3) <= 1 then
-                BattleUtils:UseSkillByPriority({2,1})
-            else
-                BattleUtils:UseSkillByPriority({1,2})
-            end
-        end
-    elseif id==PET_ID_SCOURGED_WHELPLING then
-        if  BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 then
-            BattleUtils:UseSkillByPriority({2,1})
-        else
-            BattleUtils:UseSkillByPriority({3,1})
-        end
-    elseif id==PET_ID_SCAVENGING_PINCHER then
-        if  BattleUtils:GetAliveNum(LE_BATTLE_PET_ENEMY) == 1 then
-            BattleUtils:UseSkillByPriority({3,1})
-        else 
-            BattleUtils:UseSkillByPriority({2,3,1})
-        end
-    elseif id==PET_ID_LIFELIKE_TOAD or id == PET_ID_MOJO then
-        if BattleUtils:IsAbilityWeakToEnemy(BattleUtils.TYPE_AQUATIC) or 
-                BattleUtils:IsAbilityStrongToEnemy(BattleUtils.TYPE_CRITTER) then
-            if BattleUtils:GetActivePetHealth(LE_BATTLE_PET_ALLY) < 1000 then
-                BattleUtils:UseSkillByPriority({2,1})
-            else 
-                BattleUtils:UseSkillByPriority({1,2})
-            end
-        else 
-            if BattleUtils:GetActivePetHealth(LE_BATTLE_PET_ALLY) < 1100 then
-                BattleUtils:UseSkillByPriority({2,3})
-            else 
-                BattleUtils:UseSkillByPriority({3,2})
-            end
-        end
-        BattleUtils:UseSkillByPriority({3,2,1})
-    else 
-        local skillSlot = math.random(1,3)
-        BattleUtils:UseSkillByPriority({skillSlot, ((skillSlot)%3)+1, ((skillSlot+1)%3)+1})
-    end
-
-end
-
--- 3节点雏龙
-function GetScheme3Nexus()
-    local forfeit = false
-    local forfeitTeam = {
-        {266, 261, 1068},  -- 化石幼兽 便携式世界毁灭者 乌鸦
-    }
-    for _, team in ipairs(forfeitTeam) do
-        if BattleUtils:EnemyTeamIs(team) then
-            forfeit = true
-        end
-    end
-
-    return {
-        schemeName = "3NexusScheme",
-        forfeit = forfeit,
-        Select = function(self)
-            BattleUtils:SwitchPetByOrder()
-        end,
-        Battle = function(self, round)
-            if self.forfeit and round>1 then
-                Strategy:Forfeit()
-                return
-            end
-            if C_PetBattles.IsSkipAvailable() then
-                SimplePerform()
-            end
-        end,
-    }
-end
-
-function GetSimpleScheme()
-    return {
-        schemeName = "SimpleScheme",
-        Select = function(self)
-            BattleUtils:SwitchPetByOrder()
-        end,
-        Battle = function(self, round)
-            SimplePerform()
-        end
-    }
-end
-
-function GetSchemeRabbitPebbleArfus()
-    local undeadCount = 0
-    local mechanicalCount = 0
-    local order = {1,2,3}
-    for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
-        local type = C_PetBattles.GetPetType(LE_BATTLE_PET_ENEMY, petIndex)
-        if type == BattleUtils.TYPE_UNDEAD then
-            undeadCount = undeadCount + 1
-        elseif type == BattleUtils.TYPE_MECHANICAL then
-            mechanicalCount = mechanicalCount + 1
-        end
-    end
-
-    if BattleUtils:EnemyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) or
-             BattleUtils:EnemyTeamIs({PET_ID_STUNTED_DIREHORN, PET_ID_ARFUS, PET_ID_ANUBISATH_IDOL}) then
-        order = {3,1,2}  -- 阿尔福斯->兔->配波
-    elseif undeadCount == 0 then
-        order = {3,2,1}  -- 阿尔福斯->配波->兔
-    elseif undeadCount > 0 and mechanicalCount > 0 then
-        order = {1,2,3}  --  兔->配波->阿尔福斯
-    elseif undeadCount > 0 then
-        order = {1,3,2}  -- 兔->阿尔福斯->配波
-    end
-
-    return {
-        schemeName = "RPAScheme",
-        Select = function(self)
-            BattleUtils:SwitchPetByOrder(order[1],order[2],order[3])
-        end,
-        Battle = function(self, round)
-            if BattleUtils:EnemyTeamIs({PET_ID_FOSSILIZED_HATCHLING, PET_ID_PERSONAL_WORLD_DESTROYER, PET_ID_GILNEAN_RAVEN}) and
-                    BattleUtils:IsUndeadRound(LE_BATTLE_PET_ENEMY) then
-                C_PetBattles.ChangePet(2)
-                return 
-            end
-            SimplePerform()
-        end
-    }
-end
-
-function GetSchemeAAB()
-    return {
-        schemeName = "AABScheme",
-        Select = function(self)
-            C_PetBattles.ChangePet(1)
-            BattleUtils:SwitchPetByOrder({1,2,3})
-        end,
-        Battle = function(self, round)
-            SimplePerform()
-        end
-    }
-end
 
 local function performAction(action)
     LogFrame:AddLog("Perform action: " .. action.type .. " " .. action.value)
@@ -314,7 +90,7 @@ local function performAction(action)
     end
 end
 
-function GetSchemeAI()
+local function GetSchemeAI()
     return {
         --todo 需要确认事件次序。确认回合结束时buff和cd的时间
         schemeName = "AIScheme",
@@ -362,6 +138,52 @@ function GetSchemeAI()
         end
     }
 end
+
+local XiaoyiPetActions = {
+    [1180] = {2,1,3},--赞达拉袭胫者
+    [1211] = {3,1,2},--赞达拉撕踝者
+    [1152] = {2,1,3}, --克罗马尼斯
+}
+local XiaoyiPetsPriority = {
+    [1180] = 1,
+    [1211] = 1,
+    [1152] = 2,
+}
+local XiaoyiPetsAbility = {
+    [1180] = {921,919,917},--狩猎小队 黑爪 血牙
+    [1211] = {921,364,919},
+    [1152] = {110,362,593},
+}
+
+local function GetSchemeXiaoyi()
+    return {
+        schemeName = "XiaoyiScheme",
+        actionCount = 0,
+        round = 0,
+        Select = function(self)
+            BattleUtils:SwitchPetByOrder()
+        end,
+        Battle = function(self, round)
+            if round == self.round then 
+                return nil
+            end
+            self.actionCount = self.actionCount + 1
+            self.round = round
+            local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+            local petID = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, petIndex)
+            local actions = XiaoyiPetActions[petID]
+           
+            if actions then
+                local action = actions[(self.actionCount - 1) % #actions + 1]
+                BattleUtils:UseSkillByPriority({action, 1})
+            else 
+                BattleUtils:UseSkillByPriority({1,2,3})
+            end
+        end,
+    }
+end
+
+
 
 -- 添加对战记录
 function Strategy:AddBattleRecord(result)
@@ -427,29 +249,11 @@ function Strategy:Init(targetMode)
     elseif PPBestConfig.mode == Const.MODE_AI then
         --15s投降 因为辅助方预期立刻投降
         self.scheme = GetSchemeAI()
-    else 
-        -- 处理己方宠物信息
-        if BattleUtils:AllyTeamIs({PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING, PET_ID_NEXUS_WHELPLING}) then
-            self.scheme = GetScheme3Nexus()
-        elseif BattleUtils:AllyTeamIs({PET_ID_SPRINT_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-            self.scheme = GetSchemeRabbitPebbleArfus()
-        elseif BattleUtils:AllyTeamIs({PET_ID_MOUNTAIN_COTTONTAIL, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-            self.scheme = GetSchemeRabbitPebbleArfus()
-        elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_HARE, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-            self.scheme = GetSchemeRabbitPebbleArfus()
-        elseif BattleUtils:AllyTeamIs({PET_ID_TOLAI_RABBIT, PET_ID_PEBBLE, PET_ID_ARFUS}) then
-            self.scheme = GetSchemeRabbitPebbleArfus()
-        elseif BattleUtils:AllyTeamIs({PET_ID_SCAVENGING_PINCHER, PET_ID_SCOURGED_WHELPLING, PET_ID_SCOURGED_WHELPLING}) then
-            self.scheme = GetSchemeAAB()
-        end
-    end
-    if not self.scheme then
-        self.scheme = GetSimpleScheme()
+    elseif PPBestConfig.mode == Const.MODE_XIAOYI then
+        self.scheme = GetSchemeXiaoyi()
     end
 
-    local lowLevel = false
-    local myTarget = nil
-    local enemyTarget = nil
+    assert(self.scheme, "scheme scheme is nil")
 
     -- 处理对手宠物信息
     for petIndex = 1, C_PetBattles.GetNumPets(LE_BATTLE_PET_ENEMY) do
@@ -531,6 +335,19 @@ end
 
 function Strategy:PerformBattle()
     self.scheme:Battle(self.round)
+end
+
+function Strategy:PerformOutBattle()
+    --判断scheme是否有PerformOutBattle方法
+    print("PerformOutBattle")
+    local mode = PPBestConfig.mode
+    if mode == Const.MODE_XIAOYI then
+        CastSpellByID(125439)
+        BattleUtils:BuildTeamByProriority(XiaoyiPetsPriority)
+        BattleUtils:SetPetsAbility(XiaoyiPetsAbility)
+        
+        InteractUnit("target")
+    end
 end
 
 PPBest.Strategy = Strategy

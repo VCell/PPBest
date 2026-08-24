@@ -102,7 +102,8 @@ function OptionPanel:CreateUI()
             function (self, level)
                 local options = {
                     -- { text = "单刷-基础策略", value = Const.MODE_DEFAULT },
-                    { text = "单刷", value = Const.MODE_AI },
+                    { text = "单刷-全25PVP", value = Const.MODE_AI },
+                    { text = "单刷-小艺", value = Const.MODE_XIAOYI },
                     { text = "互刷-协助方", value = Const.MODE_ASSIST },
                     { text = "互刷-我要角色经验", value = Const.MODE_WANT_EXP },
                     { text = "互刷-我要胜场数", value = Const.MODE_WANT_WIN },
