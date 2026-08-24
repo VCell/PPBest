@@ -342,11 +342,10 @@ function Strategy:PerformOutBattle()
     print("PerformOutBattle")
     local mode = PPBestConfig.mode
     if mode == Const.MODE_XIAOYI then
-        CastSpellByID(125439)
+
         BattleUtils:BuildTeamByProriority(XiaoyiPetsPriority)
         BattleUtils:SetPetsAbility(XiaoyiPetsAbility)
-        
-        InteractUnit("target")
+
     end
 end
 

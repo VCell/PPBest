@@ -267,3 +267,5 @@ SlashCmdList["PPBEST"] = function(msg)
         print("|cFFFF0000未知命令。输入 /ppbest help 查看帮助|r")
     end
 end
+
+_G.PPBest_Run = PerformAutoBattle
