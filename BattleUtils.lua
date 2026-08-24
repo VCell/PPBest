@@ -114,7 +114,7 @@ function BattleUtils:BuildTeamByProriority(petsPriority)
  
     if teamSize < 3 then
         print("符合条件的宠物不足3只，仅编入了", teamSize, "只")
-        return false
+        return true
     end
  
     return true
@@ -125,17 +125,13 @@ function BattleUtils:SetPetsAbility(petsAbilityMap)
     for teamIndex = 1, 3 do
         local guid = C_PetJournal.GetPetLoadOutInfo(teamIndex)
         if guid then
-            print(guid)
             local speciesID = C_PetJournal.GetPetInfoByPetID(guid)
-            print(speciesID)
             local abilityList = petsAbilityMap[speciesID]
             if abilityList then
                 for slot = 1, 3 do
                     local abilityID = abilityList[slot]
                     if abilityID and abilityID ~= 0 then
-                        print("设置宠物"..guid.."的技能"..slot.."为"..abilityID)
-                        C_PetJournal.SetAbility(teamIndex, slot, abilityID)
-                        
+                        C_PetJournal.SetAbility(teamIndex, slot, abilityID)     
                     end
                 end
             end

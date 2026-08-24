@@ -146,8 +146,8 @@ local XiaoyiPetActions = {
 }
 local XiaoyiPetsPriority = {
     [1180] = 1,
-    [1211] = 1,
-    [1152] = 2,
+    [1211] = 2,
+    [1152] = 3,
 }
 local XiaoyiPetsAbility = {
     [1180] = {921,919,917},--狩猎小队 黑爪 血牙
@@ -159,6 +159,7 @@ local function GetSchemeXiaoyi()
     return {
         schemeName = "XiaoyiScheme",
         actionCount = 0,
+        petID = 0,
         round = 0,
         Select = function(self)
             BattleUtils:SwitchPetByOrder()
@@ -167,12 +168,16 @@ local function GetSchemeXiaoyi()
             if round == self.round then 
                 return nil
             end
-            self.actionCount = self.actionCount + 1
-            self.round = round
+        
             local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
             local petID = C_PetBattles.GetPetSpeciesID(LE_BATTLE_PET_ALLY, petIndex)
             local actions = XiaoyiPetActions[petID]
-           
+            if petID ~= self.petID then
+                self.petID = petID
+                self.actionCount = 0
+            end
+            self.actionCount = self.actionCount + 1
+            self.round = round
             if actions then
                 local action = actions[(self.actionCount - 1) % #actions + 1]
                 BattleUtils:UseSkillByPriority({action, 1})
@@ -339,7 +344,7 @@ end
 
 function Strategy:PerformOutBattle()
     --判断scheme是否有PerformOutBattle方法
-    print("PerformOutBattle")
+
     local mode = PPBestConfig.mode
     if mode == Const.MODE_XIAOYI then
 
