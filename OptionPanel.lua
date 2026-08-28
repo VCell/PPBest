@@ -1,4 +1,4 @@
-local _, PPBest = ...
+local addonName, PPBest = ...
 local Const = PPBest.Const
 
 
@@ -53,7 +53,7 @@ local function GetDropDownMenuItemInfo(text, key)
 end
 
 local modeDescriptions = {
-    [Const.MODE_AI] = "单刷全25PVP\n使用全25级PVP宠物进行自动战斗。推荐阵容见curseforge",
+    [Const.MODE_AI] = "单刷全25PVP:\n使用全25级PVP宠物进行自动战斗。推荐阵容见curseforge",
     [Const.MODE_XIAOYI] = [[一键单刷寓言之兽[幸运的小艺]，可用于给人物升级。
 1 准备以下宠物：3只满级赞达拉袭胫者，3只满级赞达拉撕踝者，3只满级克洛玛尼斯。
 2 设置宏：
@@ -64,14 +64,25 @@ local modeDescriptions = {
 3 设置交互按键，假设按键是B
 4 站在小艺附近找到一个进出宠物战斗时角色不会移动的位置（通常是在小艺左手的石头后面），然后交替按AB键即可
 ]],
-    [Const.MODE_ASSIST] = "互刷-辅助方：\n作为协助方配合队友刷宠物，需要填写辅助目标。需要有所有等级的宠物至少一只。注意清空宠物手册的过滤器。插件会自动询问队友的宠物等级，然后自动编队并战斗。",
-    [Const.MODE_WANT_EXP] = "互刷-我要角色经验\n用于给角色升级的模式，需要玩家在1号位放任意25级宠物，23号位置放任意低于20级的宠物。此模式下协助方会在战斗开始一分钟后认输，这样角色才能有经验",
-    [Const.MODE_WANT_WIN] = "互刷-我要胜场\n用于刷5000胜的成就。需要玩家在1号位放任意25级宠物，23号位置放任意低于20级的宠物。此模式下协助方会进入战斗立刻认输",
-    [Const.MODE_WANT_PET_LEVEL] = "互刷-我要宠物等级\n用于给宠物升级的模式。玩家需把所有希望升级的宠物设置为偏好。然后在1号位放任意25级宠物，2号位置放任意低于20级的宠物，3号放置任意要升级的宠物。此模式在满级后会自动更换宠物。注意清空宠物手册的过滤器",
-    [Const.MODE_WANT_ALL] = [[互刷-我全都要
+    [Const.MODE_ASSIST] = [[互刷-协助方：
+作为协助方配合队友刷宠物。
+需要填写辅助目标。需要有所有等级的宠物至少一只。注意清空宠物手册的过滤器。
+插件会自动询问队友的宠物等级，然后自动编队并战斗。]],
+    [Const.MODE_WANT_EXP] = [[互刷-我要角色经验:
+用于给角色升级的模式。
+需要玩家在1号位放任意25级宠物，23号位置放任意低于20级的宠物。
+此模式下协助方会在战斗开始一分钟后认输，这样角色才能有经验]],
+    [Const.MODE_WANT_WIN] = [[互刷-我要胜场:
+用于刷5000胜的成就。需要玩家在1号位放任意25级宠物，23号位置放任意低于20级的宠物。
+此模式下协助方会进入战斗立刻认输]],
+    [Const.MODE_WANT_PET_LEVEL] = [[互刷-我要宠物等级:
+用于给宠物升级的模式。
+玩家需把所有希望升级的宠物设置为偏好。然后在1号位放任意25级宠物，2号位置放任意低于20级的宠物，3号放置任意要升级的宠物。注意清空宠物手册的过滤器
+此模式在满级后会自动更换宠物。此模式下协助方会进入战斗立刻认输。]],
+    [Const.MODE_WANT_ALL] = [[互刷-我全都要:
 同时提升宠物和角色的等级的模式，此模式的宠物升级效率会远低于[互刷-我要宠物等级]
-玩家需把所有希望升级的宠物设置为偏好。然后在1号位放任意25级宠物，2号位置放任意低于20级的宠物，3号放置任意要升级的宠物。此模式在满级后会自动更换宠物。注意清空宠物手册的过滤器
-]],
+玩家需把所有希望升级的宠物设置为偏好。然后在1号位放任意25级宠物，2号位置放任意低于20级的宠物，3号放置任意要升级的宠物。注意清空宠物手册的过滤器
+此模式在满级后会自动更换宠物。此模式下协助方会在战斗开始一分钟后认输。]],
 }
 
 -- 创建UI元素
@@ -79,7 +90,13 @@ function OptionPanel:CreateUI()
     -- 标题
     local title = PPBestOptions:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("PPBest 宠物对战一键助手")
+
+    local version = (C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata)(addonName, "Version")
+    if version then
+        title:SetText("PPBest 宠物对战一键助手 |cFF888888v" .. version .. "|r")
+    else
+        title:SetText("PPBest 宠物对战一键助手")
+    end
     
     -- 分隔线
     local line = PPBestOptions:CreateTexture(nil, "ARTWORK")
