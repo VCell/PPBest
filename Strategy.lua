@@ -232,8 +232,11 @@ function Strategy:Init(targetMode)
     self.forfeited = false
     
     if PPBestConfig.mode == Const.MODE_ASSIST then
-        if targetMode == Const.MODE_WANT_EXP or targetMode == Const.MODE_WANT_ALL then
+        if targetMode == Const.MODE_WANT_EXP then
             self.scheme = GetCooperateForfeitScheme(62, 1)
+            return
+        elseif targetMode == Const.MODE_WANT_ALL then
+            self.scheme = GetCooperateForfeitScheme(62, 3)
             return
         else 
             self.scheme = GetCooperateForfeitScheme(0, 1)
