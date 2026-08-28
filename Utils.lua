@@ -16,6 +16,7 @@ local Const = {
     MODE_WANT_WIN = "want_win",
     MODE_WANT_PET_LEVEL = "want_pet_level",
     MODE_XIAOYI = "xiaoyi",
+    MODE_WANT_ALL = "want_all",
 }
 
 -- 传入mode是否是互刷的主要方

@@ -52,6 +52,28 @@ local function GetDropDownMenuItemInfo(text, key)
 
 end
 
+local modeDescriptions = {
+    [Const.MODE_AI] = "单刷全25PVP\n使用全25级PVP宠物进行自动战斗。推荐阵容见curseforge",
+    [Const.MODE_XIAOYI] = [[一键单刷寓言之兽[幸运的小艺]，可用于给人物升级。
+1 准备以下宠物：3只满级赞达拉袭胫者，3只满级赞达拉撕踝者，3只满级克洛玛尼斯。
+2 设置宏：
+/target 幸运的小艺
+/use 复活战斗宠物
+/run PPBest_Run()
+并放置在非主技能栏上（主技能栏会被宠物对战操作键占用），假设快捷键是A
+3 设置交互按键，假设按键是B
+4 站在小艺附近找到一个进出宠物战斗时角色不会移动的位置（通常是在小艺左手的石头后面），然后交替按AB键即可
+]],
+    [Const.MODE_ASSIST] = "互刷-辅助方：\n作为协助方配合队友刷宠物，需要填写辅助目标。需要有所有等级的宠物至少一只。注意清空宠物手册的过滤器。插件会自动询问队友的宠物等级，然后自动编队并战斗。",
+    [Const.MODE_WANT_EXP] = "互刷-我要角色经验\n用于给角色升级的模式，需要玩家在1号位放任意25级宠物，23号位置放任意低于20级的宠物。此模式下协助方会在战斗开始一分钟后认输，这样角色才能有经验",
+    [Const.MODE_WANT_WIN] = "互刷-我要胜场\n用于刷5000胜的成就。需要玩家在1号位放任意25级宠物，23号位置放任意低于20级的宠物。此模式下协助方会进入战斗立刻认输",
+    [Const.MODE_WANT_PET_LEVEL] = "互刷-我要宠物等级\n用于给宠物升级的模式。玩家需把所有希望升级的宠物设置为偏好。然后在1号位放任意25级宠物，2号位置放任意低于20级的宠物，3号放置任意要升级的宠物。此模式在满级后会自动更换宠物。注意清空宠物手册的过滤器",
+    [Const.MODE_WANT_ALL] = [[互刷-我全都要
+同时提升宠物和角色的等级的模式，此模式的宠物升级效率会远低于[互刷-我要宠物等级]
+玩家需把所有希望升级的宠物设置为偏好。然后在1号位放任意25级宠物，2号位置放任意低于20级的宠物，3号放置任意要升级的宠物。此模式在满级后会自动更换宠物。注意清空宠物手册的过滤器
+]],
+}
+
 -- 创建UI元素
 function OptionPanel:CreateUI()
     -- 标题
@@ -88,14 +110,27 @@ function OptionPanel:CreateUI()
     end)
     
     -- 添加一个文本标签
-    local modLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    modLabel:SetPoint("TOPLEFT", setHotkeyButton, "BOTTOMLEFT", 0, -10)
-    modLabel:SetText("使用模式:")
+    local modeLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    modeLabel:SetPoint("TOPLEFT", setHotkeyButton, "BOTTOMLEFT", 0, -10)
+    modeLabel:SetText("使用模式:")
     
-    local modDropdownFrame = CreateFrame("Frame", nil, PPBestOptions, "UIDropDownMenuTemplate")
-    modDropdownFrame:SetPoint("TOPLEFT", modLabel, "BOTTOMLEFT", 0, -10)
-    modDropdownFrame:SetSize(120, 25)
-    modDropdownFrame:SetScript("OnShow", function(self)
+    local modeDropdownFrame = CreateFrame("Frame", nil, PPBestOptions, "UIDropDownMenuTemplate")
+    modeDropdownFrame:SetPoint("TOPLEFT", modeLabel, "BOTTOMLEFT", 0, -10)
+    modeDropdownFrame:SetSize(120, 25)
+        -- 模式说明文本框
+    local modeDescText = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    modeDescText:SetPoint("TOPLEFT", modeDropdownFrame, "BOTTOMLEFT", 16, -6)
+    modeDescText:SetWidth(400)
+    modeDescText:SetJustifyH("LEFT")
+    modeDescText:SetJustifyV("TOP")
+    --modeDescText:SetHeight(30)  -- 预留两行的高度，避免布局跳动
+    modeDescText:SetText("")
+
+    -- 统一的刷新函数
+    local function UpdateModeDescription(value)
+        modeDescText:SetText(modeDescriptions[value] or "")
+    end
+    modeDropdownFrame:SetScript("OnShow", function(self)
         UIDropDownMenu_SetWidth(self, 150) -- 设置宽度
         UIDropDownMenu_SetButtonWidth(self, 124) -- 标准宽度
         UIDropDownMenu_Initialize(self, 
@@ -108,14 +143,16 @@ function OptionPanel:CreateUI()
                     { text = "互刷-我要角色经验", value = Const.MODE_WANT_EXP },
                     { text = "互刷-我要胜场数", value = Const.MODE_WANT_WIN },
                     { text = "互刷-我要宠物等级", value = Const.MODE_WANT_PET_LEVEL },
+                    { text = "互刷-我全都要", value = Const.MODE_WANT_ALL },
                 }
                 for _, option in ipairs(options) do
                     local info = UIDropDownMenu_CreateInfo()
                     info.text = option.text
                     info.value = option.value
                     info.func = function(self)
-                        UIDropDownMenu_SetSelectedValue(modDropdownFrame, self.value)
+                        UIDropDownMenu_SetSelectedValue(modeDropdownFrame, self.value)
                         PPBestConfig.mode = self.value
+                        UpdateModeDescription(self.value)
                     end
                     UIDropDownMenu_AddButton(info,level)
                 end
@@ -123,10 +160,11 @@ function OptionPanel:CreateUI()
         )
         local currentValue = PPBestConfig.mode or Const.MODE_AI
         UIDropDownMenu_SetSelectedValue(self, currentValue)
+        UpdateModeDescription(currentValue)
     end)
 
     local targetNameLabel = PPBestOptions:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    targetNameLabel:SetPoint("TOPLEFT", modDropdownFrame, "BOTTOMLEFT", 0, -10)
+    targetNameLabel:SetPoint("TOPLEFT", modeDescText, "BOTTOMLEFT", 0, -10)
     targetNameLabel:SetText("辅助目标ID(只有辅助方需要填写，格式：名字-服务器)：")
 
     local targetNameBox = CreateFrame("EditBox", nil, PPBestOptions, "InputBoxTemplate")
