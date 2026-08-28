@@ -21,7 +21,7 @@ local Const = {
 
 -- 传入mode是否是互刷的主要方
 function Const.isCooperateMainMode(mode)
-    return mode == Const.MODE_WANT_EXP or mode == Const.MODE_WANT_WIN or mode == Const.MODE_WANT_PET_LEVEL
+    return mode == Const.MODE_WANT_EXP or mode == Const.MODE_WANT_WIN or mode == Const.MODE_WANT_PET_LEVEL or mode == Const.MODE_WANT_ALL
 end
 
 PPBest.Const = Const
