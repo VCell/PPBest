@@ -43,6 +43,12 @@ end
 
 -- 执行自动战斗
 local function PerformAutoBattle()
+    --清空过滤器
+    C_PetJournal.ClearSearchFilter()
+    C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_COLLECTED, true)
+    C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_NOT_COLLECTED, true)
+    C_PetJournal.SetAllPetTypesChecked(true)
+
     if C_PetBattles.IsInBattle() then 
         if C_PetBattles.ShouldShowPetSelect() then
             Strategy:PerformSelect()

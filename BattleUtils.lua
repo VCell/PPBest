@@ -53,6 +53,7 @@ function BattleUtils:checkTeamByMode(mode)
                     return true
                 end
             end
+            print("没有低级宠物可编队")
         end
     else
     --满级自动换宠物逻辑暂时取消
