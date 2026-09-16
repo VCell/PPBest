@@ -131,6 +131,16 @@ local function create_test_pets(petlist)
             pet:install_ability_by_id(AI.AbilityID.TAKEDOWN, 1)
             pet:install_ability_by_id(AI.AbilityID.FROST_SHOCK, 2)
             pet:install_ability_by_id(AI.AbilityID.DEEP_FREEZE, 3)
+        elseif pet_id == AI.PetID.QIRAJI_GUARDLING then
+            pet = AI.Pet.new(AI.PetID.QIRAJI_GUARDLING, 1400, 325, 260, AI.TypeID.HUMANOID)
+            pet:install_ability_by_id(AI.AbilityID.CRUSH, 1)
+            pet:install_ability_by_id(AI.AbilityID.SANDSTORM, 2)
+            pet:install_ability_by_id(AI.AbilityID.BLACKOUT_KICK, 3)
+        elseif pet_id == AI.PetID.DEATH_ADDER_HATCHLING then
+            pet = AI.Pet.new(AI.PetID.DEATH_ADDER_HATCHLING, 1400, 276, 292, AI.TypeID.BEAST)
+            pet:install_ability_by_id(AI.AbilityID.POISON_FANG, 1)
+            pet:install_ability_by_id(AI.AbilityID.PUNCTURE_WOUND, 2)
+            pet:install_ability_by_id(AI.AbilityID.BLINDING_POISON, 3)
         end
         if pet then
             table.insert(res, pet)
@@ -140,7 +150,7 @@ local function create_test_pets(petlist)
 end
 
 local function init_game_state()
-    local pets1 = create_test_pets({AI.PetID.LIFELIKE_TOAD, AI.PetID.LIFELIKE_TOAD, AI.PetID.LIFELIKE_TOAD})
+    local pets1 = create_test_pets({AI.PetID.UNBORN_VALKYR, AI.PetID.DEATH_ADDER_HATCHLING, AI.PetID.QIRAJI_GUARDLING})
     local pets2 = create_test_pets({AI.PetID.ARFUS, AI.PetID.FIENDISH_LMP, AI.PetID.LIFELIKE_TOAD})
 
     local game = AI.Game.new()

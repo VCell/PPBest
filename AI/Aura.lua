@@ -39,7 +39,7 @@ function AuraProcessor.is_blind(state, team_index, pet_index)
     local team_state = state.team_states[team_index]
     local ps = team_state.pets[pet_index]
     for i, aura in pairs(ps.auras) do
-        if aura.id == AI.AuraID.BLIND then
+        if aura.id == AI.AuraID.BLIND  or aura.id == AI.AuraID.BLINDING_POISON then
             return true
         end
     end
@@ -59,6 +59,17 @@ function AuraProcessor.is_chilled(state, team_index, pet_index)
     end
     if AI.Aura.is_weather(state.weather, AI.AuraID.WEATHER_BLIZZARD, state.round) then
         return true
+    end
+    return false
+end
+
+function AuraProcessor.is_poisoned(state, team_index, pet_index)
+    local team_state = state.team_states[team_index]
+    local ps = team_state.pets[pet_index]
+    for i, aura in pairs(ps.auras) do
+        if aura.id == AI.AuraID.POISONED or aura.id == AI.AuraID.BLINDING_POISON then
+            return true
+        end
     end
     return false
 end

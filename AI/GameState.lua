@@ -386,6 +386,11 @@ function GameState:process_effects(teams, player, pet_index, effects)
                     hit_count = self.apply_effect(self, teams, effect, player, opponent,
                         self.team_states[opponent].active_index, hit_count)
                 end
+            elseif effect.dynamic_type == AI.EffectDynamicType.PUNCTURE_WOUND then
+                if AuraProcessor.is_poisoned(self, opponent, self.team_states[opponent].active_index) then
+                    hit_count = self.apply_effect(self, teams, effect, player, opponent,
+                        self.team_states[opponent].active_index, hit_count)
+                end
             end
         
         elseif effect.target_type == AI.TargetType.ALLY_TEAM then

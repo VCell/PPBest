@@ -7,6 +7,7 @@ local AbilityID = {
     BITE = 110, -- 撕咬 100命中野兽普攻
     BURN = 113, -- 燃烧 90命中元素普攻
     HEALING_WAVE = 123, -- 治疗波
+    POISON_FANG = 152, -- 剧毒长牙
     BURROW = 159, -- 钻地
     VOLCANO = 176, -- 火山
     THRASH = 202, -- 痛击
@@ -14,6 +15,7 @@ local AbilityID = {
     SHADOW_SLASH = 210, -- 暗影鞭笞 90命中率亡灵普攻
     CURSE_OF_DOOM = 218, -- 厄运诅咒 
     TAKEDOWN = 221, -- 打倒
+    BLACKOUT_KICK = 227, -- 幻灭踢
     TONGUE_LASH = 228, -- 毒舌鞭笞
     FROG_KISS = 233, -- 青蛙的吻
     CALL_DARKNESS = 256, -- 召唤黑暗
@@ -49,6 +51,8 @@ local AbilityID = {
     STONE_SHOT = 801, -- 投石 95命中元素普攻
     RUPTURE = 814, -- 割裂
     BUBBLE = 934, -- 气泡
+    BLINDING_POISON = 1049, -- 致盲剧毒
+    PUNCTURE_WOUND = 1050, -- 穿刺之伤
     DEADLY_DREAM = 2530, -- 致命梦境
     SPRINT = 2531, -- 狂飙
     ARFUS_4 = 2532, -- 横扫
@@ -68,6 +72,7 @@ local AuraID = {
     DODGE = 311, -- 闪避
     DECOY = 333, -- 诱饵
     BURROW = 340, -- 钻地
+    POISONED = 379, -- 中毒
     IMMOLATION = 408, -- 献祭
     FROST_SHOCK = 415, -- 冰霜震击
     ONYX_BARRIER = 438, -- 玛瑙壁垒
@@ -83,6 +88,7 @@ local AuraID = {
     TENACITY = 924, -- 韧性 免控
     STUN = 927, -- 眩晕
     BUBBLE = 933, -- 气泡
+    BLINDING_POISON = 1048, -- 致盲剧毒
     -- 天气类
     WEATHER_BURNT_EARTH = 171, -- 焦土 前排每轮受到龙类伤害61，被点燃
     WEATHER_ARCANE_SRORM = 590, -- 奥术风暴 免疫控制
@@ -108,6 +114,7 @@ local PetID = {
     DARKMOON_TONK = 338, -- 暗月坦克
     DARKMOON_ZEPPELIN = 339, -- 暗月飞艇
     MOUNTAIN_COTTONTAIL = 391, -- 高山短尾兔
+    QIRAJI_GUARDLING = 513, -- 幼年其拉守护者
     FLAYER_YOUNGLING = 514, -- 剥石者幼崽
     SCOURGED_WHELPLING = 538, -- 痛苦的雏龙
     FEL_FLAME = 519, -- 邪焰
@@ -121,6 +128,7 @@ local PetID = {
     STUNTED_DIREHORN = 1184, -- 瘦弱恐角龙
     FIENDISH_LMP = 1229, -- 恶魔小鬼
     UNBORN_VALKYR = 1238, -- 幼年瓦格里
+    DEATH_ADDER_HATCHLING = 1330, -- 致死小蝰蛇
     CHAR = 3042, -- 查尔
     ARFUS = 4329, -- 阿尔福斯
     SCAVENGING_PINCHER = 4532, -- 劫掠者小钳
@@ -223,6 +231,8 @@ local EffectDynamicType = {
     STACK = 5, -- 伤害随着使用次数增加
     DEEP_FREEZE = 6, -- 如果目标被冰冻，100%昏迷
     TAKEDOWN = 7, -- 如果目标昏迷，造成双倍伤害
+    PUNCTURE_WOUND = 8, -- 如果目标中毒，造成双倍伤害
+    
 }
 local TargetType = {
     ALLY = 1, -- 我方单体
@@ -456,6 +466,11 @@ function Aura.new_aura_by_id(aura_id, power, from_index)
         aura = Aura.new(aura_id, AuraType.TENACITY, 2, 0)
     elseif aura_id == AuraID.FROST_SHOCK then
         aura = Aura.new(aura_id, AuraType.SPEED, 2, -25)
+    elseif aura_id == AuraID.POISONED then
+        aura = Aura.new(aura_id, AuraType.DOT, 5, 0)
+        aura.effects = {Effect.new(TypeID.ELEMENTAL, EffectType.DAMAGE, 100, (20 + power) * 0.25, TargetType.ALLY)}
+    elseif aura_id == AuraID.BLINDING_POISON then
+        aura = Aura.new(aura_id, AuraType.ACCURACY, 1, -100)
     end
     if aura then
         aura.from_index = from_index
@@ -695,6 +710,29 @@ function Pet:install_ability_by_id(id, index)
             Effect.new_damage(TypeID.HUMANOID, (20 + self.power) * 0.9, 100, TargetType.ENEMY),
             Effect.new(TypeID.HUMANOID, EffectType.DAMAGE, 100, (20 + self.power) * 0.9, TargetType.ENEMY, 0, true)
                     :set_dynamic_type(EffectDynamicType.TAKEDOWN),
+        }
+    elseif id == AbilityID.BLACKOUT_KICK then
+        ability = Ability.new(id, TypeID.HUMANOID, 5, 0)
+        ability.effect_list[1] = {
+            Effect.new(TypeID.HUMANOID, EffectType.AURA, 100, AuraID.STUN, TargetType.ENEMY, 0, false)
+        }
+    elseif id == AbilityID.POISON_FANG then
+        ability = Ability.new(id, TypeID.BEAST, 0, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.HUMANOID, (20 + self.power) * 0.75, 100, TargetType.ENEMY),
+            Effect.new(TypeID.HUMANOID, EffectType.AURA, 100, AuraID.POISONED, TargetType.ENEMY, IGNORE_BIT_ALL, true)
+        }
+    elseif id == AbilityID.PUNCTURE_WOUND then
+        ability = Ability.new(id, TypeID.BEAST, 3, 0)
+        ability.effect_list[1] = {
+            Effect.new_damage(TypeID.BEAST, (20 + self.power), 100, TargetType.ENEMY),
+            Effect.new(TypeID.BEAST, EffectType.DAMAGE, 100, (20 + self.power), TargetType.ENEMY, 0, true)
+                    :set_dynamic_type(EffectDynamicType.PUNCTURE_WOUND),
+        }
+    elseif id == AbilityID.BLINDING_POISON then
+        ability = Ability.new(id, TypeID.BEAST, 3, 0)
+        ability.effect_list[1] = {
+            Effect.new(TypeID.BEAST, EffectType.AURA, 100, AuraID.BLINDING_POISON, TargetType.ENEMY, 0, false)
         }
     end
     if ability then
