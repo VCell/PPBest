@@ -8,6 +8,10 @@ PPBestConfig = PPBestConfig or {
     searchTime = 10,
 }
 
+if not PPBestConfig.searchTime then
+    PPBestConfig.searchTime = 10
+end
+
 local Const = {
     MODE_DEFAULT = "default",
     MODE_AI = "AI",
