@@ -333,7 +333,7 @@ end
 
 function BattleUtils:UseSkillByPriority(priorityArray)
 
-    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
+    local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ALLY)
     
     if petIndex == 0 then
         print("GetActivePet == 0")
@@ -360,7 +360,7 @@ function BattleUtils:UseSkillByPriority(priorityArray)
 end
 
 function BattleUtils:GetAuraRemaining(petOwner, auraId)
-    petIndex = C_PetBattles.GetActivePet(petOwner)
+    local petIndex = C_PetBattles.GetActivePet(petOwner)
     
     if petIndex == 0 then
         return 0
@@ -383,7 +383,7 @@ function BattleUtils:IsUndeadRound(petOwner)
 end
 
 function BattleUtils:GetEnemyPetType()
-    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
     if petIndex == 0 then
         print("GetActivePet == 0")
         return false
@@ -516,7 +516,7 @@ function BattleUtils:GetTypeEffectiveness(attackType, targetType)
 end
 
 function BattleUtils:IsAbilityStrongToEnemy(abilityType)
-    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
     if petIndex == 0 then
         print("GetActivePet == 0")
         return false
@@ -527,7 +527,7 @@ function BattleUtils:IsAbilityStrongToEnemy(abilityType)
 end
 
 function BattleUtils:IsAbilityWeakToEnemy(abilityType)
-    petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
+    local petIndex = C_PetBattles.GetActivePet(LE_BATTLE_PET_ENEMY)
     if petIndex == 0 then
         print("GetActivePet == 0")
         return false
@@ -558,7 +558,7 @@ function BattleUtils:CanKillEnemy(baseDamage, abilityType)
 end
 
 function BattleUtils:GetAbilityCooldown(owner, idx)
-    petIndex = C_PetBattles.GetActivePet(owner)
+    local petIndex = C_PetBattles.GetActivePet(owner)
     
     if petIndex == 0 then
         print("GetActivePet == 0")
@@ -578,7 +578,6 @@ function BattleUtils:GetAbilityCooldown(owner, idx)
 end
 
 function BattleUtils:Debug(message)
-    print("PPBest Debug: ", message)
     if self.debug then
         print("PPBest Debug: ", message)
     end

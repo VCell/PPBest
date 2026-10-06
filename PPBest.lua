@@ -218,6 +218,7 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         end
         CooperateController:Reset()
         lastQueryTime = time()
+        AII.game = nil
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then

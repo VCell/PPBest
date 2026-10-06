@@ -288,7 +288,7 @@ function Strategy:Init(targetMode)
 end
 
 function Strategy:OnRoundComplete(round)
-    LogFrame.AddLog("OnRoundComplete")
+    LogFrame:AddLog("OnRoundComplete")
     self.round = round + 1
     --在本轮回合无法操作时，没有点击事件触发。但是仍需正常更新轮次
     if type(self.scheme.OnRoundComplete) == "function" then
