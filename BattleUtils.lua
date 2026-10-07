@@ -34,8 +34,17 @@ function BattleUtils:GetAbilitysByPetID(petID)
     return nil
 end
 
-function BattleUtils:checkTeamByMode(mode)
+-- 清空宠物手册筛选，保证GetNumPets/GetPetInfoByIndex能遍历到全部宠物
+function BattleUtils:ClearJournalFilters()
+    C_PetJournal.ClearSearchFilter()
+    C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_COLLECTED, true)
+    C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_NOT_COLLECTED, true)
+    C_PetJournal.SetAllPetTypesChecked(true)
+end
+
+function BattleUtils:CheckTeamByMode(mode)
     if mode == Const.MODE_WANT_PET_LEVEL or mode == Const.MODE_WANT_ALL then
+        self:ClearJournalFilters()
         local maxLevel = 25
         -- 宠物升级模式检查第三位是否满级
         local oldGuid = C_PetJournal.GetPetLoadOutInfo(3)
@@ -159,7 +168,7 @@ end
 function BattleUtils:BuildTeamByLevel(targetLevels)
     --先排序
     table.sort(targetLevels, function(a,b) return a>b end)
-    C_PetJournal.ClearSearchFilter()
+    self:ClearJournalFilters()
     local numPets, numOwned = C_PetJournal.GetNumPets()
     if numPets<numOwned then
         print("清空宠物手册的筛选栏再试")

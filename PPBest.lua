@@ -43,12 +43,6 @@ end
 
 -- 执行自动战斗
 local function PerformAutoBattle()
-    --清空过滤器
-    C_PetJournal.ClearSearchFilter()
-    C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_COLLECTED, true)
-    C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_NOT_COLLECTED, true)
-    C_PetJournal.SetAllPetTypesChecked(true)
-
     if C_PetBattles.IsInBattle() then 
         if C_PetBattles.ShouldShowPetSelect() then
             Strategy:PerformSelect()
@@ -65,7 +59,7 @@ local function PerformAutoBattle()
                 print("等待队友消息中...")
             elseif CooperateController.state == STATE_WAITING_START then
                 --回复队友消息，告知目标等级
-                BattleUtils:checkTeamByMode(PPBestConfig.mode)
+                BattleUtils:CheckTeamByMode(PPBestConfig.mode)
                 local levels = {}
                 for i=1,3 do
                     local guid = C_PetJournal.GetPetLoadOutInfo(i)
