@@ -233,7 +233,7 @@ function Strategy:Init(targetMode)
     
     if PPBestConfig.mode == Const.MODE_ASSIST then
         if targetMode == Const.MODE_WANT_EXP or targetMode == Const.MODE_WANT_ALL then
-            self.scheme = GetCooperateForfeitScheme(67, 1)
+            self.scheme = GetCooperateForfeitScheme(65, 1)
             return
         else 
             self.scheme = GetCooperateForfeitScheme(0, 1)
@@ -245,10 +245,10 @@ function Strategy:Init(targetMode)
         return
     elseif PPBestConfig.mode == Const.MODE_WANT_EXP then
         --70s投降，因为辅助方预期60s投降
-        self.scheme = GetCooperateForfeitScheme(75, 1)
+        self.scheme = GetCooperateForfeitScheme(70, 1)
         return
     elseif PPBestConfig.mode == Const.MODE_WANT_ALL then
-        self.scheme = GetCooperateForfeitScheme(75, 3)
+        self.scheme = GetCooperateForfeitScheme(70, 3)
         return
     elseif PPBestConfig.mode == Const.MODE_WANT_WIN then
         self.scheme = GetCooperateForfeitScheme(15, 1)
