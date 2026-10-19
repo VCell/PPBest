@@ -72,6 +72,7 @@ end
 -- 创建自动按钮
 local function CreateAutoButton()
     autoButton = CreateFrame("Button", "PPBestAutoButton", UIParent, "UIPanelButtonTemplate, SecureActionButtonTemplate")
+    autoButton:RegisterForClicks("AnyUp", "AnyDown")
     autoButton:SetSize(100, 40)
     autoButton:SetPoint("CENTER", UIParent, "CENTER", 0, -150)
     autoButton:SetMovable(true)
