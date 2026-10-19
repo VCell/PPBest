@@ -1,7 +1,6 @@
 -- PPBest.lua
 
 local _, PPBest = ...
-local Const = PPBest.Const
 local LogFrame = PPBest.LogFrame
 local StateFrame = PPBest.StateFrame
 local OptionPanel = PPBest.OptionPanel
@@ -13,33 +12,10 @@ local PPBestFrame = CreateFrame("Frame")
 PPBestFrame:RegisterEvent("ADDON_LOADED")
 
 local PPBEST_TITLE = "PPBest"
-local MIN_QUERY_INTERVAL = 10
-
-local PPBEST_MSG_PREFIX = "PPBestAutoInfo"
 
 -- 按钮创建
 local autoButton
 local isInPetBattle = false
-local lastQueryTime = 0
-
-local STATE_WAITING_INFO = "waiting_info"
-local STATE_WAITING_START = "waiting_start"
-local STATE_PLAYING = "playing"
-local CooperateController = {
-    state = STATE_WAITING_INFO,
-    assistId = "",
-    targetMode = "",
-    targetLevel = {},
-    startTime = time()
-}
-function CooperateController:Reset()
-    self.state = STATE_WAITING_INFO
-    self.assist_id = ""
-    self.targetMode = ""
-    self.targetLevel = {}
-    self.startTime = time()
-end
-
 
 -- 执行自动战斗
 local function PerformAutoBattle()
@@ -132,15 +108,14 @@ PPBestFrame:SetScript("OnEvent", function(self, event, ...)
         if autoButton then
             autoButton:SetShown(true)
         end
-        Strategy:Init(CooperateController.targetMode)
+        Strategy:Init()
     elseif event == "PET_BATTLE_CLOSE" then
         isInPetBattle = false
         if autoButton then
             autoButton:SetShown(false)
         end
-        CooperateController:Reset()
-        lastQueryTime = time()
-        AII.game = nil
+        Strategy:OnBattleClose()
+
     elseif event == "PET_BATTLE_ACTION_SELECTED" then
         LogFrame:AddLog("EVENT: PET_BATTLE_ACTION_SELECTED")
     elseif event == "PET_BATTLE_PET_ROUND_PLAYBACK_COMPLETE" then
