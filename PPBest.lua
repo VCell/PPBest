@@ -1,6 +1,4 @@
 -- PPBest.lua
--- 事件 / 按钮 / 热键，只负责转发，不认识任何具体模式
-
 local _, PPBest = ...
 local LogFrame = PPBest.LogFrame
 local StateFrame = PPBest.StateFrame
@@ -73,7 +71,7 @@ end
 
 -- 创建自动按钮
 local function CreateAutoButton()
-    autoButton = CreateFrame("Button", "PPBestAutoButton", UIParent, "SecureActionButtonTemplate")
+    autoButton = CreateFrame("Button", "PPBestAutoButton", UIParent, "UIPanelButtonTemplate, SecureActionButtonTemplate")
     autoButton:SetSize(100, 40)
     autoButton:SetPoint("CENTER", UIParent, "CENTER", 0, -150)
     autoButton:SetMovable(true)
