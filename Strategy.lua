@@ -35,7 +35,7 @@ function ModeBase:Extend(o)
     return setmetatable(o, self)
 end
 
-function ModeBase:OutBattle(ctx) end                    -- 不在战斗中，点击按钮
+function ModeBase:OutBattle(ctx, button) end                    -- 不在战斗中，点击按钮
 function ModeBase:OnBattleStart(ctx) end                -- 战斗开始，对手信息已采集
 function ModeBase:Select(ctx, round) end                -- 需要选宠
 function ModeBase:Battle(ctx, round) end                -- 需要出招
@@ -145,8 +145,9 @@ function Strategy:Init()
 end
 
 -- 点击按钮且不在战斗中
-function Strategy:PerformOutBattle()
-    self:GetConfiguredMode():OutBattle(self)
+-- button：插件的安全按钮，需要在点击时执行宏的模式（如小艺）会用到
+function Strategy:PerformOutBattle(button)
+    self:GetConfiguredMode():OutBattle(self, button)
 end
 
 function Strategy:PerformSelect()

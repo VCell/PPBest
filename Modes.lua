@@ -53,21 +53,77 @@ local XIAOYI_PET_ABILITY = {
     [1152] = {110, 362, 593},
 }
 
+-- 一键流程：
+--   prepare  首次点击：按钮执行宏（选中小艺、复活、组队），热键临时改绑为"与目标互动"
+--   interact 再次按键：游戏自带的交互进入宠物对战
+-- 对战开始/结束、或超时未进入对战，都回到 prepare 并把热键绑回插件按钮
+local STAGE_PREPARE = "prepare"
+local STAGE_INTERACT = "interact"
+local INTERACT_TIMEOUT = 5  -- 秒
+-- 组队放在复活之后执行，所以通过 /run 调用，而不是在点击回调里直接组队
+local XIAOYI_MACRO = "/target 幸运的小艺\n/use 复活战斗宠物\n/run PPBest_BuildXiaoyiTeam()"
+
 local XiaoyiMode = ModeBase:Extend{
+    stage = STAGE_PREPARE,
+    token = 0,            -- 用于让已经过期的超时回调失效
     petID = 0,
     actionCount = 0,
-    lastActRound = 0,
+    lastActRound = -1,
 }
 
-function XiaoyiMode:OutBattle()
+function XiaoyiMode:BuildTeam()
     BattleUtils:BuildTeamByProriority(XIAOYI_PET_PRIORITY)
     BattleUtils:SetPetsAbility(XIAOYI_PET_ABILITY)
 end
 
+_G.PPBest_BuildXiaoyiTeam = function()
+    XiaoyiMode:BuildTeam()
+end
+
+function XiaoyiMode:ResetStage()
+    self.stage = STAGE_PREPARE
+    self.token = self.token + 1
+    PPBest.Hotkey:UseButton()
+end
+
+function XiaoyiMode:EnterInteractStage()
+    self.stage = STAGE_INTERACT
+    self.token = self.token + 1
+    local token = self.token
+    PPBest.Hotkey:UseInteract()
+
+    -- 超时仍未进入对战（距离太远、没选中目标等），恢复热键，避免卡在交互绑定上
+    C_Timer.After(INTERACT_TIMEOUT, function()
+        if self.token == token and self.stage == STAGE_INTERACT then
+            self:ResetStage()
+        end
+    end)
+end
+
+function XiaoyiMode:OutBattle(ctx, button)
+    if self.stage ~= STAGE_PREPARE then
+        return
+    end
+    -- 真实战斗中无法修改安全按钮属性，等战斗结束后的下次点击再处理
+    if not button or InCombatLockdown() then
+        return
+    end
+
+    button:SetAttribute("type", "macro")
+    button:SetAttribute("macrotext", XIAOYI_MACRO)
+    self:EnterInteractStage()
+end
+
+function XiaoyiMode:OnBattleClose()
+    self:ResetStage()
+end
+
 function XiaoyiMode:OnBattleStart()
+    self:ResetStage()
     self.petID = 0
     self.actionCount = 0
-    self.lastActRound = 0
+    -- 用 -1 而不是 0：Strategy.round 从 0 开始，初始为 0 会导致第一回合被当成"已出过招"
+    self.lastActRound = -1
 end
 
 function XiaoyiMode:Select()
