@@ -40,6 +40,7 @@ function BattleUtils:ClearJournalFilters()
     C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_COLLECTED, true)
     C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_NOT_COLLECTED, true)
     C_PetJournal.SetAllPetTypesChecked(true)
+    C_PetJournal.SetAllPetSourcesChecked(true)
 end
 
 function BattleUtils:CheckTeamByMode(mode)
