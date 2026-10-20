@@ -90,6 +90,7 @@ end
 -- 按优先级构建团队 传入{speciesID:priority}的map，数值越小优先级越高
 -- 只在存活(血量>0)且等级>20的宠物中选取，取优先级最高的3只编入队伍
 function BattleUtils:BuildTeamByProriority(petsPriority)
+    self:ClearJournalFilters()
     local candidates = {} --{{guid=guid, priority=priority}}
     local numPets, numOwned = C_PetJournal.GetNumPets()
     if numPets < numOwned then
