@@ -46,22 +46,11 @@ function OptionPanel:Initialize()
     return true
 end
 
-
-local function GetDropDownMenuItemInfo(text, key)
-    local info = UIDropDownMenu_CreateInfo()
-
-end
-
 local modeDescriptions = {
     [Const.MODE_AI] = "单刷全25PVP:\n使用全25级PVP宠物进行自动战斗。推荐阵容见curseforge",
     [Const.MODE_XIAOYI] = [[一键单刷寓言之兽[幸运的小艺]，可用于给人物升级。
 1 准备以下宠物：3只满级赞达拉袭胫者，3只满级赞达拉撕踝者，3只满级克洛玛尼斯。
-2 设置宏：
-/target 幸运的小艺
-/use 复活战斗宠物
-并放置在技能栏上，假设快捷键是A
-3 在[选项-游戏功能-控制-与目标互动]中设置互动快捷键，假设按键是B
-4 站在小艺附近找到一个进出宠物战斗时角色不会移动的位置（通常是在小艺左手的石头后面），然后循环按：“A”、“B”、“F8”(PPBest插件设置的快捷键) 三个键即可
+2 站在小艺附近找到一个进出宠物战斗时角色不会移动的位置，通常是在小艺左后方，一块石头的旁边），然后一直按F8（PPBest插件设置的快捷键）即可。
 ]],
     [Const.MODE_ASSIST] = [[互刷-协助方：
 作为协助方配合队友刷宠物。
