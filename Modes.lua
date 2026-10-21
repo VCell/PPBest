@@ -72,6 +72,7 @@ local XiaoyiMode = ModeBase:Extend{
 }
 
 function XiaoyiMode:BuildTeam()
+    print("组队中...")
     BattleUtils:BuildTeamByProriority(XIAOYI_PET_PRIORITY)
     BattleUtils:SetPetsAbility(XIAOYI_PET_ABILITY)
 end
