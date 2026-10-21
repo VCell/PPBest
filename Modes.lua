@@ -78,6 +78,7 @@ end
 
 _G.PPBest_BuildXiaoyiTeam = function()
     XiaoyiMode:BuildTeam()
+    XiaoyiMode:EnterInteractStage()
 end
 
 function XiaoyiMode:ResetStage()
@@ -111,7 +112,6 @@ function XiaoyiMode:OutBattle(ctx, button)
 
     button:SetAttribute("type", "macro")
     button:SetAttribute("macrotext", XIAOYI_MACRO)
-    self:EnterInteractStage()
 end
 
 function XiaoyiMode:OnBattleClose()
